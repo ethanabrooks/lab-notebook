@@ -1,26 +1,23 @@
 #!/usr/bin/env python
+import argparse
+import socket
+import time
 from contextlib import contextmanager
+from datetime import datetime
 from getpass import getpass
 
-from paramiko import SSHException
-from paramiko.client import SSHClient, AutoAddPolicy
-import argparse
-import glob
+import libtmux
 import os
 import re
 import shutil
-import socket
-import warnings
-from copy import deepcopy
-from datetime import datetime
-
-import libtmux
+import visualizer
 import yaml
-from git import Repo
+from copy import deepcopy
+from git import Repo, Git
+from paramiko import SSHException
+from paramiko.client import SSHClient, AutoAddPolicy
 from tabulate import tabulate
 from termcolor import colored
-
-import visualizer
 
 DEST = 'dest'
 RUNS = '.runs'
@@ -31,6 +28,9 @@ TB_DIR = 'tb-dir'
 GOAL_LOG_FILE = 'goal-log-file'
 SAVE_PATH = 'save-path'
 RECORDS = 'records'
+PATTERN = 'pattern'
+PORT = 'port'
+COMMIT = 'commit'
 
 NEW = 'new'
 SAVE = 'save'
@@ -38,6 +38,7 @@ DELETE = 'delete'
 LOOKUP = 'lookup'
 LIST = 'list'
 TABLE = 'table'
+REPRODUCE = 'reproduce'
 VISUALIZE = 'visualize'
 
 BUFFSIZE = 1024
@@ -47,6 +48,8 @@ def code_format(*args):
     string = ' '.join(map(str, args))
     return colored(string, color='white', attrs=['dark'])
 
+
+# IO
 
 def load(path, host=None, username=None):
     try:
@@ -121,14 +124,9 @@ def make_dirs(run_name, runs_dir):
         os.makedirs(dirname, exist_ok=True)
 
 
-def commit(description):
-    repo = Repo()
-    if repo.is_dirty():
-        if get_yes_or_no("Repo is dirty. Do you want to commit before run?"):
-            if description is not None and get_yes_or_no("Use the {description} as commit message?"):
-                repo.index.commit(description)
-            else:
-                repo.index.commit(input("Provide commit message:"))
+def check_repo_is_dirty():
+    if Repo().is_dirty():
+        raise RuntimeError("Repo is dirty. You should commit before run.")
 
 
 def choose_port():
@@ -144,7 +142,7 @@ def choose_port():
 
 def build_flags(name, runs_dir, port):
     command_line_args = run_paths(name, runs_dir)
-    command_line_args.update({'port': port})
+    command_line_args.update({PORT: port})
     return ' '.join(['--{}={}'.format(flag, value)
                      for flag, value in
                      command_line_args.items()])
@@ -163,34 +161,48 @@ def run_tmux(name, window_name, command):
     pane.send_keys(command)
 
 
-def new(name, description, virtualenv_path, command, no_commit,
-        overwrite, entry, runs_dir, db_filename):
-    assert '.' not in name
+def new_entry(entry, command, datetime, commit, port):
+    updates = {PORT: port,
+               COMMAND: command,
+               DATETIME: datetime,
+               COMMIT: commit}
+    return {key: updates[key] if key in updates else entry[key]
+            for key in [entry.keys() + updates.keys()]}
 
+
+def new(entry, name, command, description, virtualenv_path, overwrite, runs_dir, db_filename):
+    assert '.' not in name
+    now = datetime.now()
     # deal with collisions
     db_path = os.path.join(runs_dir, db_filename)
     if name in load(db_path):
         if overwrite:
             delete_run(name, db_filename, runs_dir)
         else:
-            rename(name, db_filename, runs_dir)
+            name += now.strftime('%s')
 
     make_dirs(name, runs_dir)
-    if not no_commit:
-        commit(description)
+    if Repo().is_dirty():
+        raise RuntimeError("Repo is dirty. You should commit before run.")
     port = choose_port()
+
+    last_commit = Repo().active_branch.commit.hexsha
+    entry.update(dict(datetime=now.isoformat(),
+                      command=command,
+                      commit=last_commit,
+                      port=port))
+
     command += ' ' + build_flags(name, runs_dir, port)
     if virtualenv_path:
         command = source_virtualenv_command(virtualenv_path) + ' ' + command
 
-    run_tmux(name, description, command)
-    print('Command sent to session:')
-    print(code_format(command))
-
-    entry[COMMAND] = command
-    entry[DATETIME] = datetime.now().isoformat()
     with RunDB(path=db_path) as db:
         db[name] = entry
+
+    run_tmux(name, description, command)
+
+    print('Command sent to session:')
+    print(code_format(command))
 
     print('List active:')
     print(code_format('tmux list-session'))
@@ -213,7 +225,7 @@ def delete_run(name, db_filename, runs_dir):
                 try:
                     os.remove(path)
                 except FileNotFoundError as e:
-                    warnings.warn(colored(e.strerror, color='red', attrs=['dark']))
+                    print(colored(e.strerror + ': ' + path, color='red', attrs=['dark']))
 
         server = libtmux.Server()
         session = server.find_where(
@@ -226,7 +238,7 @@ def delete(pattern, db_filename, runs_dir):
     db_path = os.path.join(runs_dir, db_filename)
     filtered = filter_by_regex(load(db_path), pattern)
     if filtered:
-        question = 'Delete the following runs?\n' + '\n'.join(filtered)
+        question = 'Delete the following runs?\n' + '\n'.join(filtered) + '\n'
         if get_yes_or_no(question):
             for run_name in filtered:
                 delete_run(run_name, db_filename, runs_dir)
@@ -235,18 +247,6 @@ def delete(pattern, db_filename, runs_dir):
         print('No runs match pattern. Recorded runs:')
         for name in load(db_path):
             print(name)
-
-
-def rename(name, db_filename, runs_dir):
-    new_name = name + '@' + datetime.now().isoformat()
-
-    with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
-        db[new_name] = db[name]
-        del db[name]
-
-    for pattern in run_paths(name, runs_dir).values():
-        for path in glob.glob(pattern + '*'):  # glob is necessary for .ckpt files
-            os.rename(path, path.replace(name, new_name))
 
 
 def lookup_from_path(path, name, key,
@@ -293,6 +293,17 @@ def get_table(db, column_width):
     return tabulate(table, headers=headers)
 
 
+def reproduce(runs_dir, db_filename, name):
+    db = load(os.path.join(runs_dir, db_filename))
+    commit = lookup(db, name, key=COMMIT)
+    command = lookup(db, name, key='command')
+    description = lookup(db, name, key='description')
+    print('To reproduce:\n',
+          code_format('git checkout {}\n'.format(commit)),
+          code_format("runs new {} '{}' --description='{}'".format(name, command, description)))
+
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default=None)
@@ -311,17 +322,25 @@ def main():
     new_parser.add_argument('--description')
 
     delete_parser = subparsers.add_parser(DELETE, help='delete run info')
-    delete_parser.add_argument('pattern')
+    delete_parser.add_argument(PATTERN)
 
     list_parser = subparsers.add_parser(LIST, help='list run names')
+    list_parser.add_argument('--' + PATTERN, default=None)
 
     table_parser = subparsers.add_parser(TABLE, help='table of run info')
-    table_parser.add_argument('--pattern', default=None)
+    table_parser.add_argument('--' + PATTERN, default=None)
     table_parser.add_argument('--column-width', type=int, default=30)
 
     lookup_parser = subparsers.add_parser(LOOKUP, help='lookup run info')
     lookup_parser.add_argument(NAME)
     lookup_parser.add_argument('key')
+
+    reproduce_parser = subparsers.add_parser(REPRODUCE,
+                                             help='Reproduce run from original commit.')
+    reproduce_parser.add_argument(NAME)
+    reproduce_parser.add_argument('--description', type=str, default=None)
+    reproduce_parser.add_argument('--virtualenv-path', default='venv')
+    reproduce_parser.add_argument('--overwrite', action='store_true')
 
     visualize_parser = subparsers.add_parser(VISUALIZE,
                                              help='visualize run with '
@@ -338,6 +357,7 @@ def main():
         assert args.host is None, 'SSH into remote before calling run.py new.'
         entry = deepcopy(vars(args))
         del entry['name']
+        del entry['username']
         del entry['virtualenv_path']
         del entry['no_commit']
         del entry['runs_dir']
@@ -350,7 +370,6 @@ def main():
             description=args.description,
             virtualenv_path=args.virtualenv_path,
             command=args.command,
-            no_commit=args.no_commit,
             overwrite=args.overwrite,
             entry=entry,
             runs_dir=args.runs_dir,
@@ -374,8 +393,12 @@ def main():
         print(lookup(db, args.name, args.key))
 
     elif args.dest == VISUALIZE:
-        port = lookup(db, args.name, key='port')
+        port = lookup(db, args.name, key=PORT)
         visualizer.run(args.host, port)
+
+    elif args.dest == REPRODUCE:
+        reproduce(args.runs_dir, args.db_filename, args.name)
+
     else:
         raise RuntimeError("'{}' is not a supported dest.".format(args.dest))
 
