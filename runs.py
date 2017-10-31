@@ -85,7 +85,7 @@ def read_remote_file(remote_filename, host, username):
     client = SSHClient()
     client.set_missing_host_key_policy(AutoAddPolicy())
     try:
-        client.connect(host, username=username, look_for_keys=False)
+        client.connect(host, username=username, look_for_keys=True)
     except SSHException:
         client.connect(host, username=username, password=getpass("Enter password:"), look_for_keys=False)
     if not client:
@@ -93,6 +93,20 @@ def read_remote_file(remote_filename, host, username):
 
     with client.open_sftp().open(remote_filename) as f:
         yield f
+
+
+def get_yes_or_no(question):
+    if not question.endswith(' '):
+        question += ' '
+    response = input(question)
+    while True:
+        response = response.lower()
+        if response in ['y', 'yes']:
+            return True
+        if response in ['n', 'no']:
+            return False
+        else:
+            response = input('Please enter y[es]|n[o]')
 
 
 def run_paths(run_name, runs_dir):
@@ -107,12 +121,14 @@ def make_dirs(run_name, runs_dir):
         os.makedirs(dirname, exist_ok=True)
 
 
-def commit(description, no_commit):
-    if description is None:
-        description = input("Provide description of run:")
+def commit(description):
     repo = Repo()
-    if repo.is_dirty() and not no_commit:
-        repo.index.commit(description)
+    if repo.is_dirty():
+        if get_yes_or_no("Repo is dirty. Do you want to commit before run?"):
+            if description is not None and get_yes_or_no("Use the {description} as commit message?"):
+                repo.index.commit(description)
+            else:
+                repo.index.commit(input("Provide commit message:"))
 
 
 def choose_port():
@@ -160,7 +176,8 @@ def new(name, description, virtualenv_path, command, no_commit,
             rename(name, db_filename, runs_dir)
 
     make_dirs(name, runs_dir)
-    commit(description, no_commit)
+    if not no_commit:
+        commit(description)
     port = choose_port()
     command += ' ' + build_flags(name, runs_dir, port)
     if virtualenv_path:
@@ -181,10 +198,14 @@ def new(name, description, virtualenv_path, command, no_commit,
     print(code_format('tmux attach -t', name))
 
 
+def filter_by_regex(db, pattern):
+    return {key: db[key] for key in db
+            if re.match(pattern, key) is not None}
+
+
 def delete_run(name, db_filename, runs_dir):
     with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
         del db[name]
-
         for path in run_paths(name, runs_dir).values():
             if os.path.isdir(path):
                 shutil.rmtree(path)
@@ -203,14 +224,13 @@ def delete_run(name, db_filename, runs_dir):
 
 def delete(pattern, db_filename, runs_dir):
     db_path = os.path.join(runs_dir, db_filename)
-    pattern = '^' + pattern + '$'
-    with RunDB(path=db_path) as db:
-        runs_to_delete = [name for name in db.keys()
-                          if re.match(pattern, name) is not None]
-    if runs_to_delete:
-        for run_name in runs_to_delete:
-            delete_run(run_name, db_filename, runs_dir)
-            print('Deleted', run_name)
+    filtered = filter_by_regex(load(db_path), pattern)
+    if filtered:
+        question = 'Delete the following runs?\n' + '\n'.join(filtered)
+        if get_yes_or_no(question):
+            for run_name in filtered:
+                delete_run(run_name, db_filename, runs_dir)
+                print('Deleted', run_name)
     else:
         print('No runs match pattern. Recorded runs:')
         for name in load(db_path):
@@ -249,17 +269,19 @@ def lookup(db, name, key):
     return entry[key]
 
 
-def get_table_from_path(db_path, maxlen, host, username):
+def get_table_from_path(db_path, column_width, host, username, pattern=None):
     db = load(db_path, host, username)
-    get_table(db, maxlen)
+    if pattern:
+        db = filter_by_regex(db, pattern)
+    return get_table(db, column_width)
 
 
-def get_table(db, maxlen):
+def get_table(db, column_width):
     def get_values(entry, key):
         try:
             value = str(entry[key])
-            if len(value) > maxlen:
-                value = value[:maxlen] + '...'
+            if len(value) > column_width:
+                value = value[:column_width] + '...'
             return value
         except KeyError:
             return '_'
@@ -294,7 +316,8 @@ def main():
     list_parser = subparsers.add_parser(LIST, help='list run names')
 
     table_parser = subparsers.add_parser(TABLE, help='table of run info')
-    table_parser.add_argument('--maxlen', type=int, default=30)
+    table_parser.add_argument('--pattern', default=None)
+    table_parser.add_argument('--column-width', type=int, default=30)
 
     lookup_parser = subparsers.add_parser(LOOKUP, help='lookup run info')
     lookup_parser.add_argument(NAME)
@@ -341,7 +364,11 @@ def main():
             print(name)
 
     elif args.dest == TABLE:
-        print(get_table(db, args.maxlen))
+        print(get_table_from_path(db_path,
+                                  args.column_width,
+                                  args.host,
+                                  args.username,
+                                  args.pattern))
 
     elif args.dest == LOOKUP:
         print(lookup(db, args.name, args.key))
@@ -351,6 +378,7 @@ def main():
         visualizer.run(args.host, port)
     else:
         raise RuntimeError("'{}' is not a supported dest.".format(args.dest))
+
 
 if __name__ == '__main__':
     main()

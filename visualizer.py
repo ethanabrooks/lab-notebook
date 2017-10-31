@@ -2,7 +2,7 @@ import argparse
 import pickle
 import socket
 
-import math
+import numpy as np
 import pygame
 
 GEOMETRY_ATTRIBUTES = 'room goal agent orientation objects'.split()
@@ -55,7 +55,7 @@ class Visualizer:
         pygame.draw.circle(self.screen, color, (x, y), 5)
 
     def draw(self, room_rect, agent_pos, agent_dir, goal_coords, objects):
-        rect = [x + math.copysign(1, x) for x in room_rect]
+        rect = [x + np.sign(x) for x in room_rect]
         (self.screen_tlx, self.screen_bry), (
         self.screen_tly, self.screen_brx) = rect
         self.screen.fill(self.BACKGROUND_COLOR)
