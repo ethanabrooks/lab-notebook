@@ -46,7 +46,7 @@ BUFFSIZE = 1024
 
 def code_format(*args):
     string = ' '.join(map(str, args))
-    return colored(string, color='white', attrs=['dark'])
+    return colored(string, color='blue', attrs=['bold'])
 
 
 # IO
@@ -173,6 +173,7 @@ def new_entry(entry, command, datetime, commit, port):
 def new(entry, name, command, description, virtualenv_path, overwrite, runs_dir, db_filename):
     assert '.' not in name
     now = datetime.now()
+
     # deal with collisions
     db_path = os.path.join(runs_dir, db_filename)
     if name in load(db_path):
@@ -212,7 +213,7 @@ def new(entry, name, command, description, virtualenv_path, overwrite, runs_dir,
 
 def filter_by_regex(db, pattern):
     return {key: db[key] for key in db
-            if re.match(pattern, key) is not None}
+            if re.match('^' + pattern + '$', key) is not None}
 
 
 def delete_run(name, db_filename, runs_dir):
@@ -301,7 +302,6 @@ def reproduce(runs_dir, db_filename, name):
     print('To reproduce:\n',
           code_format('git checkout {}\n'.format(commit)),
           code_format("runs new {} '{}' --description='{}'".format(name, command, description)))
-
 
 
 def main():
