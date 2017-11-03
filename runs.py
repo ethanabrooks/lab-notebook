@@ -31,6 +31,7 @@ RECORDS = 'records'
 PATTERN = 'pattern'
 PORT = 'port'
 COMMIT = 'commit'
+DESCRIPTION = 'description'
 
 NEW = 'new'
 SAVE = 'save'
@@ -192,6 +193,8 @@ def new(entry, name, command, description, virtualenv_path, overwrite, runs_dir,
                       command=command,
                       commit=last_commit,
                       port=port))
+    if description is None:
+        entry[DESCRIPTION] = Repo().head.commit.message
 
     command += ' ' + build_flags(name, runs_dir, port)
     if virtualenv_path:
@@ -297,7 +300,7 @@ def reproduce(runs_dir, db_filename, name):
     db = load(os.path.join(runs_dir, db_filename))
     commit = lookup(db, name, key=COMMIT)
     command = lookup(db, name, key='command')
-    description = lookup(db, name, key='description')
+    description = lookup(db, name, key=DESCRIPTION)
     print('To reproduce:\n',
           code_format('git checkout {}\n'.format(commit)),
           code_format("runs new {} '{}' --description='{}'".format(name, command, description)))
