@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import argparse
 import socket
-import time
 from contextlib import contextmanager
 from datetime import datetime
 from getpass import getpass
@@ -13,7 +12,7 @@ import shutil
 import visualizer
 import yaml
 from copy import deepcopy
-from git import Repo, Git
+from git import Repo
 from paramiko import SSHException
 from paramiko.client import SSHClient, AutoAddPolicy
 from tabulate import tabulate
@@ -32,6 +31,7 @@ PATTERN = 'pattern'
 PORT = 'port'
 COMMIT = 'commit'
 DESCRIPTION = 'description'
+DEFAULT_RUNS_DIR = '.runs'
 
 NEW = 'new'
 SAVE = 'save'
@@ -91,11 +91,21 @@ def read_remote_file(remote_filename, host, username):
     try:
         client.connect(host, username=username, look_for_keys=True)
     except SSHException:
-        client.connect(host, username=username, password=getpass("Enter password:"), look_for_keys=False)
+        client.connect(host,
+                       username=username,
+                       password=getpass("Enter password:"),
+                       look_for_keys=False)
     if not client:
         raise RuntimeError("Connection not opened.")
 
-    with client.open_sftp().open(remote_filename) as f:
+    sftp = client.open_sftp()
+    try:
+        sftp.stat(remote_filename)
+    except Exception:
+        raise RuntimeError('There was a problem accessing', remote_filename)
+        raise
+
+    with sftp.open(remote_filename) as f:
         yield f
 
 
@@ -114,9 +124,12 @@ def get_yes_or_no(question):
 
 
 def run_paths(run_name, runs_dir):
-    return {'tb-dir': os.path.join(runs_dir, 'tensorboard', run_name + '/'),
-            'save-path': os.path.join(runs_dir, 'checkpoints', run_name + '.ckpt'),
-            'goal-log-file': os.path.join(runs_dir, 'goal-logs', run_name + '.log')}
+    tb_path = os.path.join(runs_dir, 'tensorboard', run_name + '/')
+    save_path = os.path.join(runs_dir, 'checkpoints', run_name + '.ckpt')
+    goal_path = os.path.join(runs_dir, 'goal-logs', run_name + '.log')
+    return {'tb-dir': tb_path,
+            'save-path':  save_path,
+            'goal-log-file': goal_path}
 
 
 def make_dirs(run_name, runs_dir):
@@ -124,10 +137,6 @@ def make_dirs(run_name, runs_dir):
         dirname = os.path.dirname(path)
         os.makedirs(dirname, exist_ok=True)
 
-
-def check_repo_is_dirty():
-    if Repo().is_dirty():
-        raise RuntimeError("Repo is dirty. You should commit before run.")
 
 
 def choose_port():
@@ -171,7 +180,14 @@ def new_entry(entry, command, datetime, commit, port):
             for key in [entry.keys() + updates.keys()]}
 
 
-def new(entry, name, command, description, virtualenv_path, overwrite, runs_dir, db_filename):
+def new(entry,
+        name,
+        command,
+        description,
+        virtualenv_path,
+        overwrite,
+        runs_dir,
+        db_filename):
     assert '.' not in name
     now = datetime.now()
 
@@ -184,17 +200,18 @@ def new(entry, name, command, description, virtualenv_path, overwrite, runs_dir,
             name += now.strftime('%s')
 
     make_dirs(name, runs_dir)
-    if Repo().is_dirty():
+    repo = Repo()
+    if repo.is_dirty():
         raise RuntimeError("Repo is dirty. You should commit before run.")
     port = choose_port()
 
-    last_commit = Repo().active_branch.commit.hexsha
+    last_commit = next(repo.iter_commits())
     entry.update(dict(datetime=now.isoformat(),
                       command=command,
-                      commit=last_commit,
+                      commit=last_commit.hexsha,
                       port=port))
     if description is None:
-        entry[DESCRIPTION] = Repo().head.commit.message
+        entry[DESCRIPTION] = latest_commit.message
 
     command += ' ' + build_flags(name, runs_dir, port)
     if virtualenv_path:
@@ -303,14 +320,15 @@ def reproduce(runs_dir, db_filename, name):
     description = lookup(db, name, key=DESCRIPTION)
     print('To reproduce:\n',
           code_format('git checkout {}\n'.format(commit)),
-          code_format("runs new {} '{}' --description='{}'".format(name, command, description)))
+          code_format("runs new {} '{}' --description='{}'".format(
+              name, command, description)))
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default=None)
     parser.add_argument('--username', default=None)
-    parser.add_argument('--runs-dir', default='.runs')
+    parser.add_argument('--runs-dir', default=DEFAULT_RUNS_DIR)
     parser.add_argument('--db-filename', default='.runs.yml')
 
     subparsers = parser.add_subparsers(dest=DEST)
@@ -337,8 +355,8 @@ def main():
     lookup_parser.add_argument(NAME)
     lookup_parser.add_argument('key')
 
-    reproduce_parser = subparsers.add_parser(REPRODUCE,
-                                             help='Reproduce run from original commit.')
+    reproduce_parser = subparsers.add_parser(
+        REPRODUCE, help='Reproduce run from original commit.')
     reproduce_parser.add_argument(NAME)
     reproduce_parser.add_argument('--description', type=str, default=None)
     reproduce_parser.add_argument('--virtualenv-path', default='venv')
@@ -348,15 +366,17 @@ def main():
                                              help='visualize run with '
                                                   'simplified top-down view')
     visualize_parser.add_argument(NAME)
-    visualize_parser.add_argument('--db-path',
-                                  default='$HOME/zero_shot/.runs/.runs.yml',
-                                  help='Needs to be in yaml format.')
 
     args = parser.parse_args()
     db_path = os.path.join(args.runs_dir, args.db_filename)
     db = load(db_path, host=args.host, username=args.username)
+    if args.runs_dir is DEFAULT_RUNS_DIR and args.host is not None:
+        print(colored('Using default path to runs_dir: "{}". '
+                      'When accessing remote files, you may want to '
+                      'specify the complete path.'.format(DEFAULT_RUNS_DIR),
+                      color='red'))
     if args.dest == NEW:
-        assert args.host is None, 'SSH into remote before calling run.py new.'
+        assert args.host is None, 'SSH into remote before calling runs new.'
         entry = deepcopy(vars(args))
         del entry['name']
         del entry['username']
@@ -378,6 +398,7 @@ def main():
             db_filename=args.db_filename)
 
     elif args.dest == DELETE:
+        assert args.host is None, 'SSH into remote before calling runs delete.'
         delete(args.pattern, args.db_filename, args.runs_dir)
 
     elif args.dest == LIST:
