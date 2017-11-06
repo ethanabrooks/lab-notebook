@@ -267,10 +267,12 @@ def lookup_from_path(path, name, key,
 
 
 def lookup(db, name, key):
+    documented_runs_message = "Documented runs are {}.".format(name, db.keys())
+    if key is None:
+        return documented_runs_message
     if name not in db.keys():
         raise KeyError(
-            "`{}` is not a documented run. Documented runs are {}.".format(
-                name, db.keys()))
+            "`{}` is not a documented run." + documented_runs_message)
     entry = db[name]
     if key not in entry:
         raise KeyError(
@@ -316,46 +318,69 @@ def reproduce(runs_dir, db_filename, name):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--host', default=None)
-    parser.add_argument('--username', default=None)
-    parser.add_argument('--runs-dir', default=DEFAULT_RUNS_DIR)
-    parser.add_argument('--db-filename', default='.runs.yml')
+    parser.add_argument('--host', default=None, help='IP address or hostname (without username). Used for accessing '
+                                                     'database on remote server.')
+    parser.add_argument('--username', default=None, help='Username associated with remote host. Used for accessing '
+                                                         'database on remote server.')
+    parser.add_argument('--runs-dir', default=DEFAULT_RUNS_DIR, help='Custom path to directory containing runs '
+                                                                     'database (default, `runs.yml`). Should not need '
+                                                                     'to be specified for local runs but probably '
+                                                                     'required for accessing databses remotely.')
+    parser.add_argument('--db-filename', default='.runs.yml', help='Name of YAML file storing run database information.')
 
     subparsers = parser.add_subparsers(dest=DEST)
 
-    new_parser = subparsers.add_parser(NEW, help='save run info')
-    new_parser.add_argument(NAME)
-    new_parser.add_argument(COMMAND)
-    new_parser.add_argument('--virtualenv-path', default='venv')
-    new_parser.add_argument('--no-commit', action='store_true')
-    new_parser.add_argument('--overwrite', action='store_true')
-    new_parser.add_argument('--description')
+    virtualenv_path_help = 'Path to virtual environment, if one is being ' \
+                           'used. If not `None`, the program will source ' \
+                           '`<virtualenv-path>/bin/activate`.'
 
-    delete_parser = subparsers.add_parser(DELETE, help='delete run info')
-    delete_parser.add_argument(PATTERN)
+    new_parser = subparsers.add_parser(NEW, help='Start a new run.')
+    new_parser.add_argument(NAME, help='Unique name assigned to new run.')
+    new_parser.add_argument(COMMAND, help='Command to run to start tensorflow program.')
+    new_parser.add_argument('--virtualenv-path', default='venv', help=virtualenv_path_help)
+    new_parser.add_argument('--overwrite', action='store_true', help='If this flag is given, this entry will '
+                                                                     'overwrite any entry with the same name. '
+                                                                     'Otherwise, a timestamp will be appended to any '
+                                                                     'new name that is already in the database.')
+    new_parser.add_argument('--description', help='Description of this run. Write whatever you want.')
 
-    list_parser = subparsers.add_parser(LIST, help='list run names')
-    list_parser.add_argument('--' + PATTERN, default=None)
+    delete_parser = subparsers.add_parser(DELETE, help="Delete runs from the database (and all associated tensorboard "
+                                                       "and checkpoint files). Don't worry, the script will ask for "
+                                                       "confirmation before deleting anything.")
+    delete_parser.add_argument(PATTERN, help='This script will only delete entries in the database whose names are a '
+                                             'complete (not partial) match of this regex pattern.')
 
-    table_parser = subparsers.add_parser(TABLE, help='table of run info')
-    table_parser.add_argument('--' + PATTERN, default=None)
-    table_parser.add_argument('--column-width', type=int, default=30)
+    pattern_help = 'Only display names matching this pattern.'
 
-    lookup_parser = subparsers.add_parser(LOOKUP, help='lookup run info')
-    lookup_parser.add_argument(NAME)
-    lookup_parser.add_argument('key')
+    list_parser = subparsers.add_parser(LIST, help='List all names in run database.')
+    list_parser.add_argument('--' + PATTERN, default=None, help=pattern_help)
+
+    table_parser = subparsers.add_parser(TABLE, help='Display contents of run database as a table.')
+    table_parser.add_argument('--' + PATTERN, default=None, help=pattern_help)
+    table_parser.add_argument('--column-width', type=int, default=30, help='Maximum width of table columns. Longer '
+                                                                           'values will be truncated and appended '
+                                                                           'with "...".')
+
+    lookup_parser = subparsers.add_parser(LOOKUP, help='Lookup specific value associated with database entry')
+    lookup_parser.add_argument(NAME, help='Name of run that value is associated with.')
+    lookup_parser.add_argument('key', help='Key that value is associated with. To view all available keys, '
+                                           'use `--key=None`.')
 
     reproduce_parser = subparsers.add_parser(
-        REPRODUCE, help='Reproduce run from original commit.')
+        REPRODUCE, help='Print commands to reproduce a run.')
     reproduce_parser.add_argument(NAME)
-    reproduce_parser.add_argument('--description', type=str, default=None)
-    reproduce_parser.add_argument('--virtualenv-path', default='venv')
-    reproduce_parser.add_argument('--overwrite', action='store_true')
+    reproduce_parser.add_argument('--description', type=str, default=None, help='Description to be assigned to new '
+                                                                                'run. If None, use the same '
+                                                                                'description as the run being '
+                                                                                'reproduced.')
+    reproduce_parser.add_argument('--virtualenv-path', default='venv', help=virtualenv_path_help)
+    reproduce_parser.add_argument('--overwrite', action='store_true', help='If this flag is provided, the reproducing '
+                                                                           'run will overwrite the reproduced run.')
 
     visualize_parser = subparsers.add_parser(VISUALIZE,
-                                             help='visualize run with '
+                                             help='Visualize run with '
                                                   'simplified top-down view')
-    visualize_parser.add_argument(NAME)
+    visualize_parser.add_argument(NAME, help='Name of run.')
 
     args = parser.parse_args()
     db_path = os.path.join(args.runs_dir, args.db_filename)
@@ -371,7 +396,6 @@ def main():
         del entry['name']
         del entry['username']
         del entry['virtualenv_path']
-        del entry['no_commit']
         del entry['runs_dir']
         del entry['db_filename']
         del entry['dest']
