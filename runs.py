@@ -103,7 +103,6 @@ def read_remote_file(remote_filename, host, username):
         sftp.stat(remote_filename)
     except Exception:
         raise RuntimeError('There was a problem accessing', remote_filename)
-        raise
 
     with sftp.open(remote_filename) as f:
         yield f
@@ -124,19 +123,18 @@ def get_yes_or_no(question):
 
 
 def run_paths(run_name, runs_dir):
-    tb_path = os.path.join(runs_dir, 'tensorboard', run_name + '/')
-    save_path = os.path.join(runs_dir, 'checkpoints', run_name + '.ckpt')
-    goal_path = os.path.join(runs_dir, 'goal-logs', run_name + '.log')
-    return {'tb-dir': tb_path,
-            'save-path':  save_path,
-            'goal-log-file': goal_path}
+    def build_path(name, ext):
+        return os.path.join(runs_dir, name, run_name + ext)
+
+    return {'tb-dir': build_path('tensorboard', '/'),
+            'save-path': build_path('checkpoints', '.ckpt'),
+            'goal-log-file': build_path('goal-logs', '.logs')}
 
 
 def make_dirs(run_name, runs_dir):
     for path in run_paths(run_name, runs_dir).values():
         dirname = os.path.dirname(path)
         os.makedirs(dirname, exist_ok=True)
-
 
 
 def choose_port():
@@ -158,8 +156,11 @@ def build_flags(name, runs_dir, port):
                      command_line_args.items()])
 
 
-def source_virtualenv_command(virtualenv_path):
-    return 'source ' + virtualenv_path + '/bin/activate;'
+def build_command(command, name, port, runs_dir, virtualenv_path):
+    command += ' ' + build_flags(name, runs_dir, port)
+    if virtualenv_path:
+        return 'source ' + virtualenv_path + '/bin/activate; ' + command
+    return command
 
 
 def run_tmux(name, window_name, command):
@@ -169,15 +170,6 @@ def run_tmux(name, window_name, command):
         dict(session_name=name))  # type: libtmux.Session
     pane = session.new_window(window_name).attached_pane
     pane.send_keys(command)
-
-
-def new_entry(entry, command, datetime, commit, port):
-    updates = {PORT: port,
-               COMMAND: command,
-               DATETIME: datetime,
-               COMMIT: commit}
-    return {key: updates[key] if key in updates else entry[key]
-            for key in [entry.keys() + updates.keys()]}
 
 
 def new(entry,
@@ -211,11 +203,9 @@ def new(entry,
                       commit=last_commit.hexsha,
                       port=port))
     if description is None:
-        entry[DESCRIPTION] = latest_commit.message
+        entry[DESCRIPTION] = last_commit.message
 
-    command += ' ' + build_flags(name, runs_dir, port)
-    if virtualenv_path:
-        command = source_virtualenv_command(virtualenv_path) + ' ' + command
+    command = build_command(command, name, port, runs_dir, virtualenv_path)
 
     with RunDB(path=db_path) as db:
         db[name] = entry
