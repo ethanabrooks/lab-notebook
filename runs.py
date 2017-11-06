@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import socket
 from contextlib import contextmanager
 from datetime import datetime
 from getpass import getpass
@@ -9,7 +8,6 @@ import libtmux
 import os
 import re
 import shutil
-import visualizer
 import yaml
 from copy import deepcopy
 from git import Repo
@@ -127,8 +125,7 @@ def run_paths(run_name, runs_dir):
         return os.path.join(runs_dir, name, run_name + ext)
 
     return {'tb-dir': build_path('tensorboard', '/'),
-            'save-path': build_path('checkpoints', '.ckpt'),
-            'goal-log-file': build_path('goal-logs', '.logs')}
+            'save-path': build_path('checkpoints', '.ckpt')}
 
 
 def make_dirs(run_name, runs_dir):
@@ -137,27 +134,15 @@ def make_dirs(run_name, runs_dir):
         os.makedirs(dirname, exist_ok=True)
 
 
-def choose_port():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    for port in range(8000, 9999):
-        try:
-            sock.bind(('', port))
-            sock.close()
-            return port
-        except OSError:
-            pass
-
-
-def build_flags(name, runs_dir, port):
+def build_flags(name, runs_dir):
     command_line_args = run_paths(name, runs_dir)
-    command_line_args.update({PORT: port})
     return ' '.join(['--{}={}'.format(flag, value)
                      for flag, value in
                      command_line_args.items()])
 
 
-def build_command(command, name, port, runs_dir, virtualenv_path):
-    command += ' ' + build_flags(name, runs_dir, port)
+def build_command(command, name, runs_dir, virtualenv_path):
+    command += ' ' + build_flags(name, runs_dir)
     if virtualenv_path:
         return 'source ' + virtualenv_path + '/bin/activate; ' + command
     return command
@@ -195,17 +180,15 @@ def new(entry,
     repo = Repo()
     if repo.is_dirty():
         raise RuntimeError("Repo is dirty. You should commit before run.")
-    port = choose_port()
 
     last_commit = next(repo.iter_commits())
     entry.update(dict(datetime=now.isoformat(),
                       command=command,
-                      commit=last_commit.hexsha,
-                      port=port))
+                      commit=last_commit.hexsha))
     if description is None:
         entry[DESCRIPTION] = last_commit.message
 
-    command = build_command(command, name, port, runs_dir, virtualenv_path)
+    command = build_command(command, name, runs_dir, virtualenv_path)
 
     with RunDB(path=db_path) as db:
         db[name] = entry
@@ -326,7 +309,8 @@ def main():
                                                                      'database (default, `runs.yml`). Should not need '
                                                                      'to be specified for local runs but probably '
                                                                      'required for accessing databses remotely.')
-    parser.add_argument('--db-filename', default='.runs.yml', help='Name of YAML file storing run database information.')
+    parser.add_argument('--db-filename', default='.runs.yml',
+                        help='Name of YAML file storing run database information.')
 
     subparsers = parser.add_subparsers(dest=DEST)
 
@@ -377,11 +361,6 @@ def main():
     reproduce_parser.add_argument('--overwrite', action='store_true', help='If this flag is provided, the reproducing '
                                                                            'run will overwrite the reproduced run.')
 
-    visualize_parser = subparsers.add_parser(VISUALIZE,
-                                             help='Visualize run with '
-                                                  'simplified top-down view')
-    visualize_parser.add_argument(NAME, help='Name of run.')
-
     args = parser.parse_args()
     db_path = os.path.join(args.runs_dir, args.db_filename)
     db = load(db_path, host=args.host, username=args.username)
@@ -427,10 +406,6 @@ def main():
 
     elif args.dest == LOOKUP:
         print(lookup(db, args.name, args.key))
-
-    elif args.dest == VISUALIZE:
-        port = lookup(db, args.name, key=PORT)
-        visualizer.run(args.host, port)
 
     elif args.dest == REPRODUCE:
         reproduce(args.runs_dir, args.db_filename, args.name)
