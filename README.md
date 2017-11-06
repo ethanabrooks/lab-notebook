@@ -28,5 +28,15 @@ runs <subcommand> -h
 ```
 
 ### `new`
-Start a new run. This command will
+Start a new run. This command will automatically create the file structure:
+
+```
+<runs-dir>/
+    <db-filename>
+    checkpoints/
+    tensorboard/<run-name>/
+```
+
+
+
 

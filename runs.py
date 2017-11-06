@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import argparse
 from contextlib import contextmanager
 from datetime import datetime
@@ -321,7 +321,7 @@ def main():
     new_parser = subparsers.add_parser(NEW, help='Start a new run.')
     new_parser.add_argument(NAME, help='Unique name assigned to new run.')
     new_parser.add_argument(COMMAND, help='Command to run to start tensorflow program.')
-    new_parser.add_argument('--virtualenv-path', default='venv', help=virtualenv_path_help)
+    new_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
     new_parser.add_argument('--overwrite', action='store_true', help='If this flag is given, this entry will '
                                                                      'overwrite any entry with the same name. '
                                                                      'Otherwise, a timestamp will be appended to any '
@@ -357,7 +357,7 @@ def main():
                                                                                 'run. If None, use the same '
                                                                                 'description as the run being '
                                                                                 'reproduced.')
-    reproduce_parser.add_argument('--virtualenv-path', default='venv', help=virtualenv_path_help)
+    reproduce_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
     reproduce_parser.add_argument('--overwrite', action='store_true', help='If this flag is provided, the reproducing '
                                                                            'run will overwrite the reproduced run.')
 
