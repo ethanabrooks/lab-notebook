@@ -399,7 +399,6 @@ def main():
         del entry['runs_dir']
         del entry['db_filename']
         del entry['dest']
-        del entry['host']
         del entry['overwrite']
 
         new(name=args.name,
