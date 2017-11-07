@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from collections import defaultdict
 from contextlib import contextmanager
 from datetime import datetime
 from getpass import getpass
@@ -16,29 +17,10 @@ from paramiko.client import SSHClient, AutoAddPolicy
 from tabulate import tabulate
 from termcolor import colored
 
-DEST = 'dest'
-RUNS = '.runs'
-NAME = 'name'
-COMMAND = 'command'
-DATETIME = 'datetime'
-TB_DIR = 'tb-dir'
-GOAL_LOG_FILE = 'goal-log-file'
-SAVE_PATH = 'save-path'
-RECORDS = 'records'
-PATTERN = 'pattern'
-PORT = 'port'
-COMMIT = 'commit'
-DESCRIPTION = 'description'
-DEFAULT_RUNS_DIR = '.runs'
+import sys
 
-NEW = 'new'
-SAVE = 'save'
-DELETE = 'delete'
-LOOKUP = 'lookup'
-LIST = 'list'
-TABLE = 'table'
-REPRODUCE = 'reproduce'
-VISUALIZE = 'visualize'
+if sys.version_info.major == 2:
+    FileNotFoundError = OSError
 
 BUFFSIZE = 1024
 
@@ -117,31 +99,23 @@ def get_yes_or_no(question):
             response = input('Please enter y[es]|n[o]')
 
 
-def run_paths(run_name, runs_dir, tb_dir_flag, save_path_flag):
-    def build_path(name, ext):
-        return os.path.join(runs_dir, name, run_name + ext)
-
-    if tb_dir_flag is None:
-        tb_dir_flag = '--tb-dir'
-
-    if save_path_flag is None:
-        save_path_flag = '--save-path'
-
-    return {tb_dir_flag: build_path('tensorboard', '/'),
-            save_path_flag: build_path('checkpoints', '.ckpt')}
-
-
 def make_dirs(run_name, runs_dir):
-    for path in run_paths(run_name, runs_dir, tb_dir_flag, save_path_flag).values():
+    for path in run_paths(run_name, runs_dir):
         dirname = os.path.dirname(path)
         os.makedirs(dirname, exist_ok=True)
 
 
+def run_paths(run_name, runs_dir):
+    return [os.path.join(runs_dir, name, run_name + ext)
+            for name, ext in [('tensorboard', '/'),
+                              ('checkpoints', '.ckpt')]]
+
+
 def build_flags(name, runs_dir, tb_dir_flag, save_path_flag):
-    command_line_args = run_paths(name, runs_dir, tb_dir_flag, save_path_flag)
+    tb_dir, save_path = run_paths(name, runs_dir)
     return ' '.join(['{}={}'.format(flag, value)
-                     for flag, value in
-                     command_line_args.items()])
+                     for flag, value in [(tb_dir_flag, tb_dir),
+                                         (save_path_flag, save_path)]])
 
 
 def build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag):
@@ -208,7 +182,7 @@ def filter_by_regex(db, pattern):
 def delete_run(name, db_filename, runs_dir):
     with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
         del db[name]
-        for path in run_paths(name, runs_dir, tb_dir_flag, save_path_flag).values():
+        for path in run_paths(name, runs_dir):
             if os.path.isdir(path):
                 shutil.rmtree(path)
             else:
@@ -280,7 +254,7 @@ def get_table(db, column_width):
 
 def reproduce(runs_dir, db_filename, name):
     db = load(os.path.join(runs_dir, db_filename))
-    commit = lookup(db, name, key=COMMIT)
+    commit = lookup(db, name, key='commit')
     command = lookup(db, name, key='command')
     description = lookup(db, name, key=DESCRIPTION)
     print('To reproduce:\n',
@@ -289,17 +263,60 @@ def reproduce(runs_dir, db_filename, name):
               name, command, description)))
 
 
+class Config:
+    def __init__(self, runsrc_path):
+        self.runs_dir = '.runs/'
+        self.db_filename = '.runs.yml'
+        self.tb_dir_flag = '--tb-dir'
+        self.save_path_flag = '--save-path'
+        self.table_column_width = 30
+        self.virtualenv_path = None
+        try:
+            with open(runsrc_path) as f:
+                print('Config file loaded from', runsrc_path)
+                for k, v in yaml.load(f).items():
+                    if v is 'None':
+                        v = None
+                    self.__setattr__(k, v)
+        except FileNotFoundError:
+            pass
+
+    def update_with_args(self, args):
+        for k, v in vars(args):
+            if v is not None:
+                self.__setattr__(k, v)
+
+
+DEST = 'dest'
+NAME = 'name'
+PATTERN = 'pattern'
+DESCRIPTION = 'description'
+DEFAULT_RUNS_DIR = '.runs'
+
+NEW = 'new'
+DELETE = 'delete'
+LOOKUP = 'lookup'
+LIST = 'list'
+TABLE = 'table'
+REPRODUCE = 'reproduce'
+
+
 def main():
+    config = Config('.runsrc')
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('--host', default=None, help='IP address or hostname (without username). Used for accessing '
-                                                     'database on remote server.')
-    parser.add_argument('--username', default=None, help='Username associated with remote host. Used for accessing '
-                                                         'database on remote server.')
-    parser.add_argument('--runs-dir', default=DEFAULT_RUNS_DIR, help='Custom path to directory containing runs '
-                                                                     'database (default, `runs.yml`). Should not need '
-                                                                     'to be specified for local runs but probably '
-                                                                     'required for accessing databses remotely.')
-    parser.add_argument('--db-filename', default='.runs.yml',
+    parser.add_argument('--host', default=None,
+                        help='IP address or hostname (without username). Used for accessing '
+                             'database on remote server.')
+    parser.add_argument('--username', default=None,
+                        help='Username associated with remote host. Used for accessing '
+                             'database on remote server.')
+    parser.add_argument('--runs_dir', default=config.runs_dir, help='Custom path to directory containing runs '
+                                                                    'database (default, `runs.yml`). Should not '
+                                                                    'need to be specified for local runs but '
+                                                                    'probably required for accessing databses '
+                                                                    'remotely.')
+    parser.add_argument('--db_filename', default=config.db_filename,
                         help='Name of YAML file storing run database information.')
 
     subparsers = parser.add_subparsers(dest=DEST)
@@ -310,12 +327,14 @@ def main():
 
     new_parser = subparsers.add_parser(NEW, help='Start a new run.')
     new_parser.add_argument(NAME, help='Unique name assigned to new run.')
-    new_parser.add_argument(COMMAND, help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
-                                          'or `--save-path` flag in this argument')
-    new_parser.add_argument('--tb-dir-flag', default=None, help='Flag to pass to program to specify tensorboard '
-                                                                      'directory.')
-    new_parser.add_argument('--save-path-flag', default=None, help='Flag to pass to program to specify '
-                                                                            'tensorboard directory.')
+    new_parser.add_argument('command', help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
+                                            'or `--save-path` flag in this argument')
+    new_parser.add_argument('--tb-dir-flag', default=config.tb_dir_flag,
+                            help='Flag to pass to program to specify tensorboard '
+                                 'directory.')
+    new_parser.add_argument('--save_path_flag', default=config.save_path_flag,
+                            help='Flag to pass to program to specify '
+                                 'tensorboard directory.')
     new_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
     new_parser.add_argument('--overwrite', action='store_true', help='If this flag is given, this entry will '
                                                                      'overwrite any entry with the same name. '
@@ -336,9 +355,10 @@ def main():
 
     table_parser = subparsers.add_parser(TABLE, help='Display contents of run database as a table.')
     table_parser.add_argument('--' + PATTERN, default=None, help=pattern_help)
-    table_parser.add_argument('--column-width', type=int, default=30, help='Maximum width of table columns. Longer '
-                                                                           'values will be truncated and appended '
-                                                                           'with "...".')
+    table_parser.add_argument('--column-width', type=int, default=config.table_column_width,
+                              help='Maximum width of table columns. Longer '
+                                   'values will be truncated and appended '
+                                   'with "...".')
 
     lookup_parser = subparsers.add_parser(LOOKUP, help='Lookup specific value associated with database entry')
     lookup_parser.add_argument(NAME, help='Name of run that value is associated with.')
@@ -357,18 +377,20 @@ def main():
                                                                            'run will overwrite the reproduced run.')
 
     args = parser.parse_args()
-    db_path = os.path.join(args.runs_dir, args.db_filename)
+    config.update_with_args(args)
+
+    db_path = os.path.join(config.runs_dir, config.db_filename)
     db = load(db_path, host=args.host, username=args.username)
-    if hasattr(args, PATTERN) and args.pattern is not None:
+    if hasattr(config, PATTERN) and args.pattern is not None:
         db = filter_by_regex(db, args.pattern)
-    if args.runs_dir is DEFAULT_RUNS_DIR and args.host is not None:
+    if config.runs_dir is DEFAULT_RUNS_DIR and args.host is not None:
         print(colored('Using default path to runs_dir: "{}". '
                       'When accessing remote files, you may want to '
                       'specify the complete path.'.format(DEFAULT_RUNS_DIR),
                       color='red'))
     if args.dest == NEW:
         assert args.host is None, 'SSH into remote before calling runs new.'
-        entry = deepcopy(vars(args))
+        entry = deepcopy(vars(config))
         del entry['name']
         del entry['username']
         del entry['virtualenv_path']
@@ -379,18 +401,18 @@ def main():
 
         new(name=args.name,
             description=args.description,
-            virtualenv_path=args.virtualenv_path,
+            virtualenv_path=config.virtualenv_path,
             command=args.command,
             overwrite=args.overwrite,
             entry=entry,
-            runs_dir=args.runs_dir,
-            db_filename=args.db_filename,
-            tb_dir_flag=args.tb_dir_flag,
-            save_path_flag=args.save_path_flag)
+            runs_dir=config.runs_dir,
+            db_filename=config.db_filename,
+            tb_dir_flag=config.tb_dir_flag,
+            save_path_flag=config.save_path_flag)
 
     elif args.dest == DELETE:
         assert args.host is None, 'SSH into remote before calling runs delete.'
-        delete(args.pattern, args.db_filename, args.runs_dir)
+        delete(args.pattern, config.db_filename, config.runs_dir)
 
     elif args.dest == LIST:
         for name in db:
@@ -398,7 +420,7 @@ def main():
 
     elif args.dest == TABLE:
         print(get_table_from_path(db_path,
-                                  args.column_width,
+                                  config.table_column_width,
                                   args.host,
                                   args.username,
                                   args.pattern))
@@ -407,7 +429,7 @@ def main():
         print(lookup(db, args.name, args.key))
 
     elif args.dest == REPRODUCE:
-        reproduce(args.runs_dir, args.db_filename, args.name)
+        reproduce(config.runs_dir, config.db_filename, args.name)
 
     else:
         raise RuntimeError("'{}' is not a supported dest.".format(args.dest))

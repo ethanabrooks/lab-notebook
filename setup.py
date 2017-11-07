@@ -5,11 +5,11 @@ from setuptools import setup
 with open('README.rst') as f:
     long_description = f.read()
 
-setup(name='tensorflow-run-manager',
+setup(name='tf-run-manager',
       version='1.0.0',
       description='A utility for tracking and reproducing Tensorflow runs.',
       long_description=long_description,
-      url='https://github.com/lobachevzky/tensorflow-run-manager',
+      url='https://github.com/lobachevzky/tf-run-manager',
       author='Ethan Brooks',
       author_email='ethanbrooks@gmail.com',
       license='MIT',
