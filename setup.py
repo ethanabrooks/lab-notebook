@@ -5,7 +5,7 @@ from setuptools import setup
 with open('README.rst') as f:
     long_description = f.read()
 
-setup(name='tf-runs',
+setup(name='tensorflow-runs',
       version='1.0.0',
       description='A utility for tracking and reproducing Tensorflow runs.',
       long_description=long_description,
