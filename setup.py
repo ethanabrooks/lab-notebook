@@ -2,14 +2,13 @@
 
 from setuptools import setup
 
+with open('README.rst') as f:
+    long_description = f.read()
+
 setup(name='run-manager',
-      version='1.0.0',
+      version='1.0.1',
       description='A utility for tracking and reproducing Tensorflow runs.',
-      long_description='Machine learning engineers often run multiple versions of an algorithm concurrently. However, '
-                       'this can make keeping track of and reproducing runs difficult. This simple utility solves '
-                       'this problem by maintaining a database in human-readable YAML formal that tracks a unique '
-                       'name assigned to each run, a description of each run, the exact command used for the run, '
-                       'the date and time of the run, the most recent commit before the run.',
+      long_description=long_description,
       url='https://github.com/lobachevzky/run_manager',
       author='Ethan Brooks',
       author_email='ethanbrooks@gmail.com',
@@ -36,5 +35,4 @@ setup(name='run-manager',
           'termcolor==1.1.0',
           'PyYAML==3.12',
           'tabulate==0.8.1',
-          'pygame==1.9.3',
       ])
