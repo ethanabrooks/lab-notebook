@@ -311,9 +311,8 @@ def main():
 
     new_parser = subparsers.add_parser(NEW, help='Start a new run.')
     new_parser.add_argument(NAME, help='Unique name assigned to new run.')
-    new_parser.add_argument(COMMAND, help='Command to run to start tensorflow
-            program. Do not include the `--tb-dir` or `--save-path` flag in this
-            argument')
+    new_parser.add_argument(COMMAND, help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
+                                          'or `--save-path` flag in this argument')
     new_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
     new_parser.add_argument('--overwrite', action='store_true', help='If this flag is given, this entry will '
                                                                      'overwrite any entry with the same name. '
