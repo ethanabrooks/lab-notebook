@@ -103,6 +103,7 @@ Print out commands for reproducing run.
 Example command:
 .. code-block:: console
     ❯ runs reproduce tester
+
     To reproduce:
      git checkout 5c9f67d2ad0b08a58f5806d91978096c6adefac9
      runs new tester 'python train.py --geofence=.5 --timesteps-per-batch=256 --ent-coeff=0.1' --description='tester'
