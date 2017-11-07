@@ -19,7 +19,10 @@ This program tries to assume as little about your program as possible, while pro
 
 * Your program lives in a Git repository.
 * The Git working tree is not dirty (if it is, the program will throw an informative error).
-* Your program accepts a ``--tb-dir`` flag pointing to the directory where all tensorboard events are saved and a ``--save-path`` flag pointing to the directory where model checkpoints are saved.
+* Your program accepts two flags:
+  - ``--tb-dir``: pointing to the same directory that you would specify in ``tensorboard logdir=<tb-dir>`` .
+  - ``--save-path``: pointing to the directory of the file that you would pass
+    to ``tf.train.Saver().restore(sess, <save-path>)``.
 
 
 
@@ -58,6 +61,9 @@ Example command:
 
     runs new 'run-name' 'python main.py' --description='Description of program'
 
+*Note:* the ``--tb-dir`` and ``--save-path`` flags will be automatically
+appended to this command argument, so do not include them.
+
 ``delete``
 ~~~~~~~~~~
 Delete all runs matching pattern. This command also deletes associated tensorboard and checkpoint files.
@@ -66,7 +72,15 @@ Example command:
 
 .. code-block:: console
 
-    runs delete 'run-.*'
+  ❯ runs delete "continuous.*"
+  Delete the following runs?
+  continuous0
+  continuous1
+  continuous21509805012
+  continuous2
+  continuous11509804959
+  continuous3
+  continuous31509805040
 
 ``list``
 ~~~~~~~~

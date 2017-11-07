@@ -239,12 +239,6 @@ def delete(pattern, db_filename, runs_dir):
             print(name)
 
 
-def lookup_from_path(path, name, key,
-                     host=None,
-                     username=None):
-    db = load(path, host, username)
-    return lookup(db, name, key)
-
 
 def lookup(db, name, key):
     documented_runs_message = "Documented runs are {}.".format(name, db.keys())
@@ -361,6 +355,8 @@ def main():
     args = parser.parse_args()
     db_path = os.path.join(args.runs_dir, args.db_filename)
     db = load(db_path, host=args.host, username=args.username)
+    if args.pattern:
+        db = filter_by_regex(db, args.pattern)
     if args.runs_dir is DEFAULT_RUNS_DIR and args.host is not None:
         print(colored('Using default path to runs_dir: "{}". '
                       'When accessing remote files, you may want to '
