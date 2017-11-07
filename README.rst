@@ -62,7 +62,8 @@ Example command:
     runs new 'run-name' 'python main.py' --description='Description of program'
 
 *Note:* the ``--tb-dir`` and ``--save-path`` flags will be automatically
-appended to this command argument, so do not include them.
+appended to this command argument, so do not include them in the ``<command>``
+argument.
 
 ``delete``
 ~~~~~~~~~~
@@ -90,7 +91,14 @@ Example command:
 
 .. code-block:: console
 
-    runs list --pattern='run-.*'
+    ❯ runs list --pattern="continuous.*"
+    continuous21509805012
+    continuous0
+    continuous11509804959
+    continuous31509805040
+    continuous1
+    continuous2
+    continuous3
 
 ``table``
 ~~~~~~~~~

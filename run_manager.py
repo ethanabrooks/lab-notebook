@@ -355,7 +355,7 @@ def main():
     args = parser.parse_args()
     db_path = os.path.join(args.runs_dir, args.db_filename)
     db = load(db_path, host=args.host, username=args.username)
-    if args.pattern:
+    if hasattr(args, PATTERN) and args.pattern is not None:
         db = filter_by_regex(db, args.pattern)
     if args.runs_dir is DEFAULT_RUNS_DIR and args.host is not None:
         print(colored('Using default path to runs_dir: "{}". '
