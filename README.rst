@@ -101,17 +101,17 @@ Display entries in run-database in table form.
 .. code-block:: console
 
   ❯ runs table
-  name                           command                            commit                             datetime                    description                        overwrite      host
-  -----------------------------  ---------------------------------  ---------------------------------  --------------------------  ---------------------------------  -----------  ------
-  continuous2                    CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-03T13:46:48.633364  Run multiple runs to test stoc...  _              rldl3
-  continuous3                    CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-03T13:47:09.951233  Run multiple runs to test stoc...  _              _
-  continuous1                    CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-03T13:42:39.879031  Run multiple runs to test stoc...  _              _
-  house-cnn-no-current-pos       python train.py --timesteps-pe...  9fb9b5a                            2017-10-28T18:07:44.246089  This is the refactored CNN on ...  True           _
-  room-with-original-cnn         python run_custom.py --timeste...  8a5e1c2                            2017-10-28T17:09:49.971061  Test original cnn on room.mjcf     True           _
-  continuous11509804959          CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-04T10:15:59.373633  Run multiple runs to test stoc...  _              _
-  continuous31509805040          CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-04T10:17:20.286275  Run multiple runs to test stoc...  _              rldl4
-  room-cnn-no-current-pos        python train.py --timesteps-pe...  2873fbf                            2017-10-28T18:08:10.615461  This is the refactored CNN on ...  True           rldl4
-  continuous21509805012          CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-04T10:16:52.129656  Run multiple runs to test stoc...  _              _
+  name                           command                            commit                             datetime                    description                          host
+  -----------------------------  ---------------------------------  ---------------------------------  --------------------------  ---------------------------------  ------
+  continuous2                    CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-03T13:46:48.633364  Run multiple runs to test stoc...    rldl3
+  continuous3                    CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-03T13:47:09.951233  Run multiple runs to test stoc...    _
+  continuous1                    CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-03T13:42:39.879031  Run multiple runs to test stoc...    _
+  house-cnn-no-current-pos       python train.py --timesteps-pe...  9fb9b5a                            2017-10-28T18:07:44.246089  This is the refactored CNN on ...    _
+  room-with-original-cnn         python run_custom.py --timeste...  8a5e1c2                            2017-10-28T17:09:49.971061  Test original cnn on room.mjcf       _
+  continuous11509804959          CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-04T10:15:59.373633  Run multiple runs to test stoc...    _
+  continuous31509805040          CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-04T10:17:20.286275  Run multiple runs to test stoc...    rldl4
+  room-cnn-no-current-pos        python train.py --timesteps-pe...  2873fbf                            2017-10-28T18:08:10.615461  This is the refactored CNN on ...    rldl4
+  continuous21509805012          CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-04T10:16:52.129656  Run multiple runs to test stoc...    _
 
 
 To filter by regex, use ``--pattern`` flag.
