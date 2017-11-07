@@ -1,23 +1,21 @@
 #!/usr/bin/env python3
 import argparse
-from collections import defaultdict
+import os
+import re
+import shutil
+import sys
 from contextlib import contextmanager
+from copy import deepcopy
 from datetime import datetime
 from getpass import getpass
 
 import libtmux
-import os
-import re
-import shutil
 import yaml
-from copy import deepcopy
 from git import Repo
 from paramiko import SSHException
 from paramiko.client import SSHClient, AutoAddPolicy
 from tabulate import tabulate
 from termcolor import colored
-
-import sys
 
 if sys.version_info.major == 2:
     FileNotFoundError = OSError
@@ -113,9 +111,10 @@ def run_paths(run_name, runs_dir):
 
 def build_flags(name, runs_dir, tb_dir_flag, save_path_flag):
     tb_dir, save_path = run_paths(name, runs_dir)
-    return ' '.join(['{}={}'.format(flag, value)
-                     for flag, value in [(tb_dir_flag, tb_dir),
-                                         (save_path_flag, save_path)]])
+    return ' '.join([
+        '{}={}'.format(flag, value)
+        for flag, value in [(tb_dir_flag, tb_dir), (save_path_flag, save_path)]
+        if flag is not None])
 
 
 def build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag):
@@ -134,7 +133,7 @@ def run_tmux(name, window_name, command):
     pane.send_keys(command)
 
 
-def new(entry, name, command, description, virtualenv_path, overwrite, runs_dir, db_filename,
+def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_filename,
         tb_dir_flag, save_path_flag):
     assert '.' not in name
     now = datetime.now()
@@ -152,14 +151,17 @@ def new(entry, name, command, description, virtualenv_path, overwrite, runs_dir,
     if repo.is_dirty():
         raise RuntimeError("Repo is dirty. You should commit before run.")
 
-    last_commit = next(repo.iter_commits())
-    entry.update(dict(datetime=now.isoformat(),
-                      command=command,
-                      commit=last_commit.hexsha))
-    if description is None:
-        entry[DESCRIPTION] = last_commit.message
-
     command = build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag)
+
+    last_commit = next(repo.iter_commits())
+    if description is None:
+        description = last_commit.message
+    entry = dict(
+        command=command,
+        commit=last_commit.hexsha,
+        datetime=now.isoformat(),
+        description=description,
+    )
 
     with RunDB(path=db_path) as db:
         db[name] = entry
@@ -180,6 +182,7 @@ def filter_by_regex(db, pattern):
 
 
 def delete_run(name, db_filename, runs_dir):
+    print('Deleting {}...'.format(name))
     with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
         del db[name]
         for path in run_paths(name, runs_dir):
@@ -189,7 +192,7 @@ def delete_run(name, db_filename, runs_dir):
                 try:
                     os.remove(path)
                 except FileNotFoundError as e:
-                    print(colored(e.strerror + ': ' + path, color='red'))
+                    print(colored(e.strerror + ': ' + path, color='yellow'))
 
         server = libtmux.Server()
         session = server.find_where(
@@ -269,22 +272,22 @@ class Config:
         self.db_filename = '.runs.yml'
         self.tb_dir_flag = '--tb-dir'
         self.save_path_flag = '--save-path'
-        self.table_column_width = 30
+        self.column_width = 30
         self.virtualenv_path = None
         try:
             with open(runsrc_path) as f:
                 print('Config file loaded from', runsrc_path)
                 for k, v in yaml.load(f).items():
-                    if v is 'None':
+                    if v == 'None':
                         v = None
                     self.__setattr__(k, v)
         except FileNotFoundError:
             pass
 
     def update_with_args(self, args):
-        for k, v in vars(args):
+        for k, v in vars(args).items():
             if v is not None:
-                self.__setattr__(k, v)
+                self.__setattr__(k.replace('-', '_'), v)
 
 
 DEST = 'dest'
@@ -355,7 +358,7 @@ def main():
 
     table_parser = subparsers.add_parser(TABLE, help='Display contents of run database as a table.')
     table_parser.add_argument('--' + PATTERN, default=None, help=pattern_help)
-    table_parser.add_argument('--column-width', type=int, default=config.table_column_width,
+    table_parser.add_argument('--column-width', type=int, default=config.column_width,
                               help='Maximum width of table columns. Longer '
                                    'values will be truncated and appended '
                                    'with "...".')
@@ -390,21 +393,11 @@ def main():
                       color='red'))
     if args.dest == NEW:
         assert args.host is None, 'SSH into remote before calling runs new.'
-        entry = deepcopy(vars(config))
-        del entry['name']
-        del entry['username']
-        del entry['virtualenv_path']
-        del entry['runs_dir']
-        del entry['db_filename']
-        del entry['dest']
-        del entry['overwrite']
-
         new(name=args.name,
             description=args.description,
             virtualenv_path=config.virtualenv_path,
             command=args.command,
             overwrite=args.overwrite,
-            entry=entry,
             runs_dir=config.runs_dir,
             db_filename=config.db_filename,
             tb_dir_flag=config.tb_dir_flag,
@@ -420,7 +413,7 @@ def main():
 
     elif args.dest == TABLE:
         print(get_table_from_path(db_path,
-                                  config.table_column_width,
+                                  config.column_width,
                                   args.host,
                                   args.username,
                                   args.pattern))
