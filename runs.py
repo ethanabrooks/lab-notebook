@@ -48,8 +48,6 @@ def code_format(*args):
     return colored(string, color='blue', attrs=['bold'])
 
 
-# IO
-
 def load(path, host=None, username=None):
     try:
         if host:
@@ -83,7 +81,6 @@ class RunDB:
 
 @contextmanager
 def read_remote_file(remote_filename, host, username):
-    # print("Connecting to server.")
     client = SSHClient()
     client.set_missing_host_key_policy(AutoAddPolicy())
     try:
