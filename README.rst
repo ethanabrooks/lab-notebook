@@ -9,8 +9,7 @@ Machine learning engineers often run multiple versions of an algorithm concurren
  - The most recent commit before the run.
 
 ## Installation
-# Ubuntu
-
+The only external prerequisites of this tool are tmux and git. After that, `pip install run-manager`.
 
 ## Assumptions
 This program tries to assume as little about your program as possible, while providing useful functionality. These assumptions are as follows:
@@ -50,7 +49,7 @@ Example command:
 runs new 'run-name' 'python main.py' --description='Description of program'
 ```
 ### `delete`
-Delete all runs matching pattern.
+Delete all runs matching pattern. This command also deletes associated tensorboard and checkpoint files.
 
 Example command:
 ```
@@ -69,10 +68,16 @@ runs list --pattern='run-.*'
 Display entries in run-database in table form. Output looks like:
 ```
 ❯ runs table
-name              command                            commit                             datetime                    description
-----------------  ---------------------------------  ---------------------------------  --------------------------  -------------
-tester            python train.py --geofence=.5 ...  5c9f67d2ad0b08a58f5806d9197809...  2017-10-31T17:20:28.739800  tester
-tester1509484895  python train.py --geofence=.5 ...  5c9f67d2ad0b08a58f5806d9197809...  2017-10-31T17:21:35.738796  tester
+name                           command                            commit                             datetime                    description                        host
+-----------------------------  ---------------------------------  ---------------------------------  --------------------------  ---------------------------------  -----
+continuous2                    CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-03T13:46:48.633364  Run multiple runs to test stoc...  _
+continuous3                    CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-03T13:47:09.951233  Run multiple runs to test stoc...  _
+continuous1                    CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-03T13:42:39.879031  Run multiple runs to test stoc...  _
+house-cnn-no-current-pos       python train.py --timesteps-pe...  9fb9b5a                            2017-10-28T18:07:44.246089  This is the refactored CNN on ...  rldl4
+room-with-original-cnn         python run_custom.py --timeste...  8a5e1c2                            2017-10-28T17:09:49.971061  Test original cnn on room.mjcf     rldl4
+continuous11509804959          CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-04T10:15:59.373633  Run multiple runs to test stoc...  _
+continuous31509805040          CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-04T10:17:20.286275  Run multiple runs to test stoc...  _
+continuous21509805012          CUDA_VISIBLE_DEVICES=1 python ...  90c0ad704e54d5152d897a4e978cc7...  2017-11-04T10:16:52.129656  Run multiple runs to test stoc...  _
 ```
 
 To filter by regex, use `--pattern` flag.
