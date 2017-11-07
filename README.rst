@@ -20,6 +20,7 @@ This program tries to assume as little about your program as possible, while pro
 * Your program lives in a Git repository.
 * The Git working tree is not dirty (if it is, the program will throw an informative error).
 * Your program accepts two flags:
+
   - ``--tb-dir``: pointing to the same directory that you would specify in ``tensorboard logdir=<tb-dir>`` .
   - ``--save-path``: pointing to the directory of the file that you would pass to ``tf.train.Saver().restore(sess, <save-path>)``.
 
@@ -31,7 +32,7 @@ For detailed descriptions of each subcommand and its arguments, run
 
 .. code-block:: console
 
-    runs <subcommand> -h
+  runs <subcommand> -h
 
 ``new``
 ~~~~~~~
@@ -39,10 +40,10 @@ Start a new run. This command will automatically create the file structure:
 
 .. code-block:: console
 
-    <runs-dir>/
-        <db-filename>
-        checkpoints/
-        tensorboard/<run-name>/
+  <runs-dir>/
+      <db-filename>
+      checkpoints/
+      tensorboard/<run-name>/
 
 It will add an entry to the database keyed by name, with the following values:
 
