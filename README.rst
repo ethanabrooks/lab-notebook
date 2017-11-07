@@ -55,8 +55,6 @@ It will add an entry to the database keyed by name, with the following values:
 
 Finally, it will execute the command in ``tmux``.
 
-Example command:
-
 .. code-block:: console
 
     runs new 'run-name' 'python main.py' --description='Description of program'
@@ -68,8 +66,6 @@ argument.
 ``delete``
 ~~~~~~~~~~
 Delete all runs matching pattern. This command also deletes associated tensorboard and checkpoint files.
-
-Example command:
 
 .. code-block:: console
 
@@ -87,8 +83,6 @@ Example command:
 ~~~~~~~~
 List all runs matching pattern.
 
-Example command:
-
 .. code-block:: console
 
   ❯ runs list --pattern="continuous.*"
@@ -103,8 +97,6 @@ Example command:
 ``table``
 ~~~~~~~~~
 Display entries in run-database in table form.
-
-Example command:
 
 .. code-block:: console
 
@@ -128,8 +120,6 @@ To filter by regex, use ``--pattern`` flag.
 ~~~~~~~~~~
 Lookup specific value associated with database entry.
 
-Example command:
-
 .. code-block:: console
 
   ❯ runs lookup continuous0 commit
@@ -138,8 +128,6 @@ Example command:
 ``reproduce``
 ~~~~~~~~~~~~~
 Print out commands for reproducing run.
-
-Example command:
 
 .. code-block:: console
 
