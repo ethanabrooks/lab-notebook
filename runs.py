@@ -117,29 +117,35 @@ def get_yes_or_no(question):
             response = input('Please enter y[es]|n[o]')
 
 
-def run_paths(run_name, runs_dir):
+def run_paths(run_name, runs_dir, tb_dir_flag, save_path_flag):
     def build_path(name, ext):
         return os.path.join(runs_dir, name, run_name + ext)
 
-    return {'tb-dir': build_path('tensorboard', '/'),
-            'save-path': build_path('checkpoints', '.ckpt')}
+    if tb_dir_flag is None:
+        tb_dir_flag = '--tb-dir'
+
+    if save_path_flag is None:
+        save_path_flag = '--save-path'
+
+    return {tb_dir_flag: build_path('tensorboard', '/'),
+            save_path_flag: build_path('checkpoints', '.ckpt')}
 
 
 def make_dirs(run_name, runs_dir):
-    for path in run_paths(run_name, runs_dir).values():
+    for path in run_paths(run_name, runs_dir, tb_dir_flag, save_path_flag).values():
         dirname = os.path.dirname(path)
         os.makedirs(dirname, exist_ok=True)
 
 
-def build_flags(name, runs_dir):
-    command_line_args = run_paths(name, runs_dir)
-    return ' '.join(['--{}={}'.format(flag, value)
+def build_flags(name, runs_dir, tb_dir_flag, save_path_flag):
+    command_line_args = run_paths(name, runs_dir, tb_dir_flag, save_path_flag)
+    return ' '.join(['{}={}'.format(flag, value)
                      for flag, value in
                      command_line_args.items()])
 
 
-def build_command(command, name, runs_dir, virtualenv_path):
-    command += ' ' + build_flags(name, runs_dir)
+def build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag):
+    command += ' ' + build_flags(name, runs_dir, tb_dir_flag, save_path_flag)
     if virtualenv_path:
         return 'source ' + virtualenv_path + '/bin/activate; ' + command
     return command
@@ -154,14 +160,8 @@ def run_tmux(name, window_name, command):
     pane.send_keys(command)
 
 
-def new(entry,
-        name,
-        command,
-        description,
-        virtualenv_path,
-        overwrite,
-        runs_dir,
-        db_filename):
+def new(entry, name, command, description, virtualenv_path, overwrite, runs_dir, db_filename,
+        tb_dir_flag, save_path_flag):
     assert '.' not in name
     now = datetime.now()
 
@@ -185,7 +185,7 @@ def new(entry,
     if description is None:
         entry[DESCRIPTION] = last_commit.message
 
-    command = build_command(command, name, runs_dir, virtualenv_path)
+    command = build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag)
 
     with RunDB(path=db_path) as db:
         db[name] = entry
@@ -208,7 +208,7 @@ def filter_by_regex(db, pattern):
 def delete_run(name, db_filename, runs_dir):
     with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
         del db[name]
-        for path in run_paths(name, runs_dir).values():
+        for path in run_paths(name, runs_dir, tb_dir_flag, save_path_flag).values():
             if os.path.isdir(path):
                 shutil.rmtree(path)
             else:
@@ -237,7 +237,6 @@ def delete(pattern, db_filename, runs_dir):
         print('No runs match pattern. Recorded runs:')
         for name in load(db_path):
             print(name)
-
 
 
 def lookup(db, name, key):
@@ -313,6 +312,10 @@ def main():
     new_parser.add_argument(NAME, help='Unique name assigned to new run.')
     new_parser.add_argument(COMMAND, help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
                                           'or `--save-path` flag in this argument')
+    new_parser.add_argument('--tb-dir-flag', default=None, help='Flag to pass to program to specify tensorboard '
+                                                                      'directory.')
+    new_parser.add_argument('--save-path-flag', default=None, help='Flag to pass to program to specify '
+                                                                            'tensorboard directory.')
     new_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
     new_parser.add_argument('--overwrite', action='store_true', help='If this flag is given, this entry will '
                                                                      'overwrite any entry with the same name. '
@@ -381,7 +384,9 @@ def main():
             overwrite=args.overwrite,
             entry=entry,
             runs_dir=args.runs_dir,
-            db_filename=args.db_filename)
+            db_filename=args.db_filename,
+            tb_dir_flag=args.tb_dir_flag,
+            save_path_flag=args.save_path_flag)
 
     elif args.dest == DELETE:
         assert args.host is None, 'SSH into remote before calling runs delete.'
