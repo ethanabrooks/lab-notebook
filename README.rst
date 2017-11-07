@@ -21,8 +21,7 @@ This program tries to assume as little about your program as possible, while pro
 * The Git working tree is not dirty (if it is, the program will throw an informative error).
 * Your program accepts two flags:
   - ``--tb-dir``: pointing to the same directory that you would specify in ``tensorboard logdir=<tb-dir>`` .
-  - ``--save-path``: pointing to the directory of the file that you would pass
-    to ``tf.train.Saver().restore(sess, <save-path>)``.
+  - ``--save-path``: pointing to the directory of the file that you would pass to ``tf.train.Saver().restore(sess, <save-path>)``.
 
 
 
