@@ -5,7 +5,7 @@ from setuptools import setup
 with open('README.rst') as f:
     long_description = f.read()
 
-setup(name='tensorflow-runs',
+setup(name='tensorflow-run-manager',
       version='1.0.0',
       description='A utility for tracking and reproducing Tensorflow runs.',
       long_description=long_description,
@@ -22,10 +22,10 @@ setup(name='tensorflow-runs',
           'Programming Language :: Python :: 3',
       ],
       keywords='tensorflow utilities development',
-      py_modules='run_manager',
+      py_modules='runs',
       entry_points={
           'console_scripts': [
-              'runs = run_manager:main',
+              'runs = runs:main',
           ],
       },
       install_requires=[
