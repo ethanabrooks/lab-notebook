@@ -45,7 +45,7 @@ Configuration
 Runs can be extensively configured using command-line arguments, but the following values can also be configured in a ``.runsrc`` file:
 
 ===================  ===============  ======================================================================================================================================================
-value                default          description
+name                 default          description
 ===================  ===============  ======================================================================================================================================================
 ``runs-dir``         ``.runs/``       The name to use for your Runs Directory.
 ``db-filename``      ``.runs.yml``    The name that you choose to save your runs database with.
@@ -74,7 +74,7 @@ Assumptions
 -----------
 This program tries to assume as little about your program as possible, while providing useful functionality. These assumptions are as follows:
 
-* You call the ``runs ...`` command from the same directory every time (all file IO paths are relative).
+* You call the ``runs`` command from the same directory every time (all file IO paths are relative).
 * Your program lives in a Git repository.
 * The Git working tree is not dirty (if it is, the program will throw an informative error).
 * Your program accepts a ``--tb-dir`` flag, which your program uses in ``tf.train.Saver().save(sess, <tf-dir>)``, and a ``--save-path`` flag, which your program uses in ``tf.train.Saver().restore(sess, <save-path>)``. If your flags are different and you don't feel like changing them, you can specify the new flag names using command-line arguments (``--tb-dir-flag`` and ``--save-path-flag``) or in your ``.runsrc`` (see the `Configuration`_ section for more info). If you don't want to pass either flag to your program, set ``--tb-dir-flag`` or ``--save-path-flag`` (or the associated values in your ``.runsrc``) to `None`.
