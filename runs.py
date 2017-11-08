@@ -331,7 +331,7 @@ def main():
     new_parser.add_argument('--tb-dir-flag', default=config.tb_dir_flag,
                             help='Flag to pass to program to specify tensorboard '
                                  'directory.')
-    new_parser.add_argument('--save_path_flag', default=config.save_path_flag,
+    new_parser.add_argument('--save-path-flag', default=config.save_path_flag,
                             help='Flag to pass to program to specify '
                                  'tensorboard directory.')
     new_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)

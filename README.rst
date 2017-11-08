@@ -13,17 +13,54 @@ Installation
 ------------
 The only external prerequisites of this tool are ``tmux`` and ``git``. After that, ``pip install run-manager``.
 
+Important paths and files
+-------------------------
+When you run ``runs new``, the utility automatically creates the following directory structure:
+
+.. code-block:: console
+
+  <Runs Directory>/
+      <Runs Database>
+      checkpoints/
+      tensorboard/<Run Name>/
+
+Runs Database
+~~~~~~~~~~~~~
+YAML file that stores historical information about Tensorflow runs.
+
+Run Name
+~~~~~~~~
+This is a unique value that you assign to each run. The ``runs`` section explains how the program deals with collisions.
+
+``checkpoints`` directory
+~~~~~~~~~~~~~~~~~~~~~~~~~
+Directory where model checkpoints are saved. Used in ``tf.train.Saver().save(sess, <checkpoints directory>/<Run Name>.ckpt)``.
+
+``tensorboard`` directory
+~~~~~~~~~~~~~~~~~~~~~~~~~
+Directory where events are saved. Used in ``tf.summary.FileWriter(<tensorboard directory>/<Run Name>/)``.
+
+Configuration
+-------------
+Runs can be extensively configured using command-line arguments, but the following values can also be configured in a ``.runsrc`` file:
+
+* ``runs-dir`` (default ``.runs/``): the name to use for your Runs Directory.
+* ``db-filename`` (default ``.runs.yml``): The name that you choose to save your runs database with.
+* ``tb-dir-flag`` (default ``--tb-dir``): The flag that gets passed to your program that specifies ``<tensorboard directory>/<Run Name>/``. If ``None``, no flag will be passed to your program.
+* ``save-path-flag`` (default ``--save-path``): The flag that gets passed to your program that specifies ``<checkpoints directory>/<Run Name>``. If ``None``, no flag will be passed to your program.
+* ``column-width`` (default 30): The default column width for the ``runs table`` command.
+* ``virtualenv-path`` (default ``None``): The path to your virtual environment directory, if you're using one. Used in the following command: ``Source <virtualenv-path>/bin/activate``.
+
+The program expects to find the ``.runsrc`` in the current working directory. The script should always be run from this directory as all file IO commands use relative paths.
+
 Assumptions
 -----------
 This program tries to assume as little about your program as possible, while providing useful functionality. These assumptions are as follows:
 
+* You call the ``runs ...`` command from the same directory every time (all file IO paths are relative).
 * Your program lives in a Git repository.
 * The Git working tree is not dirty (if it is, the program will throw an informative error).
-* Your program accepts two flags:
-
-  - ``--tb-dir``: pointing to the same directory that you would specify in ``tensorboard logdir=<tb-dir>`` .
-  - ``--save-path``: pointing to the directory of the file that you would pass to ``tf.train.Saver().restore(sess, <save-path>)``.
-
+* Your program accepts a ``--tb-dir`` flag, which your program uses in ``tf.train.Saver().save(sess, <tf-dir>)``, and a ``--save-path`` flag, which your program uses in ``tf.train.Saver().restore(sess, <save-path>)``. If your flags are different and you don't feel like changing them, you can specify the new flag names using command-line arguments (``--tb-dir-flag`` and ``--save-path-flag``) or in your ``.runsrc`` (see the `Configuration`_ section for more info). If you don't want to pass either flag to your program, set ``--tb-dir-flag`` or ``--save-path-flag`` (or the associated values in your ``.runsrc``) to `None`.
 
 
 Subcommands
@@ -36,14 +73,7 @@ For detailed descriptions of each subcommand and its arguments, run
 
 ``new``
 ~~~~~~~
-Start a new run. This command will automatically create the file structure:
-
-.. code-block:: console
-
-  <runs-dir>/
-      <db-filename>
-      checkpoints/
-      tensorboard/<run-name>/
+Start a new run and build the file structure (see `Important paths and files`_).
 
 It will add an entry to the database keyed by name, with the following values:
 
