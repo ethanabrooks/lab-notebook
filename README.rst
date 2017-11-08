@@ -44,16 +44,16 @@ Configuration
 -------------
 Runs can be extensively configured using command-line arguments, but the following values can also be configured in a ``.runsrc`` file:
 
-===================  ===============  ======================================================================================================================================================
-value                default          description
-===================  ===============  ======================================================================================================================================================
-``runs-dir``         ``.runs/``       The name to use for your Runs Directory.
-``db-filename``      ``.runs.yml``    The name that you choose to save your runs database with.
-``tb-dir-flag``      ``--tb-dir``     The flag that gets passed to your program that specifies ``<tensorboard directory>/<Run Name>/``. If ``None``, no flag will be passed to your program.
-``save-path-flag``   ``--save-path``  The flag that gets passed to your program that specifies ``<checkpoints directory>/<Run Name>``. If ``None``, no flag will be passed to your program.
-``column-width``     30               The default column width for the ``runs table`` command.
-``virtualenv-path``  ``None``         The path to your virtual environment directory, if you're using one. Used in the following command: ``Source <virtualenv-path>/bin/activate``.
-===================  ===============  ======================================================================================================================================================
+===============  ===============  ======================================================================================================================================================
+value            default          description
+===============  ===============  ======================================================================================================================================================
+runs-dir         .runs/           The name to use for your Runs Directory.
+db-filename      .runs.yml        The name that you choose to save your runs database with.
+tb-dir-flag      --tb-dir         The flag that gets passed to your program that specifies ``<tensorboard directory>/<Run Name>/``. If ``None``, no flag will be passed to your program.
+save-path-flag   --save-path      The flag that gets passed to your program that specifies ``<checkpoints directory>/<Run Name>``. If ``None``, no flag will be passed to your program.
+column-width     30               The default column width for the ``runs table`` command.
+virtualenv-path  None             The path to your virtual environment directory, if you're using one. Used in the following command: ``Source <virtualenv-path>/bin/activate``.
+===============  ===============  ======================================================================================================================================================
 
 The program expects to find the ``.runsrc`` in the current working directory. The script should always be run from this directory as all file IO commands use relative paths.
 
