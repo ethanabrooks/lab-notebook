@@ -53,7 +53,7 @@ value                default          description
 ``save-path-flag``   ``--save-path``  The flag that gets passed to your program that specifies ``<checkpoints directory>/<Run Name>``. If ``None``, no flag will be passed to your program.
 ``column-width``     ``30``           The default column width for the ``runs table`` command.
 ``virtualenv-path``  ``None``         The path to your virtual environment directory, if you're using one. Used in the following command: ``Source <virtualenv-path>/bin/activate``.
-===================  ==============   ======================================================================================================================================================
+===================  ===============  ======================================================================================================================================================
 
 The program expects to find the ``.runsrc`` in the current working directory. The script should always be run from this directory as all file IO commands use relative paths.
 
