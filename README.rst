@@ -53,9 +53,10 @@ name                 default          description
 ``save-path-flag``   ``--save-path``  The flag that gets passed to your program that specifies ``<checkpoints directory>/<Run Name>``. If ``None``, no flag will be passed to your program.
 ``column-width``     ``30``           The default column width for the ``runs table`` command.
 ``virtualenv-path``  ``None``         The path to your virtual environment directory, if you're using one. Used in the following command: ``Source <virtualenv-path>/bin/activate``.
+``extra-flags``      ``[]``           Flag, value pairs for extra, custom flags. The strings ``<runs-dir>`` and ``<run-name>`` will get replaced with the appropriate value.
 ===================  ===============  ======================================================================================================================================================
 
-The program expects to find the ``.runsrc`` in the current working directory. The script should always be run from this directory as all file IO commands use relative paths.
+The program expects to find the ``.runsrc`` in a parent of the current working directory. The script should always be run from this directory as all file IO commands use relative paths.
 
 Here is an example ``.runsrc`` file:
 
@@ -68,13 +69,13 @@ Here is an example ``.runsrc`` file:
     column-width: 10
     virtualenv-path: /home/ethan/virtualenvs/baselines/
     extra-flags:
-      - [goal-log-dir, <runs-dir>/goal-logs/<run-name>.log]
+      - [--goal-log-dir, <runs-dir>/goal-logs/<run-name>.log]
 
 Assumptions
 -----------
 This program tries to assume as little about your program as possible, while providing useful functionality. These assumptions are as follows:
 
-* You call the ``runs`` command from the same directory every time (all file IO paths are relative).
+* You call the ``runs`` command from a directory whose parent contains the runs directory.
 * Your program lives in a Git repository.
 * The Git working tree is not dirty (if it is, the program will throw an informative error).
 * Your program accepts a ``--tb-dir`` flag, which your program uses in ``tf.train.Saver().save(sess, <tf-dir>)``, and a ``--save-path`` flag, which your program uses in ``tf.train.Saver().restore(sess, <save-path>)``. If your flags are different and you don't feel like changing them, you can specify the new flag names using command-line arguments (``--tb-dir-flag`` and ``--save-path-flag``) or in your ``.runsrc`` (see the `Configuration`_ section for more info). If you don't want to pass either flag to your program, set ``--tb-dir-flag`` or ``--save-path-flag`` (or the associated values in your ``.runsrc``) to `None`.
