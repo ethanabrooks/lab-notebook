@@ -5,11 +5,10 @@ import re
 import shutil
 import sys
 from contextlib import contextmanager
-from copy import deepcopy
+import subprocess
 from datetime import datetime
 from getpass import getpass
 
-import libtmux
 import yaml
 from git import Repo
 from paramiko import SSHException
@@ -125,12 +124,13 @@ def build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_pa
 
 
 def run_tmux(name, window_name, command):
-    server = libtmux.Server()
-    server.new_session(name, kill_session=True)
-    session = server.find_where(
-        dict(session_name=name))  # type: libtmux.Session
-    pane = session.new_window(window_name).attached_pane
-    pane.send_keys(command)
+    kill_tmux(name)
+    subprocess.check_call('tmux new -d -s'.split() + [name, '-n', window_name])
+    subprocess.check_call('tmux send-keys -t'.split() + [name, command, 'Enter'])
+
+
+def kill_tmux(name):
+    subprocess.call('tmux kill-session -t'.split() + [name])
 
 
 def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_filename,
@@ -194,11 +194,7 @@ def delete_run(name, db_filename, runs_dir):
                 except FileNotFoundError as e:
                     print(colored(e.strerror + ': ' + path, color='yellow'))
 
-        server = libtmux.Server()
-        session = server.find_where(
-            dict(session_name=name))  # type: libtmux.Session
-        if session:
-            session.kill_session()
+    kill_tmux(name)
 
 
 def delete(pattern, db_filename, runs_dir):
