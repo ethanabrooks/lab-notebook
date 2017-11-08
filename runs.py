@@ -87,6 +87,14 @@ def read_remote_file(remote_filename, host, username):
         yield f
 
 
+def find_file_backward(filename):
+    filepath = filename
+    while os.path.dirname(os.path.abspath(filepath)) is not '/':
+        if os.path.exists(filepath):
+            return filepath
+        filepath = os.path.join(os.path.pardir, filepath)
+
+
 def get_yes_or_no(question):
     if not question.endswith(' '):
         question += ' '
@@ -161,7 +169,7 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
     if repo.is_dirty():
         raise RuntimeError("Repo is dirty. You should commit before run.")
 
-    command = build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag)
+    command = build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag, extra_flags)
 
     last_commit = next(repo.iter_commits())
     if description is None:
@@ -287,14 +295,17 @@ class Config:
                 for k, v in yaml.load(f).items():
                     if v == 'None':
                         v = None
-                    self.__setattr__(k, v)
+                    self.setattr(k, v)
         except FileNotFoundError:
             pass
+
+    def setattr(self, k, v):
+        setattr(self, k.replace('-', '_'), v)
 
     def update_with_args(self, args):
         for k, v in vars(args).items():
             if v is not None:
-                self.__setattr__(k.replace('-', '_'), v)
+                self.setattr(k, v)
 
 
 NAME = 'name'
@@ -310,7 +321,7 @@ REPRODUCE = 'reproduce'
 
 
 def main():
-    config = Config('.runsrc')
+    config = Config(find_file_backward('.runsrc'))
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default=None,
@@ -387,11 +398,14 @@ def main():
     args = parser.parse_args()
     config.update_with_args(args)
 
-    db_path = os.path.join(config.runs_dir, config.db_filename)
+    runs_dir = find_file_backward(config.runs_dir)
+    if runs_dir is None:
+        raise FileNotFoundError('Could not find {} in this directory or any of its parents.'.format(runs_dir))
+    db_path = os.path.join(runs_dir, config.db_filename)
     db = load(db_path, host=args.host, username=args.username)
     if hasattr(config, PATTERN) and args.pattern is not None:
         db = filter_by_regex(db, args.pattern)
-    if config.runs_dir is DEFAULT_RUNS_DIR and args.host is not None:
+    if runs_dir is DEFAULT_RUNS_DIR and args.host is not None:
         print(colored('Using default path to runs_dir: "{}". '
                       'When accessing remote files, you may want to '
                       'specify the complete path.'.format(DEFAULT_RUNS_DIR),
@@ -403,7 +417,7 @@ def main():
             virtualenv_path=config.virtualenv_path,
             command=args.command,
             overwrite=args.overwrite,
-            runs_dir=config.runs_dir,
+            runs_dir=runs_dir,
             db_filename=config.db_filename,
             tb_dir_flag=config.tb_dir_flag,
             save_path_flag=config.save_path_flag,
@@ -411,7 +425,7 @@ def main():
 
     elif args.dest == DELETE:
         assert args.host is None, 'SSH into remote before calling runs delete.'
-        delete(args.pattern, config.db_filename, config.runs_dir)
+        delete(args.pattern, config.db_filename, runs_dir)
 
     elif args.dest == LIST:
         for name in db:
@@ -428,7 +442,7 @@ def main():
         print(lookup(db, args.name, args.key))
 
     elif args.dest == REPRODUCE:
-        reproduce(config.runs_dir, config.db_filename, args.name)
+        reproduce(runs_dir, config.db_filename, args.name)
 
     else:
         raise RuntimeError("'{}' is not a supported dest.".format(args.dest))

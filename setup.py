@@ -6,7 +6,7 @@ with open('README.rst') as f:
     long_description = f.read()
 
 setup(name='tf-run-manager',
-      version='1.0.2',
+      version='1.0.4',
       description='A utility for tracking and reproducing Tensorflow runs.',
       long_description=long_description,
       url='https://github.com/lobachevzky/tf-run-manager',

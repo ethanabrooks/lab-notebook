@@ -65,7 +65,7 @@ Here is an example ``.runsrc`` file:
     db-filename: lstm-runs.yml
     tb-dir-flag: None
     save-path-flag: -s
-    column-width:
+    column-width: 10
     virtualenv-path: /home/ethan/virtualenvs/baselines/
     extra-flags:
       - [goal-log-dir, <runs-dir>/goal-logs/<run-name>.log]
