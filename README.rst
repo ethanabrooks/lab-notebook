@@ -53,6 +53,19 @@ Runs can be extensively configured using command-line arguments, but the followi
 
 The program expects to find the ``.runsrc`` in the current working directory. The script should always be run from this directory as all file IO commands use relative paths.
 
+Here is an example ``.runsrc`` file:
+
+.. code-block:: yaml
+
+    runs-dir: .lstm-runs/
+    db-filename: lstm-runs.yml
+    tb-dir-flag: None
+    save-path-flag: -s
+    column-width:
+    virtualenv-path: /home/ethan/virtualenvs/baselines/
+    extra-flags:
+      - [goal-log-dir, <runs-dir>/goal-logs/<run-name>.log]
+
 Assumptions
 -----------
 This program tries to assume as little about your program as possible, while providing useful functionality. These assumptions are as follows:

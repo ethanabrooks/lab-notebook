@@ -21,6 +21,11 @@ if sys.version_info.major == 2:
 
 BUFFSIZE = 1024
 
+COMMAND = 'command'
+COMMIT = 'commit'
+DATETIME = 'datetime'
+DESCRIPTION = 'description'
+
 
 def code_format(*args):
     string = ' '.join(map(str, args))
@@ -108,16 +113,21 @@ def run_paths(run_name, runs_dir):
                               ('checkpoints', '.ckpt')]]
 
 
-def build_flags(name, runs_dir, tb_dir_flag, save_path_flag):
+def build_flags(name, runs_dir, tb_dir_flag, save_path_flag, extra_flags):
     tb_dir, save_path = run_paths(name, runs_dir)
+    flags = [(tb_dir_flag, tb_dir), (save_path_flag, save_path)]
+    for flag, value in extra_flags:
+        value = value.replace('<run-name>', name).replace('<runs-dir>', runs_dir)
+        flags += [(flag, value)]
+
     return ' '.join([
         '{}={}'.format(flag, value)
-        for flag, value in [(tb_dir_flag, tb_dir), (save_path_flag, save_path)]
+        for flag, value in flags
         if flag is not None])
 
 
-def build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag):
-    command += ' ' + build_flags(name, runs_dir, tb_dir_flag, save_path_flag)
+def build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag, extra_flags):
+    command += ' ' + build_flags(name, runs_dir, tb_dir_flag, save_path_flag, extra_flags)
     if virtualenv_path:
         return 'source ' + virtualenv_path + '/bin/activate; ' + command
     return command
@@ -134,7 +144,7 @@ def kill_tmux(name):
 
 
 def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_filename,
-        tb_dir_flag, save_path_flag):
+        tb_dir_flag, save_path_flag, extra_flags):
     assert '.' not in name
     now = datetime.now()
 
@@ -156,12 +166,12 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
     last_commit = next(repo.iter_commits())
     if description is None:
         description = last_commit.message
-    entry = dict(
-        command=command,
-        commit=last_commit.hexsha,
-        datetime=now.isoformat(),
-        description=description,
-    )
+    entry = {
+        COMMAND: command,
+        COMMIT: last_commit.hexsha,
+        DATETIME: now.isoformat(),
+        DESCRIPTION: description,
+    }
 
     with RunDB(path=db_path) as db:
         db[name] = entry
@@ -253,8 +263,8 @@ def get_table(db, column_width):
 
 def reproduce(runs_dir, db_filename, name):
     db = load(os.path.join(runs_dir, db_filename))
-    commit = lookup(db, name, key='commit')
-    command = lookup(db, name, key='command')
+    commit = lookup(db, name, key=COMMIT)
+    command = lookup(db, name, key=COMMAND)
     description = lookup(db, name, key=DESCRIPTION)
     print('To reproduce:\n',
           code_format('git checkout {}\n'.format(commit)),
@@ -270,6 +280,7 @@ class Config:
         self.save_path_flag = '--save-path'
         self.column_width = 30
         self.virtualenv_path = None
+        self.extra_flags = []
         try:
             with open(runsrc_path) as f:
                 print('Config file loaded from', runsrc_path)
@@ -286,10 +297,8 @@ class Config:
                 self.__setattr__(k.replace('-', '_'), v)
 
 
-DEST = 'dest'
 NAME = 'name'
 PATTERN = 'pattern'
-DESCRIPTION = 'description'
 DEFAULT_RUNS_DIR = '.runs'
 
 NEW = 'new'
@@ -318,7 +327,7 @@ def main():
     parser.add_argument('--db_filename', default=config.db_filename,
                         help='Name of YAML file storing run database information.')
 
-    subparsers = parser.add_subparsers(dest=DEST)
+    subparsers = parser.add_subparsers(dest='dest')
 
     virtualenv_path_help = 'Path to virtual environment, if one is being ' \
                            'used. If not `None`, the program will source ' \
@@ -326,8 +335,8 @@ def main():
 
     new_parser = subparsers.add_parser(NEW, help='Start a new run.')
     new_parser.add_argument(NAME, help='Unique name assigned to new run.')
-    new_parser.add_argument('command', help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
-                                            'or `--save-path` flag in this argument')
+    new_parser.add_argument(COMMAND, help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
+                                          'or `--save-path` flag in this argument')
     new_parser.add_argument('--tb-dir-flag', default=config.tb_dir_flag,
                             help='Flag to pass to program to specify tensorboard '
                                  'directory.')
@@ -397,7 +406,8 @@ def main():
             runs_dir=config.runs_dir,
             db_filename=config.db_filename,
             tb_dir_flag=config.tb_dir_flag,
-            save_path_flag=config.save_path_flag)
+            save_path_flag=config.save_path_flag,
+            extra_flags=config.extra_flags)
 
     elif args.dest == DELETE:
         assert args.host is None, 'SSH into remote before calling runs delete.'
