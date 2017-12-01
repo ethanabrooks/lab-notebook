@@ -22,7 +22,7 @@ setup(name='tf-run-manager',
           'Programming Language :: Python :: 3',
       ],
       keywords='tensorflow utilities development',
-      py_modules='runs',
+      py_modules=['runs'],
       entry_points={
           'console_scripts': [
               'runs = runs:main',
