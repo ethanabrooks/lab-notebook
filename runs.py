@@ -141,10 +141,14 @@ def build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_pa
     return command
 
 
-def run_tmux(name, window_name, command):
+def run_tmux(name, window_name, main_cmd):
     kill_tmux(name)
     subprocess.check_call('tmux new -d -s'.split() + [name, '-n', window_name])
-    subprocess.check_call('tmux send-keys -t'.split() + [name, command, 'Enter'])
+    cd_cmd = 'cd ' + os.path.realpath(os.path.curdir)
+    for cmd in [cd_cmd, main_cmd]:
+        subprocess.check_call(
+                'tmux send-keys -t'.split() + [name, cmd, 'Enter']
+            )
 
 
 def kill_tmux(name):
@@ -153,7 +157,7 @@ def kill_tmux(name):
 
 def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_filename,
         tb_dir_flag, save_path_flag, extra_flags):
-    assert '.' not in name
+    assert '&' not in name, 'run name cannot include "&"'
     now = datetime.now()
 
     # deal with collisions
@@ -264,7 +268,7 @@ def get_table(db, column_width):
 
     headers = sorted(set(key for _, entry in db.items() for key in entry))
     table = [[name] + [get_values(entry, key) for key in headers]
-             for name, entry in db.items()]
+             for name, entry in sorted(db.items())]
     headers = [NAME] + list(headers)
     return tabulate(table, headers=headers)
 
@@ -289,15 +293,13 @@ class Config:
         self.column_width = 30
         self.virtualenv_path = None
         self.extra_flags = []
-        try:
+        if runsrc_path:
             with open(runsrc_path) as f:
                 print('Config file loaded from', runsrc_path)
                 for k, v in yaml.load(f).items():
                     if v == 'None':
                         v = None
                     self.setattr(k, v)
-        except FileNotFoundError:
-            pass
 
     def setattr(self, k, v):
         setattr(self, k.replace('-', '_'), v)
