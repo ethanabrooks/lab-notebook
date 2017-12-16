@@ -116,9 +116,13 @@ def make_dirs(run_name, runs_dir):
 
 
 def run_paths(run_name, runs_dir):
+    """
+    Note that the `dirname` of each of these gets deleted by `delete_run`.
+    Make sure that dir contains only files from that run.
+    """
     return [os.path.join(runs_dir, name, run_name + ext)
             for name, ext in [('tensorboard', '/'),
-                              ('checkpoints', '.ckpt')]]
+                              ('checkpoints', '/model.ckpt')]]
 
 
 def build_flags(name, runs_dir, tb_dir_flag, save_path_flag, extra_flags):
@@ -129,9 +133,9 @@ def build_flags(name, runs_dir, tb_dir_flag, save_path_flag, extra_flags):
         flags += [(flag, value)]
 
     return ' '.join([
-        '{}={}'.format(flag, value)
-        for flag, value in flags
-        if flag is not None])
+                        '{}={}'.format(flag, value)
+                        for flag, value in flags
+                        if flag is not None])
 
 
 def build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag, extra_flags):
@@ -147,8 +151,8 @@ def run_tmux(name, window_name, main_cmd):
     cd_cmd = 'cd ' + os.path.realpath(os.path.curdir)
     for cmd in [cd_cmd, main_cmd]:
         subprocess.check_call(
-                'tmux send-keys -t'.split() + [name, cmd, 'Enter']
-            )
+            'tmux send-keys -t'.split() + [name, cmd, 'Enter']
+        )
 
 
 def kill_tmux(name):
@@ -208,13 +212,8 @@ def delete_run(name, db_filename, runs_dir):
     with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
         del db[name]
         for path in run_paths(name, runs_dir):
-            if os.path.isdir(path):
-                shutil.rmtree(path)
-            else:
-                try:
-                    os.remove(path)
-                except FileNotFoundError as e:
-                    print(colored(e.strerror + ': ' + path, color='yellow'))
+            dirname = os.path.dirname(path)
+            shutil.rmtree(dirname)
 
     kill_tmux(name)
 
@@ -285,7 +284,7 @@ def reproduce(runs_dir, db_filename, name):
 
 
 class Config:
-    def __init__(self, runsrc_path):
+    def __init__(self):
         self.runs_dir = '.runs/'
         self.db_filename = '.runs.yml'
         self.tb_dir_flag = '--tb-dir'
@@ -293,21 +292,9 @@ class Config:
         self.column_width = 30
         self.virtualenv_path = None
         self.extra_flags = []
-        if runsrc_path:
-            with open(runsrc_path) as f:
-                print('Config file loaded from', runsrc_path)
-                for k, v in yaml.load(f).items():
-                    if v == 'None':
-                        v = None
-                    self.setattr(k, v)
 
     def setattr(self, k, v):
         setattr(self, k.replace('-', '_'), v)
-
-    def update_with_args(self, args):
-        for k, v in vars(args).items():
-            if v is not None:
-                self.setattr(k, v)
 
 
 NAME = 'name'
@@ -323,7 +310,20 @@ REPRODUCE = 'reproduce'
 
 
 def main():
-    config = Config(find_file_backward('.runsrc'))
+    config = Config()
+    try:
+        # load values from config
+        with open('.runsrc') as f:
+            print('Config file loaded.')
+            for k, v in yaml.load(f).items():
+
+                # Don't treat None like a string
+                if v == 'None':
+                    v = None
+
+                config.setattr(k, v)
+    except FileNotFoundError:
+        pass
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default=None,
@@ -398,16 +398,16 @@ def main():
                                                                            'run will overwrite the reproduced run.')
 
     args = parser.parse_args()
-    config.update_with_args(args)
 
-    runs_dir = find_file_backward(config.runs_dir)
-    if runs_dir is None:
-        raise FileNotFoundError('Could not find {} in this directory or any of its parents.'.format(runs_dir))
-    db_path = os.path.join(runs_dir, config.db_filename)
+    for k, v in vars(args).items():
+        if v is not None:  # None indicates that the flag was not set by the user.
+            config.setattr(k, v)
+
+    db_path = os.path.join(config.runs_dir, config.db_filename)
     db = load(db_path, host=args.host, username=args.username)
     if hasattr(config, PATTERN) and args.pattern is not None:
         db = filter_by_regex(db, args.pattern)
-    if runs_dir is DEFAULT_RUNS_DIR and args.host is not None:
+    if config.runs_dir is DEFAULT_RUNS_DIR and args.host is not None:
         print(colored('Using default path to runs_dir: "{}". '
                       'When accessing remote files, you may want to '
                       'specify the complete path.'.format(DEFAULT_RUNS_DIR),
@@ -419,7 +419,7 @@ def main():
             virtualenv_path=config.virtualenv_path,
             command=args.command,
             overwrite=args.overwrite,
-            runs_dir=runs_dir,
+            runs_dir=config.runs_dir,
             db_filename=config.db_filename,
             tb_dir_flag=config.tb_dir_flag,
             save_path_flag=config.save_path_flag,
@@ -427,7 +427,7 @@ def main():
 
     elif args.dest == DELETE:
         assert args.host is None, 'SSH into remote before calling runs delete.'
-        delete(args.pattern, config.db_filename, runs_dir)
+        delete(args.pattern, config.db_filename, config.runs_dir)
 
     elif args.dest == LIST:
         for name in db:
@@ -444,7 +444,7 @@ def main():
         print(lookup(db, args.name, args.key))
 
     elif args.dest == REPRODUCE:
-        reproduce(runs_dir, config.db_filename, args.name)
+        reproduce(config.runs_dir, config.db_filename, args.name)
 
     else:
         raise RuntimeError("'{}' is not a supported dest.".format(args.dest))
