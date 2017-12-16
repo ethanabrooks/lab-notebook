@@ -30,7 +30,6 @@ setup(name='tf-run-manager',
       },
       install_requires=[
           'paramiko==2.3.1',
-          'GitPython==2.1.7',
           'termcolor==1.1.0',
           'PyYAML==3.12',
           'tabulate==0.8.1',

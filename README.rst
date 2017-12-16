@@ -56,7 +56,7 @@ name                 default          description
 ``extra-flags``      ``[]``           Flag, value pairs for extra, custom flags. The strings ``<runs-dir>`` and ``<run-name>`` will get replaced with the appropriate value.
 ===================  ===============  ======================================================================================================================================================
 
-The program expects to find the ``.runsrc`` in a parent of the current working directory. The script should always be run from this directory as all file IO commands use relative paths.
+The program expects to find the ``.runsrc`` in a parent of the current working directory. Unless specified otherwise, the ``.runs/`` directory will be adjacent to the ``.runsrc`` in the file structure.
 
 Here is an example ``.runsrc`` file:
 

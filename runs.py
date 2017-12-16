@@ -10,7 +10,6 @@ from datetime import datetime
 from getpass import getpass
 
 import yaml
-from git import Repo
 from paramiko import SSHException
 from paramiko.client import SSHClient, AutoAddPolicy
 from tabulate import tabulate
@@ -161,7 +160,8 @@ def kill_tmux(name):
 
 def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_filename,
         tb_dir_flag, save_path_flag, extra_flags):
-    assert '&' not in name, 'run name cannot include "&"'
+    for char in '.&':
+        assert char not in name, 'run name cannot include "{}"'.format(char)
     now = datetime.now()
 
     # deal with collisions
@@ -173,18 +173,18 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
             name += now.strftime('%s')
 
     make_dirs(name, runs_dir)
-    repo = Repo()
-    if repo.is_dirty():
+    if subprocess.check_output('git status --porcelain'.split()):
         raise RuntimeError("Repo is dirty. You should commit before run.")
 
     command = build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag, extra_flags)
 
-    last_commit = next(repo.iter_commits())
     if description is None:
-        description = last_commit.message
+        description = subprocess.check_output('git log -1 --pretty=%B'.split())
+
+    last_commit_hex = subprocess.check_output('git rev-parse HEAD'.split())
     entry = {
         COMMAND: command,
-        COMMIT: last_commit.hexsha,
+        COMMIT: last_commit_hex,
         DATETIME: now.isoformat(),
         DESCRIPTION: description,
     }
@@ -284,9 +284,9 @@ def reproduce(runs_dir, db_filename, name):
 
 
 class Config:
-    def __init__(self):
-        self.runs_dir = '.runs/'
-        self.db_filename = '.runs.yml'
+    def __init__(self, root):
+        self.runs_dir = os.path.join(root, '.runs/')
+        self.db_filename = os.path.join(root, '.runs.yml')
         self.tb_dir_flag = '--tb-dir'
         self.save_path_flag = '--save-path'
         self.column_width = 30
@@ -310,10 +310,13 @@ REPRODUCE = 'reproduce'
 
 
 def main():
-    config = Config()
-    try:
+    runsrc_file = find_file_backward('.runsrc')
+    if runsrc_file is None:
+        config = Config(root='.')
+    else:
+        config = Config(root=os.path.dirname(runsrc_file))
         # load values from config
-        with open('.runsrc') as f:
+        with open(runsrc_file) as f:
             print('Config file loaded.')
             for k, v in yaml.load(f).items():
 
@@ -322,8 +325,6 @@ def main():
                     v = None
 
                 config.setattr(k, v)
-    except FileNotFoundError:
-        pass
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default=None,
