@@ -157,6 +157,9 @@ def run_tmux(name, window_name, main_cmd):
 def kill_tmux(name):
     subprocess.call('tmux kill-session -t'.split() + [name])
 
+def cmd(string):
+    return subprocess.check_output(string.split(), universal_newlines=True)
+
 
 def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_filename,
         tb_dir_flag, save_path_flag, extra_flags):
@@ -173,15 +176,15 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
             name += now.strftime('%s')
 
     make_dirs(name, runs_dir)
-    if subprocess.check_output('git status --porcelain'.split()):
+    if cmd('git status --porcelain') is not '':
         raise RuntimeError("Repo is dirty. You should commit before run.")
 
     command = build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag, extra_flags)
 
     if description is None:
-        description = subprocess.check_output('git log -1 --pretty=%B'.split())
+        description = cmd('git log -1 --pretty=%B')
 
-    last_commit_hex = subprocess.check_output('git rev-parse HEAD'.split())
+    last_commit_hex = cmd('git rev-parse HEAD')
     entry = {
         COMMAND: command,
         COMMIT: last_commit_hex,
