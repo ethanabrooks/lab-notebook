@@ -325,7 +325,7 @@ def main():
 
                 # Don't treat None like a string
                 if v == 'None':
-                    v = None
+                    v = eval(v)
 
                 config.setattr(k, v)
 
@@ -361,10 +361,10 @@ def main():
                             help='Flag to pass to program to specify '
                                  'tensorboard directory.')
     new_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
-    new_parser.add_argument('--overwrite', action='store_true', help='If this flag is given, this entry will '
-                                                                     'overwrite any entry with the same name. '
-                                                                     'Otherwise, a timestamp will be appended to any '
-                                                                     'new name that is already in the database.')
+    new_parser.add_argument('--no-overwrite', action='store_true', help='If this flag is given, a timestamp will be '
+                                                                        'appended to any new name that is already in '
+                                                                        'the database.  Otherwise this entry will '
+                                                                        'overwrite any entry with the same name. ')
     new_parser.add_argument('--description', help='Description of this run. Write whatever you want.')
 
     delete_parser = subparsers.add_parser(DELETE, help="Delete runs from the database (and all associated tensorboard "
@@ -398,8 +398,10 @@ def main():
                                                                                 'description as the run being '
                                                                                 'reproduced.')
     reproduce_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
-    reproduce_parser.add_argument('--overwrite', action='store_true', help='If this flag is provided, the reproducing '
-                                                                           'run will overwrite the reproduced run.')
+    reproduce_parser.add_argument('--no-overwrite', action='store_true', help='If this flag is given, a timestamp will be '
+                                                                        'appended to any new name that is already in '
+                                                                        'the database.  Otherwise this entry will '
+                                                                        'overwrite any entry with the same name. ')
 
     args = parser.parse_args()
 
@@ -422,7 +424,7 @@ def main():
             description=args.description,
             virtualenv_path=config.virtualenv_path,
             command=args.command,
-            overwrite=args.overwrite,
+            overwrite=not args.no_overwrite,
             runs_dir=config.runs_dir,
             db_filename=config.db_filename,
             tb_dir_flag=config.tb_dir_flag,
