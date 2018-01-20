@@ -20,6 +20,7 @@ if sys.version_info.major == 2:
 
 BUFFSIZE = 1024
 
+INPUT_COMMAND = 'input-command'
 COMMAND = 'command'
 COMMIT = 'commit'
 DATETIME = 'datetime'
@@ -109,9 +110,13 @@ def get_yes_or_no(question):
 
 
 def make_dirs(run_name, runs_dir):
-    for path in run_paths(run_name, runs_dir):
-        dirname = os.path.dirname(path)
-        os.makedirs(dirname, exist_ok=True)
+    for run_dir in run_dirs(run_name, runs_dir):
+        os.makedirs(run_dir, exist_ok=True)
+
+
+def run_dirs(run_name, runs_dir):
+    return [os.path.join(runs_dir, 'tensorboard', run_name),
+            os.path.join(runs_dir, 'checkpoints', run_name)]
 
 
 def run_paths(run_name, runs_dir):
@@ -119,9 +124,10 @@ def run_paths(run_name, runs_dir):
     Note that the `dirname` of each of these gets deleted by `delete_run`.
     Make sure that dir contains only files from that run.
     """
-    return [os.path.join(runs_dir, name, run_name + ext)
-            for name, ext in [('tensorboard', '/'),
-                              ('checkpoints', '/model.ckpt')]]
+    dirs = run_dirs(run_name, runs_dir)
+    files = '', 'model.ckpt'
+    assert len(dirs) == len(files)
+    return [os.path.join(run_dir, run_file) for run_dir, run_file in zip(dirs, files)]
 
 
 def build_flags(name, runs_dir, tb_dir_flag, save_path_flag, extra_flags):
@@ -157,6 +163,11 @@ def run_tmux(name, window_name, main_cmd):
 def kill_tmux(name):
     subprocess.call('tmux kill-session -t'.split() + [name])
 
+
+def rename_tmux(old_name, new_name):
+    subprocess.call('tmux rename-session -t'.split() + [old_name, new_name])
+
+
 def cmd(string):
     return subprocess.check_output(string.split(), universal_newlines=True)
 
@@ -180,14 +191,16 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
         if not get_yes_or_no("Repo is dirty. You should commit before run. Run anyway?"):
             exit()
 
-    command = build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag, extra_flags)
+    processed_command = build_command(command, name, runs_dir, virtualenv_path,
+                                      tb_dir_flag, save_path_flag, extra_flags)
 
     if description is None:
         description = cmd('git log -1 --pretty=%B')
 
     last_commit_hex = cmd('git rev-parse HEAD')
     entry = {
-        COMMAND: command,
+        INPUT_COMMAND: command,
+        COMMAND: processed_command,
         COMMIT: last_commit_hex,
         DATETIME: now.isoformat(),
         DESCRIPTION: description,
@@ -196,10 +209,10 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
     with RunDB(path=db_path) as db:
         db[name] = entry
 
-    run_tmux(name, description, command)
+    run_tmux(name, description, processed_command)
 
     print('Command sent to session:')
-    print(code_format(command))
+    print(code_format(processed_command))
     print('List active:')
     print(code_format('tmux list-session'))
     print('Attach:')
@@ -215,11 +228,22 @@ def delete_run(name, db_filename, runs_dir):
     print('Deleting {}...'.format(name))
     with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
         del db[name]
-        for path in run_paths(name, runs_dir):
-            dirname = os.path.dirname(path)
-            shutil.rmtree(dirname)
+        for run_dir in run_dirs(name, runs_dir):
+            shutil.rmtree(run_dir)
 
     kill_tmux(name)
+
+
+def rename(old_name, new_name, db_filename, runs_dir):
+    with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
+        db[new_name] = db[old_name]
+        del db[old_name]
+
+        for old_dir, new_dir in zip(run_dirs(old_name, runs_dir),
+                                    run_dirs(new_name, runs_dir)):
+            os.rename(old_dir, new_dir)
+
+    rename_tmux(old_name, new_name)
 
 
 def delete(pattern, db_filename, runs_dir):
@@ -252,14 +276,14 @@ def lookup(db, name, key):
     return entry[key]
 
 
-def get_table_from_path(db_path, column_width, host, username, pattern=None):
+def get_table_from_path(db_path, column_width, host, username, hidden_columns, pattern=None):
     db = load(db_path, host, username)
     if pattern:
         db = filter_by_regex(db, pattern)
-    return get_table(db, column_width)
+    return get_table(db, column_width, hidden_columns)
 
 
-def get_table(db, column_width):
+def get_table(db, column_width, hidden_columns):
     def get_values(entry, key):
         try:
             value = str(entry[key])
@@ -269,7 +293,7 @@ def get_table(db, column_width):
         except KeyError:
             return '_'
 
-    headers = sorted(set(key for _, entry in db.items() for key in entry))
+    headers = sorted(set(key for _, entry in db.items() for key in entry) - set(hidden_columns))
     table = [[name] + [get_values(entry, key) for key in headers]
              for name, entry in sorted(db.items())]
     headers = [NAME] + list(headers)
@@ -279,7 +303,7 @@ def get_table(db, column_width):
 def reproduce(runs_dir, db_filename, name):
     db = load(os.path.join(runs_dir, db_filename))
     commit = lookup(db, name, key=COMMIT)
-    command = lookup(db, name, key=COMMAND)
+    command = lookup(db, name, key=INPUT_COMMAND)
     description = lookup(db, name, key=DESCRIPTION)
     print('To reproduce:\n',
           code_format('git checkout {}\n'.format(commit)),
@@ -307,6 +331,7 @@ DEFAULT_RUNS_DIR = '.runs'
 
 NEW = 'new'
 DELETE = 'delete'
+RENAME = 'rename'
 LOOKUP = 'lookup'
 LIST = 'list'
 TABLE = 'table'
@@ -353,8 +378,8 @@ def main():
 
     new_parser = subparsers.add_parser(NEW, help='Start a new run.')
     new_parser.add_argument(NAME, help='Unique name assigned to new run.')
-    new_parser.add_argument(COMMAND, help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
-                                          'or `--save-path` flag in this argument')
+    new_parser.add_argument('command', help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
+                                            'or `--save-path` flag in this argument')
     new_parser.add_argument('--tb-dir-flag', default=config.tb_dir_flag,
                             help='Flag to pass to program to specify tensorboard '
                                  'directory.')
@@ -374,6 +399,10 @@ def main():
     delete_parser.add_argument(PATTERN, help='This script will only delete entries in the database whose names are a '
                                              'complete (not partial) match of this regex pattern.')
 
+    rename_parser = subparsers.add_parser(RENAME, help='Lookup specific value associated with database entry')
+    rename_parser.add_argument('old', help='Name of run to rename.')
+    rename_parser.add_argument('new', help='New name for run')
+
     pattern_help = 'Only display names matching this pattern.'
 
     list_parser = subparsers.add_parser(LIST, help='List all names in run database.')
@@ -381,6 +410,8 @@ def main():
 
     table_parser = subparsers.add_parser(TABLE, help='Display contents of run database as a table.')
     table_parser.add_argument('--' + PATTERN, default=None, help=pattern_help)
+    table_parser.add_argument('--hidden-columns', default='input-command',
+                              help='Comma-separated list of columns to not display in table.')
     table_parser.add_argument('--column-width', type=int, default=config.column_width,
                               help='Maximum width of table columns. Longer '
                                    'values will be truncated and appended '
@@ -399,10 +430,11 @@ def main():
                                                                                 'description as the run being '
                                                                                 'reproduced.')
     reproduce_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
-    reproduce_parser.add_argument('--no-overwrite', action='store_true', help='If this flag is given, a timestamp will be '
-                                                                        'appended to any new name that is already in '
-                                                                        'the database.  Otherwise this entry will '
-                                                                        'overwrite any entry with the same name. ')
+    reproduce_parser.add_argument('--no-overwrite', action='store_true',
+                                  help='If this flag is given, a timestamp will be '
+                                       'appended to any new name that is already in '
+                                       'the database.  Otherwise this entry will '
+                                       'overwrite any entry with the same name. ')
 
     args = parser.parse_args()
 
@@ -436,16 +468,21 @@ def main():
         assert args.host is None, 'SSH into remote before calling runs delete.'
         delete(args.pattern, config.db_filename, config.runs_dir)
 
+    elif args.dest == RENAME:
+        rename(args.old, args.new, config.db_filename, config.runs_dir)
+
     elif args.dest == LIST:
         for name in db:
             print(name)
 
     elif args.dest == TABLE:
+        hidden_columns = args.hidden_columns.split(',')
         print(get_table_from_path(db_path,
                                   config.column_width,
                                   args.host,
                                   args.username,
-                                  args.pattern))
+                                  hidden_columns,
+                                  pattern=args.pattern))
 
     elif args.dest == LOOKUP:
         print(lookup(db, args.name, args.key))
