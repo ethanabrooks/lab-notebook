@@ -177,7 +177,8 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
 
     make_dirs(name, runs_dir)
     if cmd('git status --porcelain') is not '':
-        raise RuntimeError("Repo is dirty. You should commit before run.")
+        if not get_yes_or_no("Repo is dirty. You should commit before run. Run anyway?"):
+            exit()
 
     command = build_command(command, name, runs_dir, virtualenv_path, tb_dir_flag, save_path_flag, extra_flags)
 
