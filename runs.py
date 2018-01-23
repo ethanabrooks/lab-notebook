@@ -267,7 +267,7 @@ def lookup(db, name, key):
         return documented_runs_message
     if name not in db.keys():
         raise KeyError(
-            "`{}` is not a documented run." + documented_runs_message)
+            "`{}` is not a documented run.".format(name) + documented_runs_message)
     entry = db[name]
     if key not in entry:
         raise KeyError(
