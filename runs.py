@@ -219,21 +219,6 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
     print(code_format('tmux attach -t', name))
 
 
-def filter_by_regex(db, pattern):
-    return {key: db[key] for key in db
-            if re.match('^' + pattern + '$', key) is not None}
-
-
-def delete_run(name, db_filename, runs_dir):
-    print('Deleting {}...'.format(name))
-    with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
-        del db[name]
-        for run_dir in run_dirs(name, runs_dir):
-            shutil.rmtree(run_dir)
-
-    kill_tmux(name)
-
-
 def rename(old_name, new_name, db_filename, runs_dir):
     with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
         db[new_name] = db[old_name]
@@ -246,6 +231,55 @@ def rename(old_name, new_name, db_filename, runs_dir):
     rename_tmux(old_name, new_name)
 
 
+def filter_by_regex(db, pattern):
+    return {key: db[key] for key in db
+            if re.match('^' + pattern + '$', key) is not None}
+
+
+def no_match(db_path):
+    print('No runs match pattern. Recorded runs:')
+    for name in load(db_path):
+        print(name)
+
+
+def archive(pattern, db_filename, runs_dir):
+    db_path = os.path.join(runs_dir, db_filename)
+    filtered = filter_by_regex(load(db_path), pattern)
+    if filtered:
+        question = 'Archive the following runs?\n' + '\n'.join(filtered) + '\n'
+        if get_yes_or_no(question):
+            for run_name in filtered:
+                archive_run(run_name, db_filename, runs_dir)
+                print('Archived', run_name)
+    else:
+        no_match(db_path)
+
+
+def archive_run(name, db_filename, runs_dir):
+    archive_dir = os.path.join(runs_dir, 'archive', name)
+    make_dirs(name, archive_dir)
+    archive_path = os.path.join(archive_dir, db_filename)
+    db_path = os.path.join(runs_dir, db_filename)
+    with RunDB(path=db_path) as db, RunDB(path=archive_path) as archive:
+        archive[name] = db[name]
+        del db[name]
+        for old_dir, new_dir in zip(run_dirs(name, runs_dir),
+                                    run_dirs(name, archive_dir)):
+            os.rename(old_dir, new_dir)
+
+    kill_tmux(name)
+
+
+def delete_run(name, db_filename, runs_dir):
+    print('Deleting {}...'.format(name))
+    with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
+        del db[name]
+        for run_dir in run_dirs(name, runs_dir):
+            shutil.rmtree(run_dir)
+
+    kill_tmux(name)
+
+
 def delete(pattern, db_filename, runs_dir):
     db_path = os.path.join(runs_dir, db_filename)
     filtered = filter_by_regex(load(db_path), pattern)
@@ -256,9 +290,7 @@ def delete(pattern, db_filename, runs_dir):
                 delete_run(run_name, db_filename, runs_dir)
                 print('Deleted', run_name)
     else:
-        print('No runs match pattern. Recorded runs:')
-        for name in load(db_path):
-            print(name)
+        no_match(db_path)
 
 
 def lookup(db, name, key):
@@ -331,6 +363,7 @@ DEFAULT_RUNS_DIR = '.runs'
 
 NEW = 'new'
 DELETE = 'delete'
+ARCHIVE = 'archive'
 RENAME = 'rename'
 LOOKUP = 'lookup'
 LIST = 'list'
@@ -398,6 +431,13 @@ def main():
                                                        "confirmation before deleting anything.")
     delete_parser.add_argument(PATTERN, help='This script will only delete entries in the database whose names are a '
                                              'complete (not partial) match of this regex pattern.')
+
+    archive_parser = subparsers.add_parser(ARCHIVE,
+                                           help="Archive runs from the database (and all associated tensorboard "
+                                                "and checkpoint files). Don't worry, the script will ask for "
+                                                "confirmation before archiving anything.")
+    archive_parser.add_argument(PATTERN, help='This script will only archive entries in the database whose names are a '
+                                              'complete (not partial) match of this regex pattern.')
 
     rename_parser = subparsers.add_parser(RENAME, help='Lookup specific value associated with database entry')
     rename_parser.add_argument('old', help='Name of run to rename.')
@@ -467,6 +507,10 @@ def main():
     elif args.dest == DELETE:
         assert args.host is None, 'SSH into remote before calling runs delete.'
         delete(args.pattern, config.db_filename, config.runs_dir)
+
+    elif args.dest == ARCHIVE:
+        assert args.host is None, 'SSH into remote before calling runs archive.'
+        archive(args.pattern, config.db_filename, config.runs_dir)
 
     elif args.dest == RENAME:
         rename(args.old, args.new, config.db_filename, config.runs_dir)
