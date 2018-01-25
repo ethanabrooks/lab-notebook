@@ -59,6 +59,7 @@ class RunDB:
         return self._db
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        print(self._path)
         dump(self._db, self._path)
         self._db = None
 
@@ -255,16 +256,32 @@ def archive(pattern, db_filename, runs_dir):
         no_match(db_path)
 
 
-def archive_run(name, db_filename, runs_dir):
-    archive_dir = os.path.join(runs_dir, 'archive', name)
-    make_dirs(name, archive_dir)
-    archive_path = os.path.join(archive_dir, db_filename)
+def delete(pattern, db_filename, runs_dir):
     db_path = os.path.join(runs_dir, db_filename)
+    filtered = filter_by_regex(load(db_path), pattern)
+    if filtered:
+        question = 'Delete the following runs?\n' + '\n'.join(filtered) + '\n'
+        if get_yes_or_no(question):
+            for run_name in filtered:
+                delete_run(run_name, db_filename, runs_dir)
+                print('Deleted', run_name)
+    else:
+        no_match(db_path)
+
+
+def archives_dir(runs_dir):
+    return os.path.join(runs_dir, 'archives')
+
+
+def archive_run(name, db_filename, runs_dir):
+    make_dirs(name, archives_dir(runs_dir))
+    db_path = os.path.join(runs_dir, db_filename)
+    archive_path = os.path.join(archives_dir(runs_dir), db_filename)
     with RunDB(path=db_path) as db, RunDB(path=archive_path) as archive:
         archive[name] = db[name]
         del db[name]
         for old_dir, new_dir in zip(run_dirs(name, runs_dir),
-                                    run_dirs(name, archive_dir)):
+                                    run_dirs(name, archives_dir(runs_dir))):
             os.rename(old_dir, new_dir)
 
     kill_tmux(name)
@@ -278,19 +295,6 @@ def delete_run(name, db_filename, runs_dir):
             shutil.rmtree(run_dir)
 
     kill_tmux(name)
-
-
-def delete(pattern, db_filename, runs_dir):
-    db_path = os.path.join(runs_dir, db_filename)
-    filtered = filter_by_regex(load(db_path), pattern)
-    if filtered:
-        question = 'Delete the following runs?\n' + '\n'.join(filtered) + '\n'
-        if get_yes_or_no(question):
-            for run_name in filtered:
-                delete_run(run_name, db_filename, runs_dir)
-                print('Deleted', run_name)
-    else:
-        no_match(db_path)
 
 
 def lookup(db, name, key):
@@ -346,7 +350,7 @@ def reproduce(runs_dir, db_filename, name):
 class Config:
     def __init__(self, root):
         self.runs_dir = os.path.join(root, '.runs/')
-        self.db_filename = os.path.join(root, '.runs.yml')
+        self.db_filename = 'runs.yml'
         self.tb_dir_flag = '--tb-dir'
         self.save_path_flag = '--save-path'
         self.column_width = 30
@@ -364,6 +368,7 @@ DEFAULT_RUNS_DIR = '.runs'
 NEW = 'new'
 DELETE = 'delete'
 ARCHIVE = 'archive'
+DELETE_FROM_ARCHIVE = 'delete-from-archive'
 RENAME = 'rename'
 LOOKUP = 'lookup'
 LIST = 'list'
@@ -439,6 +444,16 @@ def main():
     archive_parser.add_argument(PATTERN, help='This script will only archive entries in the database whose names are a '
                                               'complete (not partial) match of this regex pattern.')
 
+    delete_from_archive_parser = subparsers.add_parser(DELETE_FROM_ARCHIVE,
+                                                       help="Delete runs from the archive "
+                                                            "(and all associated tensorboard "
+                                                            "and checkpoint files). Don't "
+                                                            "worry, the script will ask for "
+                                                            "confirmation before deleting anything.")
+    delete_from_archive_parser.add_argument(PATTERN,
+                                            help='This script will only delete entries in the database whose names '
+                                                 'are a complete (not partial) match of this regex pattern.')
+
     rename_parser = subparsers.add_parser(RENAME, help='Lookup specific value associated with database entry')
     rename_parser.add_argument('old', help='Name of run to rename.')
     rename_parser.add_argument('new', help='New name for run')
@@ -511,6 +526,9 @@ def main():
     elif args.dest == ARCHIVE:
         assert args.host is None, 'SSH into remote before calling runs archive.'
         archive(args.pattern, config.db_filename, config.runs_dir)
+
+    elif args.dest == DELETE_FROM_ARCHIVE:
+        delete(args.pattern, config.db_filename, archives_dir(config.runs_dir))
 
     elif args.dest == RENAME:
         rename(args.old, args.new, config.db_filename, config.runs_dir)
