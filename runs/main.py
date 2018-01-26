@@ -79,8 +79,8 @@ def main():
     move_parser.add_argument('new', help='New name for run.' + path_clarification)
     move_parser.add_argument('--' + PATTERN, action='store_true',
                              help='Whether to do a bulk move, interpreting OLD as a pattern')
-    move_parser.add_argument('--keep-tmux', action='store_true',
-                             help='Do not kill tmux after the move.')
+    move_parser.add_argument('--kill-tmux', action='store_true',
+                             help='Kill tmux after the move.')
 
     pattern_help = 'Only display names matching this pattern.'
     list_parser = subparsers.add_parser(LIST, help='List all names in run database.')
@@ -145,10 +145,10 @@ def main():
         new_runs_dir, new_pattern = split_pattern(args.runs_dir, args.new)
         if len(old_run_names) > 1:
             bulk_move(old_run_names, old_runs_dir, new_runs_dir,
-                      cfg.db_filename, args.keep_tmux)
+                      cfg.db_filename, args.kill_tmux)
         else:
             move(old_runs_dir, old_run_names[0], new_runs_dir, new_pattern,
-                 cfg.db_filename, args.keep_tmux)
+                 cfg.db_filename, args.kill_tmux)
 
     elif args.dest == LIST:
         _, names = collect_runs(args.runs_dir, args.pattern, cfg.db_filename, cfg.regex)

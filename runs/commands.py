@@ -79,20 +79,20 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
     print('tmux attach -t', name)
 
 
-def bulk_move(run_names, old_runs_dir, new_runs_dir, db_filename, keep_tmux):
+def bulk_move(run_names, old_runs_dir, new_runs_dir, db_filename, _kill_tmux):
     if run_names:
         question = 'Move the following runs from {} to {}?\n'.format(
             old_runs_dir, new_runs_dir) + '\n' + '\n'.join(run_names) + '\n'
         if get_yes_or_no(question):
             for run_name in run_names:
                 move(old_runs_dir, run_name, new_runs_dir, run_name,
-                     db_filename, keep_tmux)
+                     db_filename, _kill_tmux)
                 print('Moved', run_name, 'from', old_runs_dir, 'to', new_runs_dir)
     else:
         no_match(old_runs_dir, db_filename)
 
 
-def move(old_runs_dir, old_name, new_runs_dir, new_name, db_filename, keep_tmux):
+def move(old_runs_dir, old_name, new_runs_dir, new_name, db_filename, _kill_tmux):
     make_dirs(new_runs_dir, new_name)
     old_db_path = os.path.join(old_runs_dir, db_filename)
     new_db_path = os.path.join(new_runs_dir, db_filename)
@@ -103,7 +103,7 @@ def move(old_runs_dir, old_name, new_runs_dir, new_name, db_filename, keep_tmux)
                                     run_dirs(new_runs_dir, new_name)):
             os.rename(old_dir, new_dir)
 
-    if keep_tmux:
+    if _kill_tmux:
         rename_tmux(old_name, new_name)
     else:
         kill_tmux(old_name)
