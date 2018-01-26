@@ -2,10 +2,10 @@ import fnmatch
 import os
 import re
 import subprocess
+import sys
 from contextlib import contextmanager
 from getpass import getpass
 
-import sys
 import yaml
 from paramiko import SSHClient, AutoAddPolicy, SSHException
 from termcolor import colored
@@ -48,7 +48,6 @@ class RunDB:
         return self._db
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        print(self._path)
         dump(self._db, self._path)
         self._db = None
 
@@ -99,34 +98,33 @@ def get_yes_or_no(question):
             response = input('Please enter y[es]|n[o]')
 
 
-def run_dirs(run_name, runs_dir):
+def run_dirs(runs_dir, run_name):
     return [os.path.join(runs_dir, 'tensorboard', run_name),
             os.path.join(runs_dir, 'checkpoints', run_name)]
 
 
-def run_paths(run_name, runs_dir):
+def run_paths(runs_dir, run_name):
     """
     Note that the `dirname` of each of these gets deleted by `delete_run`.
     Make sure that dir contains only files from that run.
     """
-    dirs = run_dirs(run_name, runs_dir)
+    dirs = run_dirs(runs_dir, run_name)
     files = '', 'model.ckpt'
     assert len(dirs) == len(files)
     return [os.path.join(run_dir, run_file) for run_dir, run_file in zip(dirs, files)]
 
 
-def make_dirs(run_name, runs_dir):
-    for run_dir in run_dirs(run_name, runs_dir):
+def make_dirs(runs_dir, run_name):
+    for run_dir in run_dirs(runs_dir, run_name):
         os.makedirs(run_dir, exist_ok=True)
 
 
-def split_pattern(runs_dir, pattern):
-    *subdir, pattern = pattern.split('/')
-    return os.path.join(runs_dir, *subdir), pattern
-
-
-def cmd(string):
-    return subprocess.check_output(string.split(), universal_newlines=True)
+def cmd(string, fail_ok=False):
+    args = string.split()
+    if fail_ok:
+        return subprocess.call(args)
+    else:
+        return subprocess.check_output(args, universal_newlines=True)
 
 
 def run_tmux(name, window_name, main_cmd):
@@ -138,7 +136,7 @@ def run_tmux(name, window_name, main_cmd):
 
 
 def kill_tmux(name):
-    cmd('tmux kill-session -t ' + name)
+    cmd('tmux kill-session -t ' + name, fail_ok=True)
 
 
 def rename_tmux(old_name, new_name):
@@ -152,12 +150,22 @@ def filter_by_pattern(db, pattern, regex):
         else:
             return fnmatch.fnmatch(string, pattern)
 
-    return {key: db[key] for key in db if match(key)}
+    return {k: v for k, v in db.items() if match(k)}
 
 
-def get_filtered_runs(pattern, db_filename, runs_dir, regex):
-    db_path = os.path.join(runs_dir, db_filename)
-    return filter_by_pattern(load(db_path), pattern, regex)
+def split_pattern(runs_dir, pattern):
+    *subdir, pattern = pattern.split('/')
+    return os.path.join(runs_dir, *subdir), pattern
+
+
+def collect_runs(runs_dir, pattern, db_filename, regex):
+    if pattern is None:
+        return runs_dir, load(os.path.join(runs_dir, db_filename))
+    else:
+        runs_dir, pattern = split_pattern(runs_dir, pattern)
+        db = load(os.path.join(runs_dir, db_filename))
+        filtered = filter_by_pattern(db, pattern, regex)
+        return runs_dir, list(filtered.keys())
 
 
 def no_match(runs_dir, db_filename):
@@ -172,6 +180,8 @@ class Config:
         self.db_filename = 'runs.yml'
         self.tb_dir_flag = '--tb-dir'
         self.save_path_flag = '--save-path'
+        self.save_path_flag = '--save-path'
+        self.regex = False
         self.column_width = 30
         self.virtualenv_path = None
         self.extra_flags = []
