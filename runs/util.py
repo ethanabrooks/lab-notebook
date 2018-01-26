@@ -175,9 +175,9 @@ def no_match(runs_dir, db_filename):
         print(name)
 
 
-def string_from_editor(prompt, string=''):
+def string_from_vim(prompt, string=''):
     path = os.path.join('/', 'tmp', datetime.now().strftime('%s') + '.txt')
-    delimiter = '\n' + '=' * len(prompt.split('\n')[-1]) + '\n'
+    delimiter = '\n' + '-' * len(prompt.split('\n')[-1]) + '\n'
     with open(path, 'w') as f:
         f.write(prompt + delimiter + string)
     start_line = 3 + prompt.count('\n')
