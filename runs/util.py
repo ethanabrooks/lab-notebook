@@ -1,3 +1,4 @@
+from datetime import datetime
 import fnmatch
 import os
 import re
@@ -6,6 +7,7 @@ import sys
 from contextlib import contextmanager
 from getpass import getpass
 
+import shutil
 import yaml
 from paramiko import SSHClient, AutoAddPolicy, SSHException
 from termcolor import colored
@@ -16,7 +18,7 @@ else:
     FileNotFoundError = OSError
 
 
-def code_format(*args):
+def highlight(*args):
     string = ' '.join(map(str, args))
     return colored(string, color='blue', attrs=['bold'])
 
@@ -174,6 +176,22 @@ def no_match(runs_dir, db_filename):
         print(name)
 
 
+def string_from_editor(editor, prompt, string=''):
+    path = os.path.join('/', 'tmp', datetime.now().strftime('%s') + '.txt')
+    delimiter = '\n' + '=' * len(prompt.split('\n')[-1]) + '\n'
+    with open(path, 'w') as f:
+        f.write(prompt + delimiter + string)
+    start_line = 3 + prompt.count('\n')
+    os.system('{} +{} {}'.format(editor, start_line, path))
+    with open(path) as f:
+        file_contents = f.read()[:-1]
+        if delimiter not in file_contents:
+            raise RuntimeError("Don't delete the delimiter.")
+        prompt, string = file_contents.split(delimiter)
+    os.remove(path)
+    return string
+
+
 class Config:
     def __init__(self, root):
         self.runs_dir = os.path.join(root, '.runs/')
@@ -181,6 +199,7 @@ class Config:
         self.tb_dir_flag = '--tb-dir'
         self.save_path_flag = '--save-path'
         self.save_path_flag = '--save-path'
+        self.editor = 'vim'
         self.regex = False
         self.column_width = 30
         self.virtualenv_path = None
