@@ -120,12 +120,16 @@ def make_dirs(runs_dir, run_name):
         os.makedirs(run_dir, exist_ok=True)
 
 
-def cmd(string, fail_ok=False):
-    args = string.split()
-    if fail_ok:
-        return subprocess.call(args)
+def cmd(args, fail_ok=False):
+    process = subprocess.Popen(args,
+                               stderr=subprocess.PIPE,
+                               stdout=subprocess.PIPE,
+                               universal_newlines=True)
+    stdout, stderr = process.communicate(timeout=1)
+    if stderr and not fail_ok:
+        raise OSError("Command `{}` failed: {}".format(args, stderr))
     else:
-        return subprocess.check_output(args, universal_newlines=True)
+        return stdout
 
 
 def run_tmux(name, window_name, main_cmd):
@@ -133,15 +137,15 @@ def run_tmux(name, window_name, main_cmd):
     subprocess.check_call('tmux new -d -s'.split() + [name, '-n', window_name])
     cd_cmd = 'cd ' + os.path.realpath(os.path.curdir)
     for command in [cd_cmd, main_cmd]:
-        cmd('tmux send-keys -t ' + name + ' ' + command + 'Enter')
+        cmd('tmux send-keys -t'.split() + [name, command, 'Enter'])
 
 
 def kill_tmux(name):
-    cmd('tmux kill-session -t ' + name, fail_ok=True)
+    cmd('tmux kill-session -t'.split() + [name], fail_ok=True)
 
 
 def rename_tmux(old_name, new_name):
-    cmd('tmux rename-session -t ' + old_name + ' ' + new_name)
+    cmd('tmux rename-session -t '.split() + [old_name, new_name])
 
 
 def filter_by_pattern(db, pattern, regex):

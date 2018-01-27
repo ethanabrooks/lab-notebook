@@ -43,7 +43,7 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
             name += now.strftime('%s')
 
     make_dirs(runs_dir, name)
-    if cmd('git status --porcelain') is not '':
+    if cmd('git status --porcelain'.split()) is not '':
         if not get_yes_or_no("Repo is dirty. You should commit before run. Run anyway?"):
             exit()
 
@@ -51,9 +51,9 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
                                       tb_dir_flag, save_path_flag, extra_flags)
 
     if description is None:
-        description = cmd('git log -1 --pretty=%B')
+        description = cmd('git log -1 --pretty=%B'.split())
 
-    last_commit_hex = cmd('git rev-parse HEAD')
+    last_commit_hex = cmd('git rev-parse HEAD'.split())
     prompt = 'Edit the description of this run: (Do not edit the line or above.)'
     description = string_from_vim(prompt, description)
     entry = {
