@@ -181,7 +181,7 @@ def string_from_vim(prompt, string=''):
     with open(path, 'w') as f:
         f.write(prompt + delimiter + string)
     start_line = 3 + prompt.count('\n')
-    os.system('vim +{} {}'.format(start_line, path))
+    subprocess.call('vim +{} {}'.format(start_line, path), shell=True)
     with open(path) as f:
         file_contents = f.read()[:-1]
         if delimiter not in file_contents:
