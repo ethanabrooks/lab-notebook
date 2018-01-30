@@ -4,9 +4,9 @@ import os
 
 import yaml
 
-from runs.commands import new, bulk_move, delete, lookup, reproduce, load_table, move
+from runs.commands import new, bulk_move, remove, lookup, reproduce, load_table, move
 from runs.util import load, find_file_backward, split_pattern, Config, NAME, PATTERN, \
-    NEW, DELETE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs
 
 
 def main():
@@ -66,7 +66,7 @@ def main():
                                                                         'overwrite any entry with the same name. ')
     new_parser.add_argument('--description', help='Description of this run. Write whatever you want.')
 
-    delete_parser = subparsers.add_parser(DELETE,
+    delete_parser = subparsers.add_parser(REMOVE,
                                           help="Delete runs from the database (and all associated tensorboard "
                                                "and checkpoint files). Don't worry, the script will ask for "
                                                "confirmation before deleting anything.")
@@ -133,11 +133,11 @@ def main():
             save_path_flag=cfg.save_path_flag,
             extra_flags=cfg.extra_flags)
 
-    elif args.dest == DELETE:
+    elif args.dest == REMOVE:
         runs_dir, run_names = collect_runs(args.runs_dir, args.pattern,
                                            cfg.db_filename, cfg.regex)
         assert args.host is None, 'SSH into remote before calling runs delete.'
-        delete(run_names, cfg.db_filename, runs_dir)
+        remove(run_names, cfg.db_filename, runs_dir)
 
     elif args.dest == MOVE:
         old_runs_dir, old_run_names = collect_runs(args.runs_dir, args.old,

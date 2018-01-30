@@ -38,7 +38,7 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
     db_path = os.path.join(runs_dir, db_filename)
     if name in load(db_path):
         if overwrite:
-            delete_run(name, db_filename, runs_dir)
+            remove_run(name, db_filename, runs_dir)
         else:
             name += now.strftime('%s')
 
@@ -109,19 +109,19 @@ def move(old_runs_dir, old_name, new_runs_dir, new_name, db_filename, _kill_tmux
         kill_tmux(old_name)
 
 
-def delete(run_names, db_filename, runs_dir):
+def remove(run_names, db_filename, runs_dir):
     if run_names:
-        question = 'Delete the following runs?\n' + '\n'.join(run_names) + '\n'
+        question = 'Remove the following runs?\n' + '\n'.join(run_names) + '\n'
         if get_yes_or_no(question):
             for run_name in run_names:
-                delete_run(run_name, db_filename, runs_dir)
-                print('Deleted', run_name)
+                remove_run(run_name, db_filename, runs_dir)
+                print('Removed', run_name)
     else:
         no_match(runs_dir, db_filename)
 
 
-def delete_run(name, db_filename, runs_dir):
-    print('Deleting {}...'.format(name))
+def remove_run(name, db_filename, runs_dir):
+    print('Removing {}...'.format(name))
     with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
         del db[name]
         for run_dir in run_dirs(runs_dir, name):
