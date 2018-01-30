@@ -96,17 +96,22 @@ def move(old_runs_dir, old_name, new_runs_dir, new_name, db_filename, _kill_tmux
     make_dirs(new_runs_dir, new_name)
     old_db_path = os.path.join(old_runs_dir, db_filename)
     new_db_path = os.path.join(new_runs_dir, db_filename)
-    with RunDB(path=old_db_path) as old_db, RunDB(path=new_db_path) as new_db:
-        new_db[new_name] = old_db[old_name]
+
+    with RunDB(path=old_db_path) as old_db:
+        if new_db_path == old_db_path:
+            old_db[new_name] = old_db[old_name]
+        else:
+            with RunDB(path=new_db_path) as new_db:
+                new_db[new_name] = old_db[old_name]
         del old_db[old_name]
         for old_dir, new_dir in zip(run_dirs(old_runs_dir, old_name),
                                     run_dirs(new_runs_dir, new_name)):
             os.rename(old_dir, new_dir)
 
     if _kill_tmux:
-        rename_tmux(old_name, new_name)
-    else:
         kill_tmux(old_name)
+    else:
+        rename_tmux(old_name, new_name)
 
 
 def remove(run_names, db_filename, runs_dir):
