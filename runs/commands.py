@@ -140,11 +140,11 @@ def lookup(db, name, key):
     if key is None:
         return documented_runs_message
     if name not in db.keys():
-        raise KeyError(
+        raise RuntimeError(
             "`{}` is not a documented run.".format(name) + documented_runs_message)
     entry = db[name]
     if key not in entry:
-        raise KeyError(
+        raise RuntimeError(
             "`{}` not a valid key. Valid keys are {}.".format(
                 key, entry.keys()))
     return entry[key]

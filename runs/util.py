@@ -145,7 +145,7 @@ def kill_tmux(name):
 
 
 def rename_tmux(old_name, new_name):
-    cmd('tmux rename-session -t '.split() + [old_name, new_name])
+    cmd('tmux rename-session -t '.split() + [old_name, new_name], fail_ok=True)
 
 
 def filter_by_pattern(db, pattern, regex):

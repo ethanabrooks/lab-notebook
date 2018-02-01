@@ -1,4 +1,4 @@
 * Fix move to rename
-* Use bash command names
+* Make it so that you can mv dir/name dir/
 * Add cp
 * Make everything tensorflow agnostic

@@ -6,7 +6,7 @@ import yaml
 
 from runs.commands import new, bulk_move, remove, lookup, reproduce, load_table, move
 from runs.util import load, find_file_backward, split_pattern, Config, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs, no_match
 
 
 def main():
@@ -143,7 +143,9 @@ def main():
         old_runs_dir, old_run_names = collect_runs(args.runs_dir, args.old,
                                                    cfg.db_filename, cfg.regex)
         new_runs_dir, new_pattern = split_pattern(args.runs_dir, args.new)
-        if len(old_run_names) > 1:
+        if len(old_run_names) == 0:
+            no_match(old_runs_dir, cfg.db_filename)
+        elif len(old_run_names) > 1:
             bulk_move(old_run_names, old_runs_dir, new_runs_dir,
                       cfg.db_filename, args.kill_tmux)
         else:
