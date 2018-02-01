@@ -142,14 +142,16 @@ def main():
     elif args.dest == MOVE:
         old_runs_dir, old_run_names = collect_runs(args.runs_dir, args.old,
                                                    cfg.db_filename, cfg.regex)
-        new_runs_dir, new_pattern = split_pattern(args.runs_dir, args.new)
+        new_runs_dir, new_name = split_pattern(args.runs_dir, args.new)
+        if new_name == '' and len(old_run_names) > 0:
+            new_name = old_run_names[0]
         if len(old_run_names) == 0:
             no_match(old_runs_dir, cfg.db_filename)
         elif len(old_run_names) > 1:
             bulk_move(old_run_names, old_runs_dir, new_runs_dir,
                       cfg.db_filename, args.kill_tmux)
         else:
-            move(old_runs_dir, old_run_names[0], new_runs_dir, new_pattern,
+            move(old_runs_dir, old_run_names[0], new_runs_dir, new_name,
                  cfg.db_filename, args.kill_tmux)
 
     elif args.dest == LIST:
