@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#Add '.' for main runs dii!/usr/bin/env python3
 import argparse
 import os
 
@@ -17,7 +17,6 @@ def main():
         cfg = Config(root=os.path.dirname(runsrc_file))
         # load values from config
         with open(runsrc_file) as f:
-            print('Config file loaded.')
             for k, v in yaml.load(f).items():
 
                 # Don't treat None like a string
