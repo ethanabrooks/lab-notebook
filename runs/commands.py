@@ -2,6 +2,7 @@ import os
 import shutil
 from datetime import datetime
 
+from pathlib import Path
 from tabulate import tabulate
 
 from runs.util import highlight, load, RunDB, get_yes_or_no, run_dirs, run_paths, make_dirs, cmd, run_tmux, kill_tmux, \
@@ -35,7 +36,7 @@ def new(name, command, description, virtualenv_path, overwrite, runs_dir, db_fil
     now = datetime.now()
 
     # deal with collisions
-    db_path = os.path.join(runs_dir, db_filename)
+    db_path = Path(runs_dir, db_filename)
     if name in load(db_path):
         if overwrite:
             remove_run(name, db_filename, runs_dir)
@@ -89,13 +90,13 @@ def bulk_move(run_names, old_runs_dir, new_runs_dir, db_filename, _kill_tmux):
                      db_filename, _kill_tmux)
                 print('Moved', run_name, 'from', old_runs_dir, 'to', new_runs_dir)
     else:
-        no_match(old_runs_dir, db_filename)
+        no_match(load(Path(old_runs_dir, db_filename)))
 
 
 def move(old_runs_dir, old_name, new_runs_dir, new_name, db_filename, _kill_tmux):
     make_dirs(new_runs_dir, new_name)
-    old_db_path = os.path.join(old_runs_dir, db_filename)
-    new_db_path = os.path.join(new_runs_dir, db_filename)
+    old_db_path = Path(old_runs_dir, db_filename)
+    new_db_path = Path(new_runs_dir, db_filename)
 
     with RunDB(path=old_db_path) as old_db:
         if new_db_path == old_db_path:
@@ -122,12 +123,12 @@ def remove(run_names, db_filename, runs_dir):
                 remove_run(run_name, db_filename, runs_dir)
                 print('Removed', run_name)
     else:
-        no_match(runs_dir, db_filename)
+        no_match(load(Path(runs_dir, db_filename)))
 
 
 def remove_run(name, db_filename, runs_dir):
     print('Removing {}...'.format(name))
-    with RunDB(path=(os.path.join(runs_dir, db_filename))) as db:
+    with RunDB(path=(Path(runs_dir, db_filename))) as db:
         del db[name]
         for run_dir in run_dirs(runs_dir, name):
             shutil.rmtree(run_dir)
@@ -136,18 +137,14 @@ def remove_run(name, db_filename, runs_dir):
 
 
 def lookup(db, name, key):
-    documented_runs_message = "Documented runs are {}.".format(name, db.keys())
-    if key is None:
-        return documented_runs_message
     if name not in db.keys():
-        raise RuntimeError(
-            "`{}` is not a documented run.".format(name) + documented_runs_message)
+        no_match(db)
     entry = db[name]
     if key not in entry:
         raise RuntimeError(
             "`{}` not a valid key. Valid keys are {}.".format(
                 key, entry.keys()))
-    return entry[key]
+    return entry[key].strip()
 
 
 def get_table(db, column_width, hidden_columns):
@@ -170,13 +167,13 @@ def get_table(db, column_width, hidden_columns):
 
 def load_table(runs_dir, db_filename, run_names, host,
                column_width, username, hidden_columns):
-    db = load(os.path.join(runs_dir, db_filename), host, username)
+    db = load(Path(runs_dir, db_filename), host, username)
     filtered = {k: v for k, v in db.items() if k in run_names}
     return get_table(filtered, column_width, hidden_columns)
 
 
 def reproduce(runs_dir, db_filename, name):
-    db = load(os.path.join(runs_dir, db_filename))
+    db = load(Path(runs_dir, db_filename))
     commit = lookup(db, name, key=COMMIT)
     command = lookup(db, name, key=INPUT_COMMAND)
     description = lookup(db, name, key=DESCRIPTION)
