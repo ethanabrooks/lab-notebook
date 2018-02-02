@@ -1,13 +1,13 @@
 # Add '.' for main runs dii!/usr/bin/env python3
 import argparse
 import os
+from pathlib import Path
 
 import yaml
-from pathlib import Path
 
 from runs.commands import new, bulk_move, remove, lookup, reproduce, load_table, move
 from runs.util import load, find_file_backward, split_pattern, Config, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs, no_match, highlight, DIFF, COMMIT, cmd, error
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs, no_match, highlight
 
 
 def main():

@@ -6,10 +6,10 @@ import sys
 from contextlib import contextmanager
 from datetime import datetime
 from getpass import getpass
+from pathlib import Path
 
 import yaml
 from paramiko import SSHClient, AutoAddPolicy, SSHException
-from pathlib import Path
 from termcolor import colored
 
 if sys.version_info.major == 2:
