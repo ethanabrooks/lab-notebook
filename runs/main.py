@@ -95,9 +95,9 @@ def main():
                                    'be truncated and appended with "...".')
 
     lookup_parser = subparsers.add_parser(LOOKUP, help='Lookup specific value associated with database entry')
-    lookup_parser.add_argument(NAME, help='Name of run that value is associated with.')
     lookup_parser.add_argument('key', help='Key that value is associated with. To view all available keys, '
                                            'use `--key=None`.')
+    lookup_parser.add_argument(NAME, help='Name of run that value is associated with.')
 
     reproduce_parser = subparsers.add_parser(
         REPRODUCE, help='Print commands to reproduce a run.')
