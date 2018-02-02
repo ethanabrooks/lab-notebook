@@ -1,4 +1,3 @@
-* Fix move to rename
-* Make it so that you can mv dir/name dir/
 * Add cp
+* Add '.' for main runs dir
 * Make everything tensorflow agnostic
