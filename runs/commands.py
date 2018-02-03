@@ -1,4 +1,3 @@
-import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -130,7 +129,8 @@ def remove_run(name, db_filename, runs_dir):
     with RunDB(path=(Path(runs_dir, db_filename))) as db:
         del db[name]
         for run_dir in run_dirs(runs_dir, name):
-            shutil.rmtree(run_dir)
+            assert isinstance(run_dir, Path)
+            run_dir.rmdir()
 
     kill_tmux(name)
 
