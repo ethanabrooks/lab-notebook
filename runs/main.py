@@ -1,6 +1,5 @@
 # Add '.' for main runs dii!/usr/bin/env python3
 import argparse
-import os
 from pathlib import Path
 
 import yaml
@@ -12,12 +11,13 @@ from runs.util import load, find_file_backward, split_pattern, Config, NAME, PAT
 
 def main():
     runsrc_file = find_file_backward('.runsrc')
+    assert isinstance(runsrc_file, Path)
     if runsrc_file is None:
-        cfg = Config(root='.')
+        cfg = Config(root=Path.cwd())
     else:
-        cfg = Config(root=os.path.dirname(runsrc_file))
+        cfg = Config(root=runsrc_file.parent)
         # load values from config
-        with open(runsrc_file) as f:
+        with runsrc_file.open() as f:
             for k, v in yaml.load(f).items():
 
                 # Don't treat None like a string
@@ -175,6 +175,8 @@ def main():
     elif args.dest == LOOKUP:
         runs_dir, run_names = collect_runs(cfg.runs_dir, args.pattern,
                                            cfg.db_filename, cfg.regex)
+        if not run_names:
+            no_match(load(Path(runs_dir, cfg.db_filename)))
         db = load(Path(runs_dir, cfg.db_filename))
         for name in run_names:
             if not args.quiet:

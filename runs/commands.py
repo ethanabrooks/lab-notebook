@@ -1,4 +1,3 @@
-import os
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -107,7 +106,7 @@ def move(old_runs_dir, old_name, new_runs_dir, new_name, db_filename, _kill_tmux
         del old_db[old_name]
         for old_dir, new_dir in zip(run_dirs(old_runs_dir, old_name),
                                     run_dirs(new_runs_dir, new_name)):
-            os.rename(old_dir, new_dir)
+            old_dir.rename(new_dir)
 
     if _kill_tmux:
         kill_tmux(old_name)

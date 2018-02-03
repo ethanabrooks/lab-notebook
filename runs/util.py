@@ -1,5 +1,4 @@
 import fnmatch
-import os
 import re
 import subprocess
 import sys
@@ -81,11 +80,11 @@ def read_remote_file(remote_filename, host, username):
 
 
 def find_file_backward(filename):
-    filepath = filename
-    while os.path.dirname(os.path.abspath(filepath)) is not '/':
-        if os.path.exists(filepath):
+    filepath = Path(filename).resolve()
+    while filepath.parent is not filepath.root:
+        if filepath.exists():
             return filepath
-        filepath = Path(os.path.pardir, filepath)
+        filepath = Path(filepath.parents[1], filepath)
 
 
 def get_yes_or_no(question):
@@ -120,7 +119,7 @@ def run_paths(runs_dir, run_name):
 
 def make_dirs(runs_dir, run_name):
     for run_dir in run_dirs(runs_dir, run_name):
-        os.makedirs(run_dir, exist_ok=True)
+        Path(run_dir).mkdir(exist_ok=True)
 
 
 def cmd(args, fail_ok=False):
@@ -138,7 +137,7 @@ def cmd(args, fail_ok=False):
 def run_tmux(name, window_name, main_cmd):
     kill_tmux(name)
     subprocess.check_call('tmux new -d -s'.split() + [name, '-n', window_name])
-    cd_cmd = 'cd ' + os.path.realpath(os.path.curdir)
+    cd_cmd = 'cd ' + str(Path.cwd())
     for command in [cd_cmd, main_cmd]:
         cmd('tmux send-keys -t'.split() + [name, command, 'Enter'])
 
@@ -177,7 +176,7 @@ def collect_runs(runs_dir, pattern, db_filename, regex):
 
 
 def no_match(db):
-    print('No runs match pattern. Recorded runs:')
+    print(highlight('No runs match pattern. Recorded runs:'))
     for name in db:
         print(name)
 
