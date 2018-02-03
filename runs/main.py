@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 import argparse
-import os
+from pathlib import Path
 
 import yaml
 
 from runs.commands import new, bulk_move, remove, lookup, reproduce, load_table, move
 from runs.util import load, find_file_backward, split_pattern, Config, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs, no_match, CHDESCRIPTION
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs, no_match, highlight, CHDESCRIPTION
 
 
 def main():
     runsrc_file = find_file_backward('.runsrc')
+    assert isinstance(runsrc_file, Path)
     if runsrc_file is None:
-        cfg = Config(root='.')
+        cfg = Config(root=Path.cwd())
     else:
-        cfg = Config(root=os.path.dirname(runsrc_file))
+        cfg = Config(root=runsrc_file.parent)
         # load values from config
-        with open(runsrc_file) as f:
-            print('Config file loaded.')
+        with runsrc_file.open() as f:
             for k, v in yaml.load(f).items():
 
                 # Don't treat None like a string
@@ -34,10 +34,10 @@ def main():
                         help='Username associated with remote host. Used for accessing '
                              'database on remote server.')
     parser.add_argument('--runs_dir', default=cfg.runs_dir, help='Custom path to directory containing runs '
-                                                                    'database (default, `runs.yml`). Should not '
-                                                                    'need to be specified for local runs but '
-                                                                    'probably required for accessing databses '
-                                                                    'remotely.')
+                                                                 'database (default, `runs.yml`). Should not '
+                                                                 'need to be specified for local runs but '
+                                                                 'probably required for accessing databses '
+                                                                 'remotely.')
     parser.add_argument('--db_filename', default=cfg.db_filename,
                         help='Name of YAML file storing run database information.')
 
@@ -95,9 +95,10 @@ def main():
                                    'be truncated and appended with "...".')
 
     lookup_parser = subparsers.add_parser(LOOKUP, help='Lookup specific value associated with database entry')
-    lookup_parser.add_argument(NAME, help='Name of run that value is associated with.')
     lookup_parser.add_argument('key', help='Key that value is associated with. To view all available keys, '
                                            'use `--key=None`.')
+    lookup_parser.add_argument(PATTERN, help='Pattern of runs for which to retrieve key.')
+    lookup_parser.add_argument('--quiet', '-q', action='store_true', help='Suppress any explanatory output.')
 
     chdesc_parser = subparsers.add_parser(CHDESCRIPTION, help='Edit description of run.')
     chdesc_parser.add_argument(NAME, help='Name of run whose description you want to edit.')
@@ -149,7 +150,7 @@ def main():
         if new_name == '' and len(old_run_names) > 0:
             new_name = old_run_names[0]
         if len(old_run_names) == 0:
-            no_match(old_runs_dir, cfg.db_filename)
+            no_match(load(Path(old_runs_dir, cfg.db_filename)))
         elif len(old_run_names) > 1:
             bulk_move(old_run_names, old_runs_dir, new_runs_dir,
                       cfg.db_filename, args.kill_tmux)
@@ -175,9 +176,15 @@ def main():
                          hidden_columns=hidden_columns))
 
     elif args.dest == LOOKUP:
-        runs_dir, pattern = split_pattern(args.runs_dir, args.name)
-        db = load(os.path.join(runs_dir, cfg.db_filename))
-        print(lookup(db, args.name, args.key))
+        runs_dir, run_names = collect_runs(cfg.runs_dir, args.pattern,
+                                           cfg.db_filename, cfg.regex)
+        if not run_names:
+            no_match(load(Path(runs_dir, cfg.db_filename)))
+        db = load(Path(runs_dir, cfg.db_filename))
+        for name in run_names:
+            if not args.quiet:
+                print(highlight('{} for {}:'.format(args.key, name)))
+            print(lookup(db, name, args.key))
 
     elif args.dest == CHDESCRIPTION:
         runs_dir, pattern = split_pattern(args.runs_dir, args.name)

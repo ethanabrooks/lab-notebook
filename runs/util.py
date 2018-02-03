@@ -1,11 +1,11 @@
 import fnmatch
-import os
 import re
 import subprocess
 import sys
 from contextlib import contextmanager
 from datetime import datetime
 from getpass import getpass
+from pathlib import Path
 
 import yaml
 from paramiko import SSHClient, AutoAddPolicy, SSHException
@@ -23,19 +23,21 @@ def highlight(*args):
 
 
 def load(path, host=None, username=None):
+    assert isinstance(path, Path)
     try:
         if host:
             with read_remote_file(path, host, username) as f:
                 return yaml.load(f)
         else:
-            with open(path, 'r') as f:
+            with path.open('r') as f:
                 return yaml.load(f)
     except FileNotFoundError:
         return dict()
 
 
 def dump(db, path):
-    with open(path, 'w') as f:
+    assert isinstance(path, Path)
+    with path.open('w') as f:
         yaml.dump(db, f, default_flow_style=False)
 
 
@@ -78,11 +80,11 @@ def read_remote_file(remote_filename, host, username):
 
 
 def find_file_backward(filename):
-    filepath = filename
-    while os.path.dirname(os.path.abspath(filepath)) is not '/':
-        if os.path.exists(filepath):
+    filepath = Path(filename).resolve()
+    while filepath.parent is not filepath.root:
+        if filepath.exists():
             return filepath
-        filepath = os.path.join(os.path.pardir, filepath)
+        filepath = Path(filepath.parents[1], filepath)
 
 
 def get_yes_or_no(question):
@@ -100,8 +102,8 @@ def get_yes_or_no(question):
 
 
 def run_dirs(runs_dir, run_name):
-    return [os.path.join(runs_dir, 'tensorboard', run_name),
-            os.path.join(runs_dir, 'checkpoints', run_name)]
+    return [Path(runs_dir, 'tensorboard', run_name),
+            Path(runs_dir, 'checkpoints', run_name)]
 
 
 def run_paths(runs_dir, run_name):
@@ -112,12 +114,12 @@ def run_paths(runs_dir, run_name):
     dirs = run_dirs(runs_dir, run_name)
     files = '', 'model.ckpt'
     assert len(dirs) == len(files)
-    return [os.path.join(run_dir, run_file) for run_dir, run_file in zip(dirs, files)]
+    return [Path(run_dir, run_file) for run_dir, run_file in zip(dirs, files)]
 
 
 def make_dirs(runs_dir, run_name):
     for run_dir in run_dirs(runs_dir, run_name):
-        os.makedirs(run_dir, exist_ok=True)
+        Path(run_dir).mkdir(exist_ok=True)
 
 
 def cmd(args, fail_ok=False):
@@ -129,13 +131,13 @@ def cmd(args, fail_ok=False):
     if stderr and not fail_ok:
         raise OSError("Command `{}` failed: {}".format(args, stderr))
     else:
-        return stdout
+        return stdout.strip()
 
 
 def run_tmux(name, window_name, main_cmd):
     kill_tmux(name)
     subprocess.check_call('tmux new -d -s'.split() + [name, '-n', window_name])
-    cd_cmd = 'cd ' + os.path.realpath(os.path.curdir)
+    cd_cmd = 'cd ' + str(Path.cwd())
     for command in [cd_cmd, main_cmd]:
         cmd('tmux send-keys -t'.split() + [name, command, 'Enter'])
 
@@ -160,44 +162,49 @@ def filter_by_pattern(db, pattern, regex):
 
 def split_pattern(runs_dir, pattern):
     *subdir, pattern = pattern.split('/')
-    return os.path.join(runs_dir, *subdir), pattern
+    return Path(runs_dir, *subdir), pattern
 
 
 def collect_runs(runs_dir, pattern, db_filename, regex):
     if pattern is None:
-        return runs_dir, load(os.path.join(runs_dir, db_filename))
+        return runs_dir, load(Path(runs_dir, db_filename))
     else:
         runs_dir, pattern = split_pattern(runs_dir, pattern)
-        db = load(os.path.join(runs_dir, db_filename))
+        db = load(Path(runs_dir, db_filename))
         filtered = filter_by_pattern(db, pattern, regex)
         return runs_dir, list(filtered.keys())
 
 
-def no_match(runs_dir, db_filename):
-    print('No runs match pattern. Recorded runs:')
-    for name in load(os.path.join(runs_dir, db_filename)):
+def no_match(db):
+    print(highlight('No runs match pattern. Recorded runs:'))
+    for name in db:
         print(name)
 
 
 def string_from_vim(prompt, string=''):
-    path = os.path.join('/', 'tmp', datetime.now().strftime('%s') + '.txt')
+    path = Path('/', 'tmp', datetime.now().strftime('%s') + '.txt')
     delimiter = '\n' + '-' * len(prompt.split('\n')[-1]) + '\n'
-    with open(path, 'w') as f:
+    with path.open('w') as f:
         f.write(prompt + delimiter + string)
     start_line = 3 + prompt.count('\n')
     subprocess.call('vim +{} {}'.format(start_line, path), shell=True)
-    with open(path) as f:
+    with path.open('w') as f:
         file_contents = f.read()[:-1]
         if delimiter not in file_contents:
             raise RuntimeError("Don't delete the delimiter.")
         prompt, string = file_contents.split(delimiter)
-    os.remove(path)
+    path.unlink()
     return string
+
+
+def error(string):
+    print('Error:', string)
+    exit()
 
 
 class Config:
     def __init__(self, root):
-        self.runs_dir = os.path.join(root, '.runs/')
+        self.runs_dir = Path(root, '.runs/')
         self.db_filename = 'runs.yml'
         self.tb_dir_flag = '--tb-dir'
         self.save_path_flag = '--save-path'
@@ -218,6 +225,7 @@ NEW = 'new'
 REMOVE = 'rm'
 MOVE = 'mv'
 LOOKUP = 'lookup'
+DIFF = 'diff'
 LIST = 'list'
 TABLE = 'table'
 REPRODUCE = 'reproduce'
