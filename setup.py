@@ -28,7 +28,7 @@ setup(name='tf-run-manager',
               'runs = runs.main:main',
           ],
       },
-      scripts=['git'],
+      scripts=['git-runs'],
       install_requires=[
           'paramiko==2.3.1',
           'termcolor==1.1.0',
