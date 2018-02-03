@@ -120,7 +120,7 @@ def run_paths(runs_dir, run_name):
 
 def make_dirs(runs_dir, run_name):
     for run_dir in run_dirs(runs_dir, run_name):
-        Path(run_dir).mkdir(exist_ok=True)
+        Path(run_dir).mkdir(exist_ok=True, parents=True)
 
 
 def cmd(args, fail_ok=False):
