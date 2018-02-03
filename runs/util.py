@@ -81,10 +81,14 @@ def read_remote_file(remote_filename, host, username):
 
 def find_file_backward(filename):
     filepath = Path(filename).resolve()
-    while filepath.parent is not filepath.root:
+    while True:
         if filepath.exists():
             return filepath
-        filepath = Path(filepath.parents[1], filepath)
+        try:
+            parent = filepath.parents[1]
+        except IndexError:
+            return None
+        filepath = Path(parent, filename)
 
 
 def get_yes_or_no(question):
@@ -188,7 +192,7 @@ def string_from_vim(prompt, string=''):
         f.write(prompt + delimiter + string)
     start_line = 3 + prompt.count('\n')
     subprocess.call('vim +{} {}'.format(start_line, path), shell=True)
-    with path.open('w') as f:
+    with path.open() as f:
         file_contents = f.read()[:-1]
         if delimiter not in file_contents:
             raise RuntimeError("Don't delete the delimiter.")

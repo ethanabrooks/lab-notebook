@@ -6,15 +6,16 @@ import yaml
 
 from runs.commands import new, bulk_move, remove, lookup, reproduce, load_table, move
 from runs.util import load, find_file_backward, split_pattern, Config, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs, no_match, highlight, CHDESCRIPTION
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs, no_match, highlight, CHDESCRIPTION, RunDB, \
+    DESCRIPTION, string_from_vim
 
 
 def main():
     runsrc_file = find_file_backward('.runsrc')
-    assert isinstance(runsrc_file, Path)
     if runsrc_file is None:
         cfg = Config(root=Path.cwd())
     else:
+        assert isinstance(runsrc_file, Path)
         cfg = Config(root=runsrc_file.parent)
         # load values from config
         with runsrc_file.open() as f:
@@ -187,8 +188,12 @@ def main():
             print(lookup(db, name, args.key))
 
     elif args.dest == CHDESCRIPTION:
-        runs_dir, pattern = split_pattern(args.runs_dir, args.name)
-
+        runs_dir, name = split_pattern(args.runs_dir, args.name)
+        with RunDB(Path(runs_dir, cfg.db_filename)) as db:
+            db[name][DESCRIPTION] = string_from_vim(
+                prompt='Edit the description for {}'.format(name),
+                string=db[name][DESCRIPTION]
+            )
 
     elif args.dest == REPRODUCE:
         reproduce(cfg.runs_dir, cfg.db_filename, args.name)
