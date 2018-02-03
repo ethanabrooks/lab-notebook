@@ -6,7 +6,7 @@ import yaml
 
 from runs.commands import new, bulk_move, remove, lookup, reproduce, load_table, move
 from runs.util import load, find_file_backward, split_pattern, Config, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs, no_match
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, collect_runs, no_match, CHDESCRIPTION
 
 
 def main():
@@ -99,6 +99,9 @@ def main():
     lookup_parser.add_argument('key', help='Key that value is associated with. To view all available keys, '
                                            'use `--key=None`.')
 
+    chdesc_parser = subparsers.add_parser(CHDESCRIPTION, help='Edit description of run.')
+    chdesc_parser.add_argument(NAME, help='Name of run whose description you want to edit.')
+
     reproduce_parser = subparsers.add_parser(
         REPRODUCE, help='Print commands to reproduce a run.')
     reproduce_parser.add_argument(NAME)
@@ -175,6 +178,10 @@ def main():
         runs_dir, pattern = split_pattern(args.runs_dir, args.name)
         db = load(os.path.join(runs_dir, cfg.db_filename))
         print(lookup(db, args.name, args.key))
+
+    elif args.dest == CHDESCRIPTION:
+        runs_dir, pattern = split_pattern(args.runs_dir, args.name)
+
 
     elif args.dest == REPRODUCE:
         reproduce(cfg.runs_dir, cfg.db_filename, args.name)
