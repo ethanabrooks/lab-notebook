@@ -1,0 +1,15 @@
+#!/bin/bash
+
+positional=()
+  while [[ $# -gt 0 ]]; do
+    char1=$(cut -c 1 <<< "$1")
+    arg=$1
+    if [ "$char1" == '#' ]; then
+      run=$(cut -c 2- <<< "$1")
+      arg=$(runs lookup commit --quiet "$run")
+    fi
+    positional+=("$arg") # save it in an array for later
+    shift # past argument ;;
+  done
+set -- "${positional[@]}" # restore positional parameters
+git "$@"
