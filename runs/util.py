@@ -80,15 +80,12 @@ def read_remote_file(remote_filename, host, username):
 
 
 def find_file_backward(filename):
-    filepath = Path(filename).resolve()
-    while True:
+    dirpath = Path('.').resolve()
+    while not dirpath.match(dirpath.root):
+        filepath = Path(dirpath, filename)
         if filepath.exists():
             return filepath
-        try:
-            parent = filepath.parents[1]
-        except IndexError:
-            return None
-        filepath = Path(parent, filename)
+        dirpath = dirpath.parent
 
 
 def get_yes_or_no(question):
