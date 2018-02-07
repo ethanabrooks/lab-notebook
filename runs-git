@@ -12,4 +12,4 @@ positional=()
     shift # past argument ;;
   done
 set -- "${positional[@]}" # restore positional parameters
-git "$@"
+/usr/bin/git "$@"
