@@ -179,5 +179,5 @@ def reproduce(runs_dir, db_filename, name):
     description = lookup(db, name, key=DESCRIPTION)
     print('To reproduce:\n',
           highlight('git checkout {}\n'.format(commit)),
-          highlight("runs new {} '{}' --description='{}'".format(
+          highlight("runs new {} '{}' --no-overwrite --description='{}'".format(
               name, command, description)))
