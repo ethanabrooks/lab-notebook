@@ -1,14 +1,12 @@
-import fnmatch
-import re
+import os
+import pprint
 import subprocess
 import sys
-from contextlib import contextmanager
 from datetime import datetime
-from getpass import getpass
 from pathlib import Path
 
 import yaml
-from paramiko import SSHClient, AutoAddPolicy, SSHException
+from anytree import RenderTree
 from termcolor import colored
 
 if sys.version_info.major == 2:
@@ -22,64 +20,7 @@ def highlight(*args):
     return colored(string, color='blue', attrs=['bold'])
 
 
-def load(path, host=None, username=None):
-    assert isinstance(path, Path)
-    try:
-        if host:
-            with read_remote_file(path, host, username) as f:
-                return yaml.load(f)
-        else:
-            with path.open('r') as f:
-                return yaml.load(f)
-    except FileNotFoundError:
-        return dict()
-
-
-def dump(db, path):
-    assert isinstance(path, Path)
-    with path.open('w') as f:
-        yaml.dump(db, f, default_flow_style=False)
-
-
-class RunDB:
-    def __init__(self, path):
-        self._path = path
-        self._db = None
-
-    def __enter__(self):
-        self._db = load(self._path)
-        return self._db
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        dump(self._db, self._path)
-        self._db = None
-
-
-@contextmanager
-def read_remote_file(remote_filename, host, username):
-    client = SSHClient()
-    client.set_missing_host_key_policy(AutoAddPolicy())
-    try:
-        client.connect(host, username=username, look_for_keys=True)
-    except SSHException:
-        client.connect(host,
-                       username=username,
-                       password=getpass("Enter password:"),
-                       look_for_keys=False)
-    if not client:
-        raise RuntimeError("Connection not opened.")
-
-    sftp = client.open_sftp()
-    try:
-        sftp.stat(remote_filename)
-    except Exception:
-        raise RuntimeError('There was a problem accessing', remote_filename)
-
-    with sftp.open(remote_filename) as f:
-        yield f
-
-
-def find_file_backward(filename):
+def search_ancestors(filename):
     dirpath = Path('.').resolve()
     while not dirpath.match(dirpath.root):
         filepath = Path(dirpath, filename)
@@ -88,7 +29,7 @@ def find_file_backward(filename):
         dirpath = dirpath.parent
 
 
-def get_yes_or_no(question):
+def get_permission(question):
     if not question.endswith(' '):
         question += ' '
     response = input(question)
@@ -100,27 +41,6 @@ def get_yes_or_no(question):
             return False
         else:
             response = input('Please enter y[es]|n[o]')
-
-
-def run_dirs(runs_dir, run_name):
-    return [Path(runs_dir, 'tensorboard', run_name),
-            Path(runs_dir, 'checkpoints', run_name)]
-
-
-def run_paths(runs_dir, run_name):
-    """
-    Note that the `dirname` of each of these gets deleted by `delete_run`.
-    Make sure that dir contains only files from that run.
-    """
-    dirs = run_dirs(runs_dir, run_name)
-    files = '', 'model.ckpt'
-    assert len(dirs) == len(files)
-    return [Path(run_dir, run_file) for run_dir, run_file in zip(dirs, files)]
-
-
-def make_dirs(runs_dir, run_name):
-    for run_dir in run_dirs(runs_dir, run_name):
-        Path(run_dir).mkdir(exist_ok=True, parents=True)
 
 
 def cmd(args, fail_ok=False):
@@ -151,38 +71,17 @@ def rename_tmux(old_name, new_name):
     cmd('tmux rename-session -t '.split() + [old_name, new_name], fail_ok=True)
 
 
-def filter_by_pattern(db, pattern, regex):
-    def match(string):
-        if regex:
-            return re.match('^' + pattern + '$', string) is not None
-        else:
-            return fnmatch.fnmatch(string, pattern)
-
-    return {k: v for k, v in db.items() if match(k)}
+def dirty_repo():
+    return cmd('git status --porcelain'.split()) is not ''
 
 
-def split_pattern(runs_dir, pattern):
-    *subdir, pattern = pattern.split('/')
-    return Path(runs_dir, *subdir), pattern
+def last_commit():
+    return cmd('git rev-parse HEAD'.split())
 
 
-def collect_runs(runs_dir, pattern, db_filename, regex):
-    if pattern is None:
-        return runs_dir, load(Path(runs_dir, db_filename))
-    else:
-        runs_dir, pattern = split_pattern(runs_dir, pattern)
-        db = load(Path(runs_dir, db_filename))
-        filtered = filter_by_pattern(db, pattern, regex)
-        return runs_dir, list(filtered.keys())
-
-
-def no_match(db):
-    print(highlight('No runs match pattern. Recorded runs:'))
-    for name in db:
-        print(name)
-
-
-def string_from_vim(prompt, string=''):
+def string_from_vim(prompt, string=None):
+    if string is None:
+        string = ' '
     path = Path('/', 'tmp', datetime.now().strftime('%s') + '.txt')
     delimiter = '\n' + '-' * len(prompt.split('\n')[-1]) + '\n'
     with path.open('w') as f:
@@ -198,42 +97,53 @@ def string_from_vim(prompt, string=''):
     return string
 
 
-def error(string):
-    print('Error:', string)
-    exit()
-
-
-class Config:
-    def __init__(self, root):
-        self.runs_dir = Path(root, '.runs/')
-        self.db_filename = 'runs.yml'
-        self.tb_dir_flag = '--tb-dir'
-        self.save_path_flag = '--save-path'
-        self.save_path_flag = '--save-path'
-        self.regex = False
-        self.column_width = 30
-        self.virtualenv_path = None
-        self.extra_flags = []
-
-    def setattr(self, k, v):
-        setattr(self, k.replace('-', '_'), v)
+def print_tree(tree, print_attrs=False):
+    for pre, fill, node in RenderTree(tree):
+        public_attrs = {k: v for k, v in vars(node).items()
+                        if not k.startswith('_') and not k == 'name'}
+        if public_attrs:
+            pnode = yaml.dump(public_attrs, default_flow_style=False).split('\n')
+        else:
+            pnode = ''
+        print("{}{}".format(pre, node.name))
+        if print_attrs:
+            for line in pnode:
+                print("{}{}".format(fill, line))
 
 
 NAME = 'name'
 PATTERN = 'pattern'
-DEFAULT_RUNS_DIR = '.runs'
 NEW = 'new'
 REMOVE = 'rm'
 MOVE = 'mv'
 LOOKUP = 'lookup'
-DIFF = 'diff'
-LIST = 'list'
+LIST = 'ls'
 TABLE = 'table'
 REPRODUCE = 'reproduce'
-BUFFSIZE = 1024
-INPUT_COMMAND = 'input-command'
 COMMAND = 'command'
 COMMIT = 'commit'
-DATETIME = 'datetime'
 DESCRIPTION = 'description'
 CHDESCRIPTION = 'chdesc'
+
+# @contextmanager
+# def read_remote_file(remote_filename, host, username):
+#     client = SSHClient()
+#     client.set_missing_host_key_policy(AutoAddPolicy())
+#     try:
+#         client.connect(host, username=username, look_for_keys=True)
+#     except SSHException:
+#         client.connect(host,
+#                        username=username,
+#                        password=getpass("Enter password:"),
+#                        look_for_keys=False)
+#     if not client:
+#         raise RuntimeError("Connection not opened.")
+#
+#     sftp = client.open_sftp()
+#     try:
+#         sftp.stat(remote_filename)
+#     except Exception:
+#         raise RuntimeError('There was a problem accessing', remote_filename)
+#
+#     with sftp.open(remote_filename) as f:
+#         yield f

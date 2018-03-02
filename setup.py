@@ -30,7 +30,7 @@ setup(name='tf-run-manager',
       },
       scripts=['runs-git'],
       install_requires=[
-          'paramiko==2.3.1',
+          'anytree==2.4.3',
           'termcolor==1.1.0',
           'PyYAML==3.12',
           'tabulate==0.8.1',
