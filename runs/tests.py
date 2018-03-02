@@ -31,7 +31,7 @@ class TestNew(TestRuns):
     def setUp(self):
         super().setUp()
         self.name = 'test-run'
-        self.command = 'python -c "print(\\"hello\\")"'
+        self.command = 'python -c "while True: pass"'
         self.description = 'test new command'
         main.main(['new', self.name, self.command,
                    "--description="+self.description, '-q'])
