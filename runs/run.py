@@ -72,7 +72,7 @@ class Run(DBPath):
             print('tmux attach -t', self.head)
 
     def build_command(self, command):
-        for flag, value in self.flags():
+        for flag, value in self.cfg.flags:
             value = value.replace(
                 '<run-name>', self.path).replace(
                 '<runs-dir>', self.cfg.root)

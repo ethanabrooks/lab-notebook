@@ -1,5 +1,4 @@
 import shutil
-from configparser import ConfigParser
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -8,42 +7,9 @@ from anytree import NodeMixin, Resolver, ChildResolverError
 from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
 
-from runs.util import search_ancestors
-
 
 class DBPath:
     cfg = None
-
-    @staticmethod
-    def cfg():
-        if DBPath.args is None:
-            raise RuntimeError('Cannot access arguments before calling `parser.parse_args()`')
-        else:
-            return DBPath.args
-
-    def flags(self):
-        return [(k, v) for k, v in vars(self.cfg).items()
-                if k.endswith('-flag')]
-
-    def dir_names(self):
-        return self.cfg.dir_names
-
-    def read(self):
-        node = None
-        db_path = Path(self.cfg.db_path)
-        if db_path.exists():
-            with db_path.open() as f:
-                data = yaml.load(f)
-            node = DictImporter().import_(data)
-        return node
-
-    def write(self, db):
-        if db is None:
-            data = dict()
-        else:
-            data = DictExporter().export(db)
-        with Path(self.cfg.db_path).open('w') as f:
-            yaml.dump(data, f, default_flow_style=False)
 
     def __init__(self, parts, cfg=None):
         if cfg is None:
@@ -64,6 +30,24 @@ class DBPath:
                 self.parts.extend(part.split(self.sep))
         self.path = self.sep.join(self.parts)
 
+    def read(self):
+        node = None
+        db_path = Path(self.cfg.db_path)
+        if db_path.exists():
+            with db_path.open() as f:
+                data = yaml.load(f)
+            node = DictImporter().import_(data)
+        return node
+
+    def write(self, db):
+        if db is None:
+            data = dict()
+        else:
+            data = DictExporter().export(db)
+        with Path(self.cfg.db_path).open('w') as f:
+            yaml.dump(data, f, default_flow_style=False)
+
+
     def node(self, root=None):
         if root is None:
             root = self.read()
@@ -83,7 +67,7 @@ class DBPath:
     @property
     def Paths(self):
         return [Path(self.cfg.root_dir, dir_name, self.path)
-                for dir_name in self.dir_names()]
+                for dir_name in self.cfg.dir_names]
 
     # file I/O
     def mkdirs(self, exist_ok=True):
