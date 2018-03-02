@@ -2,7 +2,6 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from pprint import pprint
 from unittest import TestCase
 
 import yaml
@@ -12,11 +11,11 @@ from runs.run import Run
 
 
 class TestRuns(TestCase):
-    path = Path('/tmp/test-run-manager')
+    path = '/tmp/test-run-manager'
     run_name = 'test-run'
 
     def setUp(self):
-        TestRuns.path.mkdir()
+        Path(TestRuns.path).mkdir()
         os.chdir(TestRuns.path)
         subprocess.run(['git', 'init', '-q'], cwd=TestRuns.path)
         with Path(TestRuns.path, '.gitignore').open('w') as f:
@@ -25,7 +24,7 @@ class TestRuns(TestCase):
         subprocess.run(['git', 'commit', '-qam', 'init'], cwd=TestRuns.path)
 
     def tearDown(self):
-        shutil.rmtree(str(TestRuns.path))
+        shutil.rmtree(TestRuns.path)
 
 
 class TestNew(TestRuns):
