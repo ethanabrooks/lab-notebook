@@ -44,7 +44,8 @@ class TestNew(TestRuns):
     def test_db(self):
         with Path(TestRuns.path, 'runs.yml').open() as f:
             db = yaml.load(f)
-        assert db['_is_run'] is True
+        assert 'commit' in db
+        assert 'datetime' in db
         assert db['description'] == self.description
         assert db['full_command'] == self.command
         assert db['input_command'] == self.command

@@ -6,6 +6,7 @@ import sys
 
 import subprocess
 
+from runs.cfg import Cfg
 from runs.pattern import Pattern
 from runs.run import Run
 from runs.db_path import DBPath
@@ -47,7 +48,7 @@ from runs.util import search_ancestors, NAME, PATTERN, \
 
 
 def main(argv=sys.argv[1:]):
-    config = ConfigParser()
+    config = ConfigParser(allow_no_value=True)
     config_filename = '.runsrc'
     config_path = search_ancestors(config_filename)
     if config_path:
@@ -56,12 +57,19 @@ def main(argv=sys.argv[1:]):
         config['DEFAULT'] = {
             # Custom path to directory containing runs database (default, `runs.yml`). Should not need to be
             # specified for local runs but probably required for accessing databses remotely.
-            'runs_dir': '.runs',
+            'root': '.runs',
 
             # path to YAML file storing run database information.
             'db_path': 'runs.yml',
 
-            'dir_names': '',
+            # directories that runs should create
+            'dir_names': None,
+
+            'virtualenv_path': None,
+
+            'flags': None,
+
+            'hidden_columns': 'input_command'
         }
 
         with open(config_filename, 'w') as f:
@@ -101,7 +109,7 @@ def main(argv=sys.argv[1:]):
                                           help="Delete runs from the database (and all associated tensorboard "
                                                "and checkpoint files). Don't worry, the script will ask for "
                                                "confirmation before deleting anything.")
-    remove_parser.add_argument(PATTERN,
+    remove_parser.add_argument(PATTERN, default='*',
                                help='This script will only delete entries in the database whose names are a '
                                     'complete (not partial) match of this regex pattern.')
     set_defaults(remove_parser, REMOVE)
@@ -122,7 +130,7 @@ def main(argv=sys.argv[1:]):
 
     table_parser = subparsers.add_parser(TABLE, help='Display contents of run database as a table.')
     table_parser.add_argument(PATTERN, nargs='?', default=None, help=pattern_help)
-    table_parser.add_argument('--hidden-columns', default='input-command',
+    table_parser.add_argument('--hidden-columns',
                               help='Comma-separated list of columns to not display in table.')
     table_parser.add_argument('--column-width', type=int, default=100,
                               help='Maximum width of table columns. Longer values will '
@@ -153,8 +161,8 @@ def main(argv=sys.argv[1:]):
                                        'the database.  Otherwise this entry will '
                                        'overwrite any entry with the same name. ')
     set_defaults(reproduce_parser, REPRODUCE)
-
-    DBPath.args = args = parser.parse_args(args=argv)
+    args = parser.parse_args(args=argv)
+    DBPath.cfg = Cfg(**config['DEFAULT'])
 
     if args.dest == NEW:
         Run(args.name).start(
@@ -170,10 +178,7 @@ def main(argv=sys.argv[1:]):
         Pattern(args.old).move(Run(args.new), args.keep_tmux)
 
     elif args.dest == LIST:
-        if args.pattern is None:
-            print_tree(DBPath.read())
-        else:
-            print_tree(Pattern(args.pattern).tree())
+        print_tree(Pattern(args.pattern).tree())
 
     elif args.dest == TABLE:
         print(Pattern(args.pattern).table(args.column_width))

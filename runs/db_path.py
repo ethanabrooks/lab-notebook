@@ -12,7 +12,7 @@ from runs.util import search_ancestors
 
 
 class DBPath:
-    args = None
+    cfg = None
 
     @staticmethod
     def cfg():
@@ -21,35 +21,36 @@ class DBPath:
         else:
             return DBPath.args
 
-    @staticmethod
-    def flags():
-        return [(k, v) for k, v in vars(DBPath.cfg()).items()
+    def flags(self):
+        return [(k, v) for k, v in vars(self.cfg).items()
                 if k.endswith('-flag')]
 
-    @staticmethod
-    def dir_names():
-        return DBPath.cfg().dir_names.split()
+    def dir_names(self):
+        return self.cfg.dir_names
 
-    @staticmethod
-    def read():
+    def read(self):
         node = None
-        db_path = Path(DBPath.cfg().db_path)
+        db_path = Path(self.cfg.db_path)
         if db_path.exists():
             with db_path.open() as f:
                 data = yaml.load(f)
             node = DictImporter().import_(data)
         return node
 
-    @staticmethod
-    def write(db):
+    def write(self, db):
         if db is None:
             data = dict()
         else:
             data = DictExporter().export(db)
-        with Path(DBPath.cfg().db_path).open('w') as f:
+        with Path(self.cfg.db_path).open('w') as f:
             yaml.dump(data, f, default_flow_style=False)
 
-    def __init__(self, parts):
+    def __init__(self, parts, cfg=None):
+        if cfg is None:
+            if DBPath is None:
+                raise RuntimeError('Either `cfg` has to be specified or `DBPath.cfg` has to be set')
+            cfg = DBPath.cfg
+        self.cfg = cfg
         self.sep = '/'
         if isinstance(parts, NodeMixin):
             self.parts = [str(node.name) for node in parts.path]
@@ -65,7 +66,7 @@ class DBPath:
 
     def node(self, root=None):
         if root is None:
-            root = DBPath.read()
+            root = self.read()
         try:
             assert root is not None
             return Resolver().get(root, self.path)
@@ -75,14 +76,14 @@ class DBPath:
     # DB I/O
     @contextmanager
     def open(self):
-        root = DBPath.read()
+        root = self.read()
         yield self.node(root)
-        DBPath.write(root)
+        self.write(root)
 
     @property
     def Paths(self):
-        return [Path(DBPath.cfg().root_dir, dir_name, self.path)
-                for dir_name in DBPath.dir_names()]
+        return [Path(self.cfg.root_dir, dir_name, self.path)
+                for dir_name in self.dir_names()]
 
     # file I/O
     def mkdirs(self, exist_ok=True):

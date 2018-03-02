@@ -55,22 +55,6 @@ def cmd(args, fail_ok=False):
         return stdout.strip()
 
 
-def run_tmux(name, window_name, main_cmd):
-    kill_tmux(name)
-    subprocess.check_call('tmux new -d -s'.split() + [name, '-n', window_name])
-    cd_cmd = 'cd ' + str(Path.cwd())
-    for command in [cd_cmd, main_cmd]:
-        cmd('tmux send-keys -t'.split() + [name, command, 'Enter'])
-
-
-def kill_tmux(name):
-    cmd('tmux kill-session -t'.split() + [name], fail_ok=True)
-
-
-def rename_tmux(old_name, new_name):
-    cmd('tmux rename-session -t '.split() + [old_name, new_name], fail_ok=True)
-
-
 def dirty_repo():
     return cmd('git status --porcelain'.split()) is not ''
 

@@ -48,18 +48,17 @@ class Run(DBPath):
         self.new_tmux(description, full_command)
 
         # new db entry
-        root = DBPath.read()
+        root = self.read()
         node = AnyNode(name=self.head,
                        input_command=command,
                        full_command=full_command,
                        commit=last_commit(),
                        datetime=datetime.now().isoformat(),
                        description=description,
-                       parent=self.parent.node(root),
-                       _is_run=True)
+                       parent=self.parent.node(root))
         if root is None:
             root = node
-        DBPath.write(root)
+        self.write(root)
 
         # print result
         if not quiet:
@@ -73,14 +72,14 @@ class Run(DBPath):
             print('tmux attach -t', self.head)
 
     def build_command(self, command):
-        for flag, value in DBPath.flags():
+        for flag, value in self.flags():
             value = value.replace(
                 '<run-name>', self.path).replace(
-                '<runs-dir>', DBPath.cfg().root)
+                '<runs-dir>', self.cfg.root)
             command += ' ' + '{}={}'.format(flag, value)
 
-        if DBPath.cfg().virtualenv_path:
-            return 'source ' + DBPath.cfg().virtualenv_path + '/bin/activate; ' + command
+        if self.cfg.virtualenv_path:
+            return 'source ' + self.cfg.virtualenv_path + '/bin/activate; ' + command
         return command
 
     def remove(self):

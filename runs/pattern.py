@@ -13,22 +13,22 @@ class Pattern(DBPath):
     # DB I/O
     @contextmanager
     def open(self):
-        tree = DBPath.read()
+        tree = self.read()
         yield self.runs(tree)
-        DBPath.write(tree)
+        self.write(tree)
 
     def runs(self, root=None):
         return list(map(runs.run.Run, self.nodes(root)))
 
     def nodes(self, root=None):
         if root is None:
-            root = DBPath.read()
+            root = self.read()
         run_nodes = [node
                      for base in Resolver().glob(root, self.path)
-                     for node in findall(base, lambda n: hasattr(n, '_is_run'))]
+                     for node in findall(base, lambda n: not hasattr(n, 'children'))]
         if not run_nodes:
             print('No runs match pattern. Recorded runs:')
-            print_tree(DBPath.read())
+            print_tree(self.read())
             exit()
         return run_nodes
 
@@ -76,7 +76,7 @@ class Pattern(DBPath):
         return [run.lookup(key) for run in self.runs()]
 
     def tree(self):
-        tree = deepcopy(DBPath.read())
+        tree = deepcopy(self.read())
         for node in findall(tree, lambda n: n not in self.nodes(tree)):
             node.parent = None
         return tree
@@ -91,7 +91,7 @@ class Pattern(DBPath):
             except AttributeError:
                 return '_'
 
-        headers = sorted(set(self.keys) - set(DBPath.cfg().hidden_columns))
+        headers = sorted(set(self.keys) - set(self.cfg.hidden_columns))
         table = [[node.name] + [get_values(node, key) for key in headers]
                  for node in sorted(self.nodes(), key=lambda n: n.name)]
         return tabulate(table, headers=headers)
