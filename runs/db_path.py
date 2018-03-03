@@ -78,7 +78,7 @@ class DBPath:
 
     def rmdirs(self):
         for path in self.Paths:
-            shutil.rmtree(str(path))
+            shutil.rmtree(str(path), ignore_errors=True)
 
     def mvdirs(self, new):
         for old_path, new_path in zip(self.Paths, new.Paths):

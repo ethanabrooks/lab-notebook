@@ -2,21 +2,21 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from pprint import pprint
 from unittest import TestCase
 
-import time
 import yaml
 
 from runs import main
 from runs.run import Run
-from runs.util import cmd
 
 
 def sessions():
-    return subprocess.check_output(
-        'tmux list-session -F "#{session_name}"'.split(),
-        universal_newlines=True).split('\n')
+    try:
+        return subprocess.check_output(
+            'tmux list-session -F "#{session_name}"'.split(),
+            universal_newlines=True).split('\n')
+    except subprocess.CalledProcessError:
+        return []
 
 
 class TestRuns(TestCase):
@@ -68,7 +68,7 @@ class TestNewWithConfig(TestNew):
     def setUp(self):
         self.dir_names = ['checkpoints', 'tensorboard']
         self.root = '.runs'
-        Path(TestRuns.run_name).mkdir()
+        Path(TestRuns.path, TestRuns.run_name).mkdir(parents=True)
         with Path(TestRuns.path, '.runsrc').open('w') as f:
             f.write(
                 """\

@@ -1,10 +1,8 @@
-import os
 import subprocess
 from datetime import datetime
 from pathlib import Path
 
 from anytree import AnyNode
-from anytree import Resolver
 from anytree.exporter import DictExporter
 
 from runs.db_path import DBPath
