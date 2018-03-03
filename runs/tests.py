@@ -63,20 +63,21 @@ class TestNew(TestRuns):
 class TestNewWithConfig(TestNew):
     def setUp(self):
         self.dir_names = ['checkpoints', 'tensorboard']
+        self.root = '.runs'
         Path(TestRuns.path).mkdir()
         with Path(TestRuns.path, '.runsrc').open('w') as f:
             f.write(
                 """\
 [DEFAULT]
-root = .runs
+root = {}
 db_path = runs.yml
 dir_names = {}\
-""".format(' '.join(self.dir_names)))
+""".format(self.root, ' '.join(self.dir_names)))
         super().setUp()
 
     def test_mkdirs(self):
         for dir_name in self.dir_names:
-            assert Path(dir_name, self.name).exists()
+            assert Path(TestRuns.path, self.root, dir_name, self.name).exists()
 
 
 # class TestRemoveNoPattern(TestNew):

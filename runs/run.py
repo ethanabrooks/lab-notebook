@@ -1,3 +1,4 @@
+import os
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -86,10 +87,7 @@ class Run(DBPath):
         self.kill_tmux()
         self.rmdirs()
         with self.open() as node:
-            if node.parent is None:
-                self._root = None
-            else:
-                node.parent = None
+            node.parent = None
 
     def move(self, dest, keep_tmux):
         assert isinstance(dest, Run)
