@@ -118,7 +118,7 @@ class Run(DBPath):
             cmd('tmux send-keys -t'.split() + [self.path, command, 'Enter'])
 
     def rename_tmux(self, new):
-        cmd('tmux rename-session -t '.split() + [self.name, new], fail_ok=True)
+        cmd('tmux rename-session -t '.split() + [self.path, new], fail_ok=True)
 
     def chdescription(self):
         with self.open() as node:

@@ -5,10 +5,12 @@ from pathlib import Path
 from pprint import pprint
 from unittest import TestCase
 
+import time
 import yaml
 
 from runs import main
 from runs.run import Run
+from runs.util import cmd
 
 
 def sessions():
@@ -18,20 +20,22 @@ def sessions():
 
 
 class TestRuns(TestCase):
+    path = '/tmp/test-run-manager'
+    run_name = 'test_run'
 
     def setUp(self):
-        self.path = '/tmp/test-run-manager'
-        self.run_name = 'test_run'
-        Path(self.path).mkdir(exist_ok=True)
-        os.chdir(self.path)
-        subprocess.run(['git', 'init', '-q'], cwd=self.path)
-        with Path(self.path, '.gitignore').open('w') as f:
+        TestRuns.path = '/tmp/test-run-manager'
+        TestRuns.run_name = 'test_run'
+        Path(TestRuns.path).mkdir(exist_ok=True)
+        os.chdir(TestRuns.path)
+        subprocess.run(['git', 'init', '-q'], cwd=TestRuns.path)
+        with Path(TestRuns.path, '.gitignore').open('w') as f:
             f.write('.runsrc\nruns.yml')
-        subprocess.run(['git', 'add', '.gitignore'], cwd=self.path)
-        subprocess.run(['git', 'commit', '-qam', 'init'], cwd=self.path)
+        subprocess.run(['git', 'add', '.gitignore'], cwd=TestRuns.path)
+        subprocess.run(['git', 'commit', '-qam', 'init'], cwd=TestRuns.path)
 
     def tearDown(self):
-        shutil.rmtree(self.path)
+        shutil.rmtree(TestRuns.path)
 
 
 class TestNew(TestRuns):
@@ -39,33 +43,33 @@ class TestNew(TestRuns):
         super().setUp()
         self.command = 'echo hello'
         self.description = 'test new command'
-        main.main(['new', self.run_name, self.command,
+        main.main(['new', TestRuns.run_name, self.command,
                    "--description=" + self.description, '-q'])
 
     def tearDown(self):
-        Run(self.run_name).kill_tmux()
+        Run(TestRuns.run_name).kill_tmux()
         super().tearDown()
 
     def test_db(self):
-        with Path(self.path, 'runs.yml').open() as f:
+        with Path(TestRuns.path, 'runs.yml').open() as f:
             db = yaml.load(f)['children'][0]
         assert 'commit' in db
         assert 'datetime' in db
         assert db['description'] == self.description
         assert db['full_command'] == self.command
         assert db['input_command'] == self.command
-        assert db['name'] == self.run_name
+        assert db['name'] == TestRuns.run_name
 
     def test_tmux(self):
-        assert '"' + self.run_name + '"' in sessions()
+        assert '"' + TestRuns.run_name + '"' in sessions()
 
 
 class TestNewWithConfig(TestNew):
     def setUp(self):
         self.dir_names = ['checkpoints', 'tensorboard']
         self.root = '.runs'
-        Path(self.path).mkdir()
-        with Path(self.path, '.runsrc').open('w') as f:
+        Path(TestRuns.run_name).mkdir()
+        with Path(TestRuns.path, '.runsrc').open('w') as f:
             f.write(
                 """\
 [DEFAULT]
@@ -77,18 +81,18 @@ dir_names = {}\
 
     def test_mkdirs(self):
         for dir_name in self.dir_names:
-            assert Path(self.path, self.root, dir_name, self.run_name).exists()
+            assert Path(TestRuns.path, self.root, dir_name, TestRuns.run_name).exists()
 
 
 class TestRemoveNoPattern(TestNew):
     def setUp(self):
         super().setUp()
-        main.main(['rm', '-y', self.run_name])
+        main.main(['rm', '-y', TestRuns.run_name])
 
-    # def test_tmux(self):
-    #     assert '"' + self.run_name + '"' not in sessions()
+    def test_tmux(self):
+        assert '"' + TestRuns.run_name + '"' not in sessions()
 
     def test_rmdirs(self):
-        for root, dirs, files in os.walk(self.path):
+        for root, dirs, files in os.walk(TestRuns.path):
             for file in files:
-                assert self.run_name != file
+                assert TestRuns.run_name != file

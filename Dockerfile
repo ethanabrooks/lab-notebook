@@ -14,5 +14,5 @@ COPY runs-git .
 COPY README.rst .
 COPY runs runs/
 RUN pip3 install -e .
-RUN echo 'alias mytest="python3 -m unittest runs/tests.py"' > /root/.bashrc
-#CMD ["python3", "-m", "unittest", "runs/tests.py"]
+#RUN echo 'alias t="python3 -m unittest runs/tests.py"' > /root/.bashrc
+CMD ["python3", "-m", "unittest", "runs/tests.py"]

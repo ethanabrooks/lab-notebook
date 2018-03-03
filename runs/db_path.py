@@ -13,6 +13,7 @@ from runs.util import print_tree
 
 class DBPath:
     cfg = None
+    root = Node('.')
 
     def __init__(self, parts, cfg=None):
         if cfg is None:
@@ -22,7 +23,7 @@ class DBPath:
         self.cfg = cfg
         self.sep = '/'
         if isinstance(parts, NodeMixin):
-            self.parts = [str(node.name) for node in parts.path]
+            self.parts = [str(node.name) for node in parts.path[1:]]
         elif isinstance(parts, str):
             self.parts = parts.split(self.sep)
         else:
@@ -34,7 +35,7 @@ class DBPath:
         self.path = self.sep.join(self.parts)
 
     def read(self):
-        node = Node('.')
+        node = DBPath.root
         db_path = Path(self.cfg.db_path)
         if db_path.exists():
             with db_path.open() as f:
@@ -44,7 +45,7 @@ class DBPath:
 
     def write(self, db):
         if db is None:
-            db = Node('.')
+            db = DBPath.root
         data = DictExporter().export(db)
         with Path(self.cfg.db_path).open('w') as f:
             yaml.dump(data, f, default_flow_style=False)
