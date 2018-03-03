@@ -47,7 +47,6 @@ class DBPath:
         with Path(self.cfg.db_path).open('w') as f:
             yaml.dump(data, f, default_flow_style=False)
 
-
     def node(self, root=None):
         if root is None:
             root = self.read()
@@ -66,13 +65,13 @@ class DBPath:
 
     @property
     def Paths(self):
-        return [Path(self.cfg.root_dir, dir_name, self.path)
+        return [Path(self.cfg.root, dir_name, self.path)
                 for dir_name in self.cfg.dir_names]
 
     # file I/O
     def mkdirs(self, exist_ok=True):
         for path in self.Paths:
-            path.mkdir(exist_ok=exist_ok)
+            path.mkdir(exist_ok=exist_ok, parents=True)
 
     def rmdirs(self):
         for path in self.Paths:

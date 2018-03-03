@@ -1,77 +1,42 @@
 #!/usr/bin/env python3
 import argparse
+import inspect
+import sys
 from configparser import ConfigParser
 
-import sys
-
-import subprocess
-
 from runs.cfg import Cfg
+from runs.db_path import DBPath
 from runs.pattern import Pattern
 from runs.run import Run
-from runs.db_path import DBPath
 from runs.util import search_ancestors, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, print_tree
-
-
-# conf_parser = argparse.ArgumentParser(
-#     description=__doc__,  # printed with -h/--help
-#     # Don't mess with format of description
-#     formatter_class=argparse.RawDescriptionHelpFormatter,
-#     # Turn off help, so we print all options in response to -h
-#     add_help=False
-# )
-# defaults = dict(
-#     db_path='runs.yml',
-#     root_dir=Path(runsrc_path.parent, '.runs'),
-#     dir_names=[],
-# )
-#
-#     defaults.update(dict(config))
-#
-# parser = argparse.ArgumentParser(
-#     # Inherit options from config_parser
-#     parents=[conf_parser]
-# )
-#
-# parser.set_defaults(**defaults)
-
-# if runsrc_path is None:
-#     cfg = Config(root=Path.cwd())
-# else:
-#     assert isinstance(runsrc_path, Path)
-#     cfg = Config(root=runsrc_path.parent)
-#     # load values from config
-#     with runsrc_path.open() as f:
-#         for k, v in yaml.load(f).items():
-#             cfg.setattr(k, v)
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, print_tree, DEFAULT
 
 
 def main(argv=sys.argv[1:]):
     config = ConfigParser(allow_no_value=True)
     config_filename = '.runsrc'
     config_path = search_ancestors(config_filename)
+    default_config = {
+        # Custom path to directory containing runs database (default, `runs.yml`). Should not need to be
+        # specified for local runs but probably required for accessing databses remotely.
+        'root': '.runs',
+
+        # path to YAML file storing run database information.
+        'db_path': 'runs.yml',
+
+        # directories that runs should create
+        'dir_names': None,
+
+        'virtualenv_path': None,
+
+        'flags': None,
+
+        'hidden_columns': 'input_command'
+    }
     if config_path:
-        config.read(config_path)
+        config.read(str(config_path))
     else:
-        config['DEFAULT'] = {
-            # Custom path to directory containing runs database (default, `runs.yml`). Should not need to be
-            # specified for local runs but probably required for accessing databses remotely.
-            'root': '.runs',
-
-            # path to YAML file storing run database information.
-            'db_path': 'runs.yml',
-
-            # directories that runs should create
-            'dir_names': None,
-
-            'virtualenv_path': None,
-
-            'flags': None,
-
-            'hidden_columns': 'input_command'
-        }
-
+        config[DEFAULT] = default_config
         with open(config_filename, 'w') as f:
             config.write(f)
 
@@ -83,7 +48,12 @@ def main(argv=sys.argv[1:]):
             subparser.set_defaults(**config[name])
 
     parser = argparse.ArgumentParser()
-    set_defaults(parser, 'DEFAULT')
+    parser.add_argument('--root', help='Custom path to directory containing runs database (default, `runs.yml`). '
+                                       'Should not need to be specified for local runs but probably required for '
+                                       'accessing databses remotely.')
+    parser.add_argument('--db-path', help='path to YAML file storing run database information.')
+    parser.add_argument('--virtualenv-path')
+    set_defaults(parser, DEFAULT)
     subparsers = parser.add_subparsers(dest='dest')
     virtualenv_path_help = 'Path to virtual environment, if one is being ' \
                            'used. If not `None`, the program will source ' \
@@ -95,6 +65,7 @@ def main(argv=sys.argv[1:]):
     new_parser.add_argument('command', help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
                                             'or `--save-path` flag in this argument')
     new_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
+    new_parser.add_argument('--flags')
     new_parser.add_argument('--no-overwrite', action='store_true', help='Check before overwriting existing runs.')
     new_parser.add_argument('--ignore-dirty', action='store_true', help='Create new run even if repo is dirty.'
                                                                         'overwrite any entry with the same name. ')
@@ -162,7 +133,11 @@ def main(argv=sys.argv[1:]):
                                        'overwrite any entry with the same name. ')
     set_defaults(reproduce_parser, REPRODUCE)
     args = parser.parse_args(args=argv)
-    DBPath.cfg = Cfg(**config['DEFAULT'])
+
+    DBPath.cfg = Cfg(**{
+        k: v for k, v in vars(args).items()
+        if k in inspect.signature(Cfg).parameters
+        })
 
     if args.dest == NEW:
         Run(args.name).start(

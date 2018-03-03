@@ -2,7 +2,8 @@ from pathlib import Path
 
 
 class Cfg:
-    def __init__(self, root, virtualenv_path, hidden_columns, dir_names, db_path, flags):
+    def __init__(self, root, db_path, hidden_columns=None, dir_names=None,
+                 flags=None, virtualenv_path=None):
         self.db_path = Path(db_path)
         self.root = Path(root)
         self.virtualenv_path = Path(virtualenv_path) if virtualenv_path else None

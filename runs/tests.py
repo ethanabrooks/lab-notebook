@@ -10,12 +10,18 @@ from runs import main
 from runs.run import Run
 
 
+def sessions():
+    return subprocess.check_output(
+        'tmux list-session -F "#{session_name}"'.split(),
+        universal_newlines=True).split('\n')
+
+
 class TestRuns(TestCase):
     path = '/tmp/test-run-manager'
     run_name = 'test-run'
 
     def setUp(self):
-        Path(TestRuns.path).mkdir()
+        Path(TestRuns.path).mkdir(exist_ok=True)
         os.chdir(TestRuns.path)
         subprocess.run(['git', 'init', '-q'], cwd=TestRuns.path)
         with Path(TestRuns.path, '.gitignore').open('w') as f:
@@ -31,10 +37,10 @@ class TestNew(TestRuns):
     def setUp(self):
         super().setUp()
         self.name = 'test-run'
-        self.command = 'python -c "while True: pass"'
+        self.command = 'echo hello'
         self.description = 'test new command'
         main.main(['new', self.name, self.command,
-                   "--description="+self.description, '-q'])
+                   "--description=" + self.description, '-q'])
 
     def tearDown(self):
         Run(TestRuns.run_name).kill_tmux()
@@ -51,7 +57,37 @@ class TestNew(TestRuns):
         assert db['name'] == self.name
 
     def test_tmux(self):
-        sessions = subprocess.check_output(
-            'tmux list-session -F "#{session_name}"'.split(),
-            universal_newlines=True)
-        assert '"' + TestRuns.run_name + '"' in sessions.split('\n')
+        assert '"' + TestRuns.run_name + '"' in sessions()
+
+
+class TestNewWithConfig(TestNew):
+    def setUp(self):
+        self.dir_names = ['checkpoints', 'tensorboard']
+        Path(TestRuns.path).mkdir()
+        with Path(TestRuns.path, '.runsrc').open('w') as f:
+            f.write(
+                """\
+[DEFAULT]
+root = .runs
+db_path = runs.yml
+dir_names = {}\
+""".format(' '.join(self.dir_names)))
+        super().setUp()
+
+    def test_mkdirs(self):
+        for dir_name in self.dir_names:
+            assert Path(dir_name, self.name).exists()
+
+
+# class TestRemoveNoPattern(TestNew):
+#     def setUp(self):
+#         super().setUp()
+#         main.main(['rm', self.name])
+#
+#     def test_tmux(self):
+#         assert '"' + TestRuns.run_name + '"' not in sessions()
+#
+#     def test_rmdirs(self):
+#         for root, dirs, files in os.walk(TestRuns.path):
+#             for file in files:
+#                 assert self.name != file

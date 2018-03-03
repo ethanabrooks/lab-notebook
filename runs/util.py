@@ -95,6 +95,7 @@ def print_tree(tree, print_attrs=False):
                 print("{}{}".format(fill, line))
 
 
+DEFAULT = 'DEFAULT'
 NAME = 'name'
 PATTERN = 'pattern'
 NEW = 'new'
