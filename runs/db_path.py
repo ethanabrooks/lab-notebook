@@ -4,9 +4,11 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import yaml
-from anytree import NodeMixin, Resolver, ChildResolverError
+from anytree import NodeMixin, Resolver, ChildResolverError, Node
 from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
+
+from runs.util import print_tree
 
 
 class DBPath:
@@ -32,7 +34,7 @@ class DBPath:
         self.path = self.sep.join(self.parts)
 
     def read(self):
-        node = None
+        node = Node('.')
         db_path = Path(self.cfg.db_path)
         if db_path.exists():
             with db_path.open() as f:
@@ -42,9 +44,8 @@ class DBPath:
 
     def write(self, db):
         if db is None:
-            data = dict()
-        else:
-            data = DictExporter().export(db)
+            db = Node('.')
+        data = DictExporter().export(db)
         with Path(self.cfg.db_path).open('w') as f:
             yaml.dump(data, f, default_flow_style=False)
 

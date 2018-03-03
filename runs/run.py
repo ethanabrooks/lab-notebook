@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 from anytree import AnyNode
+from anytree import Resolver
 from anytree.exporter import DictExporter
 
 from runs.db_path import DBPath
@@ -22,7 +23,7 @@ class Run(DBPath):
         return DictExporter().export(self.node).keys()
 
     # Commands
-    def start(self, command, description, no_overwrite, quiet):
+    def new(self, command, description, no_overwrite, quiet):
         # Check if repo is dirty
         if dirty_repo():
             prompt = "Repo is dirty. You should commit before run. Run anyway?"
@@ -49,17 +50,15 @@ class Run(DBPath):
         self.new_tmux(description, full_command)
 
         # new db entry
-        root = self.read()
-        node = AnyNode(name=self.head,
-                       input_command=command,
-                       full_command=full_command,
-                       commit=last_commit(),
-                       datetime=datetime.now().isoformat(),
-                       description=description,
-                       parent=self.parent.node(root))
-        if root is None:
-            root = node
-        self.write(root)
+        with self.parent.open() as parent:
+            assert parent is not None
+            AnyNode(name=self.head,
+                    input_command=command,
+                    full_command=full_command,
+                    commit=last_commit(),
+                    datetime=datetime.now().isoformat(),
+                    description=description,
+                    parent=parent)
 
         # print result
         if not quiet:

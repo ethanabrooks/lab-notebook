@@ -25,7 +25,7 @@ class Pattern(DBPath):
             root = self.read()
         run_nodes = [node
                      for base in Resolver().glob(root, self.path)
-                     for node in findall(base, lambda n: not hasattr(n, 'children'))]
+                     for node in findall(base, lambda n: hasattr(n, 'commit'))]
         if not run_nodes:
             print('No runs match pattern. Recorded runs:')
             print_tree(self.read())
@@ -39,9 +39,9 @@ class Pattern(DBPath):
     def keys(self):
         return set([run.keys for run in self.runs()])
 
-    def remove(self):
-        if get_permission('Remove the following runs?\n{}\n'.format(
-                '\n'.join(self.names()))):
+    def remove(self, assume_yes):
+        prompt = 'Remove the following runs?\n{}\n'.format('\n'.join(self.names()))
+        if assume_yes or get_permission(prompt):
             with self.open() as runs:
                 for run in runs:
                     run.remove()

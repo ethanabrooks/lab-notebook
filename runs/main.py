@@ -83,6 +83,8 @@ def main(argv=sys.argv[1:]):
     remove_parser.add_argument(PATTERN, default='*',
                                help='This script will only delete entries in the database whose names are a '
                                     'complete (not partial) match of this regex pattern.')
+    remove_parser.add_argument('--assume-yes', '-y', action='store_true',
+                               help='Don\'t request permission from user before deleting.')
     set_defaults(remove_parser, REMOVE)
 
     move_parser = subparsers.add_parser(MOVE, help='Move a run from OLD to NEW.')
@@ -140,14 +142,14 @@ def main(argv=sys.argv[1:]):
         })
 
     if args.dest == NEW:
-        Run(args.name).start(
+        Run(args.name).new(
             command=args.command,
             description=args.description,
             no_overwrite=args.no_overwrite,
             quiet=args.quiet)
 
     elif args.dest == REMOVE:
-        Pattern(args.pattern).remove()
+        Pattern(args.pattern).remove(args.assume_yes)
 
     elif args.dest == MOVE:
         Pattern(args.old).move(Run(args.new), args.keep_tmux)

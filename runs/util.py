@@ -89,7 +89,7 @@ def print_tree(tree, print_attrs=False):
             pnode = yaml.dump(public_attrs, default_flow_style=False).split('\n')
         else:
             pnode = ''
-        print("{}{}".format(pre, node.name))
+        print("{}{}".format(pre, node.name).encode('utf-8'))
         if print_attrs:
             for line in pnode:
                 print("{}{}".format(fill, line))
