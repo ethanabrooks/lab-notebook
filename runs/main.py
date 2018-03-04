@@ -98,6 +98,8 @@ def main(argv=sys.argv[1:]):
     move_parser.add_argument('new', help='New name for run.' + path_clarification, type=nonempty_string)
     move_parser.add_argument('--keep-tmux', action='store_true',
                              help='Rename tmux session instead of killing it.')
+    move_parser.add_argument('--assume-yes', '-y', action='store_true',
+                               help='Don\'t request permission from user before deleting.')
     set_defaults(move_parser, MOVE)
 
     pattern_help = 'Only display names matching this pattern.'
@@ -159,7 +161,7 @@ def main(argv=sys.argv[1:]):
         Pattern(args.pattern).remove(args.assume_yes)
 
     elif args.dest == MOVE:
-        Pattern(args.old).move(Run(args.new), args.keep_tmux)
+        Pattern(args.old).move(Run(args.new), args.keep_tmux, args.assume_yes)
 
     elif args.dest == LIST:
         print(Pattern(args.pattern).tree_string(args.print_attrs))

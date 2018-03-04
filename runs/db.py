@@ -1,10 +1,10 @@
 import shutil
-from collections import OrderedDict
 from contextlib import contextmanager
 from pathlib import Path
 
 import yaml
 from anytree import NodeMixin, Resolver, ChildResolverError, Node
+from anytree import RenderTree
 from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
 
@@ -30,6 +30,23 @@ def write(tree, db_path):
     data = DictExporter().export(tree)
     with Path(db_path).open('w') as f:
         yaml.dump(data, f, default_flow_style=False)
+
+
+def tree_string(tree, print_attrs=False):
+    assert isinstance(tree, NodeMixin)
+    string = ''
+    for pre, fill, node in RenderTree(tree):
+        public_attrs = {k: v for k, v in vars(node).items()
+                        if not k.startswith('_') and not k == 'name'}
+        if public_attrs:
+            pnode = yaml.dump(public_attrs, default_flow_style=False).split('\n')
+        else:
+            pnode = ''
+        string += "{}{}\n".format(pre, node.name)
+        if print_attrs:
+            for line in pnode:
+                string += "{}{}\n".format(fill, line)
+    return string
 
 
 @contextmanager
@@ -64,11 +81,14 @@ class DBPath:
                 self.parts.extend(part.split(self.sep))
         self.path = self.sep.join(self.parts)
 
-        # TODO: stinky
         parts = self.parts
         if not parts:
             parts = self.root_path
         *self.ancestors, self.head = parts
+
+    @property
+    def parent(self):
+        return DBPath(self.ancestors)
 
     @property
     def root(self):

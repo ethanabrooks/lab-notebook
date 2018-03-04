@@ -7,7 +7,7 @@ from anytree import Resolver, findall
 from tabulate import tabulate
 
 import runs.main
-from runs.db import DBPath
+from runs.db import DBPath, tree_string
 from runs.util import get_permission, highlight, COMMIT, NAME, COMMAND, DESCRIPTION
 
 
@@ -48,7 +48,7 @@ class Pattern(DBPath):
                 for run in runs:
                     run.remove()
 
-    def move(self, dest, keep_tmux):
+    def move(self, dest, keep_tmux, assume_yes):
         assert isinstance(dest, runs.run.Run)
 
         # check for conflicts with existing runs
@@ -60,17 +60,17 @@ class Pattern(DBPath):
         # prompt depends on number of runs being moved
         if len(src) > 1:
             prompt = 'Move the following runs into {}?\n{}'.format(
-                dest.work_dir, '\n'.join(run.work_dir for run in src))
+                dest.parent, '\n'.join(run.parent for run in src))
         else:
-            prompt = 'Move {} to {}?'.format(src[0].work_dir, dest.work_dir)
+            prompt = 'Move {} to {}?'.format(src[0].parent, dest.parent)
 
-        if get_permission(prompt):
+        if assume_yes or get_permission(prompt):
             for run in src:
 
                 # if the dest exists or we are moving multiple runs,
                 if dest.node() is not None or len(src) > 1:
                     # preserve the current name of the run
-                    dest = runs.run.Run(dest.work_dir, run.head)
+                    dest = runs.run.Run(dest.parent, run.head)
 
                 run.move(dest, keep_tmux)
 
@@ -84,20 +84,7 @@ class Pattern(DBPath):
         return tree
 
     def tree_string(self, print_attrs=False):
-        string = ''
-        tree = self.tree()
-        for pre, fill, node in RenderTree(tree):
-            public_attrs = {k: v for k, v in vars(node).items()
-                            if not k.startswith('_') and not k == 'name'}
-            if public_attrs:
-                pnode = yaml.dump(public_attrs, default_flow_style=False).split('\n')
-            else:
-                pnode = ''
-            string += "{}{}\n".format(pre, node.name)
-            if print_attrs:
-                for line in pnode:
-                    string += "{}{}\n".format(fill, line)
-        return string
+        return tree_string(self.tree(), print_attrs)
 
     def table(self, column_width):
         def get_values(node, key):

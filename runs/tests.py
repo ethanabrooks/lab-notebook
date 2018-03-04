@@ -76,6 +76,7 @@ print(vars(parser.parse_args()))\
 
     @property
     def db_entry(self):
+        self.assertIn(CHILDREN, self.db)
         return get_name(self.db[CHILDREN], self.name)
 
     @property
@@ -93,12 +94,11 @@ print(vars(parser.parse_args()))\
         for key in ['commit', 'datetime']:
             with self.subTest(key=key):
                 self.assertIn(key, self.db_entry)
-        for key in ['description', 'full_command', 'name']:
+        for key in ['description', 'full_command', 'input_command', 'name']:
             with self.subTest(key=key):
-                self.assertEqual(self.db_entry[key], getattr(self, key))
-        key = 'input_command'
-        with self.subTest(key=key):
-            self.assertEqual(self.db_entry[key], self.input_command)
+                self.assertIn(key, self.db_entry)
+                attr = self.input_command if key == 'input_command' else getattr(self, key)
+                self.assertEqual(self.db_entry[key], attr)
 
 
 class TestNewWithSubdir(TestNew):
@@ -195,8 +195,9 @@ class TestChdesc(TestNew):
         main.main(['chdesc', self.input_name, '--description=' + description])
         self.assertEqual(Run(self.input_name).lookup('description'), description)
 
+
 # class TestMove(TestNew):
 #     def setUp(self):
 #         super().setUp()
 #         self.new_name = 'new_name'
-#         main.main(['mv', self.input_name, self.new_name])
+#         main.main(['mv', '-y', '--keep-tmux', self.input_name, self.new_name])

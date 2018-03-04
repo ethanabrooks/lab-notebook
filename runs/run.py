@@ -41,7 +41,7 @@ class Run(DBPath):
         self.new_tmux(description, full_command)
 
         # new db entry
-        with DBPath(self.ancestors).add_to_tree() as parent:
+        with self.parent.add_to_tree() as parent:
             assert parent is not None
             AnyNode(name=self.head,
                     input_command=command,
@@ -91,7 +91,7 @@ class Run(DBPath):
         with self.open() as node:
             if node:
                 node.name = dest.head
-                node.parent = dest.parent
+                node.parent = dest.parent.node()
 
     def lookup(self, key):
         try:
@@ -121,5 +121,8 @@ class Run(DBPath):
             node.description = new_description
 
     def already_exists(self):
-        print('{} already exists.'.format(self.head))
+        print('{} already exists.'.format(self))
         exit()
+
+    def __str__(self):
+        return self.path
