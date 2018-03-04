@@ -7,7 +7,6 @@ from unittest import TestCase
 import yaml
 
 from runs import main
-from runs.db import DBPath
 from runs.pattern import Pattern
 from runs.run import Run
 from runs.util import NAME
@@ -201,5 +200,3 @@ class TestChdesc(TestNew):
 #         super().setUp()
 #         self.new_name = 'new_name'
 #         main.main(['mv', self.input_name, self.new_name])
-#
-#     def test_rename(self):

@@ -25,8 +25,7 @@ class Run(DBPath):
         # Check if path already exists
         if self.node() is not None:
             if no_overwrite:
-                print('{} already exists.'.format(self.head))
-                exit()
+                self.already_exists()
             self.remove()
 
         # create directories
@@ -120,3 +119,7 @@ class Run(DBPath):
             if new_description is None:
                 new_description = string_from_vim('Edit description', node.description)
             node.description = new_description
+
+    def already_exists(self):
+        print('{} already exists.'.format(self.head))
+        exit()

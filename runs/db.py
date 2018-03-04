@@ -43,7 +43,7 @@ def open_db(root, db_path):
 
 class DBPath:
     cfg = None
-    root = Node('.')
+    root_path = '.'
 
     def __init__(self, parts, cfg=None):
         if cfg is None:
@@ -63,11 +63,16 @@ class DBPath:
                 assert isinstance(part, str)
                 self.parts.extend(part.split(self.sep))
         self.path = self.sep.join(self.parts)
-        if self.parts:
-            *self.ancestors, self.head = self.parts
-        else:
-            self.ancestors = []
-            self.head = '.'
+
+        # TODO: stinky
+        parts = self.parts
+        if not parts:
+            parts = self.root_path
+        *self.ancestors, self.head = parts
+
+    @property
+    def root(self):
+        return Node(self.root_path)
 
     @contextmanager
     def add_to_tree(self):
@@ -83,7 +88,7 @@ class DBPath:
                 yield Node(name=self.head, parent=parent)
 
                 #
-                # with open_db(DBPath.root, self.cfg.db_path) as node:
+                # with open_db(self.root, self.cfg.db_path) as node:
                 #     for i, part in enumerate(self.parts):
                 #         try:
                 #             node = Resolver().get(node, self.sep.join(self.parts[:i]))
@@ -94,7 +99,7 @@ class DBPath:
     def read(self):
         tree = read(self.cfg.db_path)
         if tree is None:
-            tree = DBPath.root
+            tree = self.root
         return tree
 
     def write(self, db):
@@ -116,7 +121,7 @@ class DBPath:
     # DB I/O
     @contextmanager
     def open(self):
-        with open_db(DBPath.root, self.cfg.db_path) as tree:
+        with open_db(self.root, self.cfg.db_path) as tree:
             yield self.node(tree)
 
     @property
