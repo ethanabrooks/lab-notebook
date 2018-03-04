@@ -21,22 +21,25 @@ def sessions():
 
 
 class TestRuns(TestCase):
-    path = '/tmp/test-run-manager'
-    run_name = 'test_run'
-
     def setUp(self):
-        TestRuns.path = '/tmp/test-run-manager'
-        TestRuns.run_name = 'test_run'
-        Path(TestRuns.path).mkdir(exist_ok=True)
-        os.chdir(TestRuns.path)
-        subprocess.run(['git', 'init', '-q'], cwd=TestRuns.path)
-        with Path(TestRuns.path, '.gitignore').open('w') as f:
+        Path(self.path).mkdir(exist_ok=True)
+        os.chdir(self.path)
+        subprocess.run(['git', 'init', '-q'], cwd=self.path)
+        with Path(self.path, '.gitignore').open('w') as f:
             f.write('.runsrc\nruns.yml')
-        subprocess.run(['git', 'add', '.gitignore'], cwd=TestRuns.path)
-        subprocess.run(['git', 'commit', '-qam', 'init'], cwd=TestRuns.path)
+        subprocess.run(['git', 'add', '.gitignore'], cwd=self.path)
+        subprocess.run(['git', 'commit', '-qam', 'init'], cwd=self.path)
 
     def tearDown(self):
-        shutil.rmtree(TestRuns.path)
+        shutil.rmtree(self.path)
+
+    @property
+    def path(self):
+        return '/tmp/test-run-manager'
+
+    @property
+    def run_name(self):
+        return 'test_run'
 
 
 class TestNew(TestRuns):
@@ -52,33 +55,41 @@ print(vars(parser.parse_args()))\
 """)
         self.full_command = self.command
         self.description = 'test new command'
-        main.main(['new', TestRuns.run_name, self.command,
+        main.main(['new', self.run_name, self.command,
                    "--description=" + self.description, '-q'])
 
     def tearDown(self):
-        Run(TestRuns.run_name).kill_tmux()
+        Run(self.run_name).kill_tmux()
         super().tearDown()
 
     def test_tmux(self):
-        assert '"' + TestRuns.run_name + '"' in sessions()
+        assert '"' + self.run_name + '"' in sessions()
 
     def test_db(self):
-        with Path(TestRuns.path, 'runs.yml').open() as f:
+        with Path(self.path, 'runs.yml').open() as f:
             db = yaml.load(f)['children'][0]
         self.assertIn('commit', db)
         self.assertIn('datetime', db)
         self.assertEqual(db['description'], self.description)
         self.assertEqual(db['full_command'], self.full_command)
         self.assertEqual(db['input_command'], self.command)
-        self.assertEqual(db['name'], TestRuns.run_name)
+        self.assertEqual(db['name'], self.run_name)
+
+
+# class TestNewWithSubdir(TestNew):
+#     def setUp(self):
+#         self.root = '.runs'
+#         self.subdir = 'subdir'
+#         Path(self.path, self.subdir, self.run_name).mkdir(parents=True)
+#         raise NotImplemented
 
 
 class TestNewWithConfig(TestNew):
     def setUp(self):
         self.dir_names = ['checkpoints', 'tensorboard']
         self.root = '.runs'
-        Path(TestRuns.path, TestRuns.run_name).mkdir(parents=True)
-        with Path(TestRuns.path, '.runsrc').open('w') as f:
+        Path(self.path, self.run_name).mkdir(parents=True)
+        with Path(self.path, '.runsrc').open('w') as f:
             f.write(
                 """\
 [filesystem]
@@ -93,7 +104,7 @@ dir_names = {}
 
     def test_mkdirs(self):
         for dir_name in self.dir_names:
-            path = Path(TestRuns.path, self.root, dir_name, TestRuns.run_name)
+            path = Path(self.path, self.root, dir_name, self.run_name)
             assert path.exists()
 
     def test_db(self):
@@ -104,33 +115,35 @@ dir_names = {}
 class TestRemoveNoPattern(TestNew):
     def setUp(self):
         super().setUp()
-        main.main(['rm', '-y', TestRuns.run_name])
+        main.main(['rm', '-y', self.run_name])
 
     def test_tmux(self):
-        self.assertNotIn('"' + TestRuns.run_name + '"', sessions())
+        self.assertNotIn('"' + self.run_name + '"', sessions())
 
     def test_rmdirs(self):
-        for root, dirs, files in os.walk(TestRuns.path):
+        for root, dirs, files in os.walk(self.path):
             for file in files:
-                self.assertNotEqual(TestRuns.run_name, file)
+                self.assertNotEqual(self.run_name, file)
 
 
 class TestList(TestNew):
-    pattern = '*'
+    def setUp(self):
+        self.pattern = '*'
+        super().setUp()
 
     def test_list(self):
-        string = Pattern(TestList.pattern).tree_string(print_attrs=False)
+        string = Pattern(self.pattern).tree_string(print_attrs=False)
         self.assertEqual(string, """\
 .
 └── test_run
 """)
 
     def test_list_happy_pattern(self):
-        TestList.pattern = 'test*'
+        self.pattern = 'test*'
         self.test_list()
 
     def test_list_sad_pattern(self):
-        TestList.pattern = 'x*'
+        self.pattern = 'x*'
         with self.assertRaises(SystemExit):
             self.test_list()
 
