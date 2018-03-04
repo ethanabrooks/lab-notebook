@@ -60,9 +60,9 @@ class Pattern(DBPath):
             # prompt depends on number of runs being moved
             if len(src) > 1:
                 prompt = 'Move the following runs into {}?\n{}'.format(
-                    dest.path, '\n'.join(run.path for run in src))
+                    dest.work_dir, '\n'.join(run.work_dir for run in src))
             else:
-                prompt = 'Move {} to {}?'.format(src[0].path, dest.path)
+                prompt = 'Move {} to {}?'.format(src[0].work_dir, dest.work_dir)
 
             if get_permission(prompt):
                 for run in src:
@@ -70,7 +70,7 @@ class Pattern(DBPath):
                     # if the dest exists or we are moving multiple runs,
                     if dest.node() is not None or len(src) > 1:
                         # preserve the current name of the run
-                        dest = runs.run.Run(dest.path, run.head)
+                        dest = runs.run.Run(dest.work_dir, run.head)
 
                     run.move(dest, keep_tmux)
 

@@ -27,7 +27,7 @@ def name_first(attrs):
 
 def write(tree, db_path):
     assert isinstance(tree, NodeMixin)
-    data = DictExporter(dictcls=OrderedDict, attriter=name_first).export(tree)
+    data = DictExporter().export(tree)
     with Path(db_path).open('w') as f:
         yaml.dump(data, f, default_flow_style=False)
 

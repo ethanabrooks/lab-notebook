@@ -170,7 +170,7 @@ def main(argv=sys.argv[1:]):
     elif args.dest == LOOKUP:
         pattern = Pattern(args.pattern)
         for run, value in zip(pattern.runs(), pattern.lookup(args.key)):
-            print("{}: {}".format(run.path, value))
+            print("{}: {}".format(run.work_dir, value))
 
     elif args.dest == CHDESCRIPTION:
         Run(args.name).chdescription(args.description)
