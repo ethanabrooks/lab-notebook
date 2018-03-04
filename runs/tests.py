@@ -37,8 +37,7 @@ class TestNew(TestCase):
             f.write('.runsrc\nruns.yml')
         subprocess.run(['git', 'add', '.gitignore'], cwd=self.work_dir)
         subprocess.run(['git', 'commit', '-qam', 'init'], cwd=self.work_dir)
-        self.input_command = 'python -c "{}"'.format(
-            """\
+        self.input_command = 'python -c "{}"'.format("""\
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -103,6 +102,11 @@ print(vars(parser.parse_args()))\
                     attr = getattr(self, key)
                 self.assertEqual(self.db_entry[key], attr)
 
+    def test_file_structure(self):
+        for dir_name in self.dir_names:
+            path = Path(self.work_dir, self.root, dir_name, self.input_name)
+            self.assertTrue(path.exists(), msg="{} does not exist.".format(path))
+
 
 class TestNewWithSubdir(TestNew):
     @property
@@ -134,11 +138,6 @@ dir_names = {}
 """.format(self.root, ' '.join(self.dir_names)))
         super().setUp()
 
-    def test_mkdirs(self):
-        for dir_name in self.dir_names:
-            path = Path(self.work_dir, self.root, dir_name, self.input_name)
-            self.assertTrue(path.exists())
-
     @property
     def full_command(self):
         return self.input_command + ' --option=1'
@@ -152,7 +151,7 @@ class TestNewWithSubdirAndConfig(TestNewWithConfig, TestNewWithSubdir):
     pass
 
 
-class TestRemoveNoPattern(TestNew):
+class TestRemove(TestNew):
     def setUp(self):
         super().setUp()
         main.main(['rm', '-y', self.input_name])
@@ -160,11 +159,15 @@ class TestRemoveNoPattern(TestNew):
     def test_tmux(self):
         self.assertNotIn('"' + self.input_name + '"', sessions())
 
-    def test_rmdirs(self):
+    def test_file_structure(self):
         for root, dirs, files in os.walk(self.work_dir):
             for file in files:
                 with self.subTest(file=file):
                     self.assertNotEqual(self.input_name, file)
+
+
+class TestRemoveWithConfig(TestNewWithConfig, TestRemove):
+    pass
 
 
 class TestList(TestNew):
@@ -202,5 +205,8 @@ class TestChdesc(TestNew):
 class TestMove(TestNew):
     def setUp(self):
         super().setUp()
-        self.new_name = 'new_name'
-        main.main(['mv', '-y', '--keep-tmux', self.input_name, self.new_name])
+        for new_name in ['new_name', 'subdir/new_name']:
+            with self.subTest(new_name=new_name):
+                main.main(['mv', '-y', '--keep-tmux', self.input_name, new_name])
+
+# TODO: Sad cases
