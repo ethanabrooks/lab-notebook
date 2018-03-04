@@ -1,3 +1,4 @@
+import argparse
 import os
 import shutil
 import subprocess
@@ -30,6 +31,15 @@ class TestBase(TestCase):
             f.write('.runsrc\nruns.yml')
         subprocess.run(['git', 'add', '.gitignore'], cwd=self.path)
         subprocess.run(['git', 'commit', '-qam', 'init'], cwd=self.path)
+        self.input_command = 'python -c "{}"'.format(
+            """\
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--option', default=0)
+print(vars(parser.parse_args()))\
+""")
+        self.description = 'test new command'
 
     def tearDown(self):
         shutil.rmtree(self.path)
@@ -46,15 +56,6 @@ class TestBase(TestCase):
 class TestNew(TestBase):
     def setUp(self):
         super().setUp()
-        self.input_command = 'python -c "{}"'.format(
-            """\
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--option', default=0)
-print(vars(parser.parse_args()))\
-""")
-        self.description = 'test new command'
         main.main(['new', self.name, self.input_command,
                    "--description=" + self.description, '-q'])
 

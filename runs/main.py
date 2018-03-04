@@ -3,7 +3,6 @@ import argparse
 import inspect
 import sys
 from configparser import ConfigParser
-from pprint import pprint
 
 from runs.cfg import Cfg
 from runs.db import DBPath
@@ -11,6 +10,12 @@ from runs.pattern import Pattern
 from runs.run import Run
 from runs.util import search_ancestors, NAME, PATTERN, \
     NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, FILESYSTEM
+
+
+def nonempty_string(value):
+    if value == '' or not isinstance(value, str):
+        raise argparse.ArgumentTypeError("Value must be a nonempty string.")
+    return value
 
 
 def main(argv=sys.argv[1:]):
@@ -51,9 +56,9 @@ def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', help='Custom path to directory containing runs database (default, `runs.yml`). '
                                        'Should not need to be specified for local runs but probably required for '
-                                       'accessing databses remotely.')
-    parser.add_argument('--db-path', help='path to YAML file storing run database information.')
-    parser.add_argument('--virtualenv-path')
+                                       'accessing databses remotely.', type=nonempty_string)
+    parser.add_argument('--db-path', help='path to YAML file storing run database information.', type=nonempty_string)
+    parser.add_argument('--virtualenv-path', type=nonempty_string)
     set_defaults(parser, FILESYSTEM)
 
     subparsers = parser.add_subparsers(dest='dest')
@@ -63,10 +68,10 @@ def main(argv=sys.argv[1:]):
     path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
 
     new_parser = subparsers.add_parser(NEW, help='Start a new run.')
-    new_parser.add_argument(NAME, help='Unique name assigned to new run.' + path_clarification)
+    new_parser.add_argument(NAME, help='Unique name assigned to new run.' + path_clarification, type=nonempty_string)
     new_parser.add_argument('command', help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
-                                            'or `--save-path` flag in this argument')
-    new_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
+                                            'or `--save-path` flag in this argument', type=nonempty_string)
+    new_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help, type=nonempty_string)
     new_parser.add_argument('--no-overwrite', action='store_true', help='Check before overwriting existing runs.')
     new_parser.add_argument('--ignore-dirty', action='store_true', help='Create new run even if repo is dirty.'
                                                                         'overwrite any entry with the same name. ')
@@ -83,31 +88,27 @@ def main(argv=sys.argv[1:]):
                                                "confirmation before deleting anything.")
     remove_parser.add_argument(PATTERN, default='*',
                                help='This script will only delete entries in the database whose names are a '
-                                    'complete (not partial) match of this regex pattern.')
+                                    'complete (not partial) match of this regex pattern.', type=nonempty_string)
     remove_parser.add_argument('--assume-yes', '-y', action='store_true',
                                help='Don\'t request permission from user before deleting.')
     set_defaults(remove_parser, REMOVE)
 
     move_parser = subparsers.add_parser(MOVE, help='Move a run from OLD to NEW.')
-    move_parser.add_argument('old', help='Name of run to rename.' + path_clarification)
-    move_parser.add_argument('new', help='New name for run.' + path_clarification)
-    move_parser.add_argument('--' + PATTERN, action='store_true',
-                             help='Whether to do a bulk move, interpreting OLD as a pattern')
+    move_parser.add_argument('old', help='Name of run to rename.' + path_clarification, type=nonempty_string)
+    move_parser.add_argument('new', help='New name for run.' + path_clarification, type=nonempty_string)
     move_parser.add_argument('--keep-tmux', action='store_true',
                              help='Rename tmux session instead of killing it.')
     set_defaults(move_parser, MOVE)
 
     pattern_help = 'Only display names matching this pattern.'
     list_parser = subparsers.add_parser(LIST, help='List all names in run database.')
-    list_parser.add_argument(PATTERN, nargs='?', default=None, help=pattern_help)
-    list_parser.add_argument('print_attrs', action='store_true',
-                             help='Print run attributes in addition to names.')
+    list_parser.add_argument(PATTERN, nargs='?', default=None, help=pattern_help, type=nonempty_string)
+    list_parser.add_argument('print_attrs', action='store_true', help='Print run attributes in addition to names.')
     set_defaults(list_parser, LIST)
 
     table_parser = subparsers.add_parser(TABLE, help='Display contents of run database as a table.')
-    table_parser.add_argument(PATTERN, nargs='?', default=None, help=pattern_help)
-    table_parser.add_argument('--hidden-columns',
-                              help='Comma-separated list of columns to not display in table.')
+    table_parser.add_argument(PATTERN, nargs='?', default=None, help=pattern_help, type=nonempty_string)
+    table_parser.add_argument('--hidden-columns', help='Comma-separated list of columns to not display in table.')
     table_parser.add_argument('--column-width', type=int, default=100,
                               help='Maximum width of table columns. Longer values will '
                                    'be truncated and appended with "...".')
@@ -116,22 +117,21 @@ def main(argv=sys.argv[1:]):
     lookup_parser = subparsers.add_parser(LOOKUP, help='Lookup specific value associated with database entry')
     lookup_parser.add_argument('key', help='Key that value is associated with. To view all available keys, '
                                            'use `--key=None`.')
-    lookup_parser.add_argument(PATTERN, help='Pattern of runs for which to retrieve key.')
+    lookup_parser.add_argument(PATTERN, help='Pattern of runs for which to retrieve key.', type=nonempty_string)
     lookup_parser.add_argument('--quiet', '-q', action='store_true', help='Suppress any explanatory output.')
     set_defaults(lookup_parser, LOOKUP)
 
     chdesc_parser = subparsers.add_parser(CHDESCRIPTION, help='Edit description of run.')
-    chdesc_parser.add_argument(NAME, help='Name of run whose description you want to edit.')
+    chdesc_parser.add_argument(NAME, help='Name of run whose description you want to edit.', type=nonempty_string)
     chdesc_parser.add_argument('--description', default=None, help='New description. If None, script will prompt for '
                                                                    'a description in Vim')
     set_defaults(chdesc_parser, CHDESCRIPTION)
 
     reproduce_parser = subparsers.add_parser(REPRODUCE, help='Print commands to reproduce a run.')
     reproduce_parser.add_argument(NAME)
-    reproduce_parser.add_argument('--description', type=str, default=None, help='Description to be assigned to new '
-                                                                                'run. If None, use the same '
-                                                                                'description as the run being '
-                                                                                'reproduced.')
+    reproduce_parser.add_argument('--description', type=nonempty_string, default=None,
+                                  help="Description to be assigned to new run. If None, use the same description as "
+                                       "the run being reproduced.")
     reproduce_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
     reproduce_parser.add_argument('--no-overwrite', action='store_true',
                                   help='If this flag is given, a timestamp will be '

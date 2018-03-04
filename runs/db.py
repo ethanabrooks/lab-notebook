@@ -1,4 +1,5 @@
 import shutil
+from collections import OrderedDict
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -6,6 +7,8 @@ import yaml
 from anytree import NodeMixin, Resolver, ChildResolverError, Node
 from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
+
+from runs.util import NAME
 
 
 def read(db_path):
@@ -17,9 +20,14 @@ def read(db_path):
     return None
 
 
+def name_first(attrs):
+    return [t for t in attrs if t[0] == NAME] + \
+           [t for t in attrs if t[0] != NAME]
+
+
 def write(tree, db_path):
     assert isinstance(tree, NodeMixin)
-    data = DictExporter().export(tree)
+    data = DictExporter(dictcls=OrderedDict, attriter=name_first).export(tree)
     with Path(db_path).open('w') as f:
         yaml.dump(data, f, default_flow_style=False)
 
