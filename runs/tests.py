@@ -1,14 +1,13 @@
-import argparse
 import os
 import shutil
 import subprocess
 from pathlib import Path
-from pprint import pprint
 from unittest import TestCase
 
 import yaml
 
 from runs import main
+from runs.db import DBPath
 from runs.pattern import Pattern
 from runs.run import Run
 from runs.util import NAME
@@ -80,9 +79,16 @@ print(vars(parser.parse_args()))\
     def db_entry(self):
         return get_name(self.db[CHILDREN], self.name)
 
+    @property
+    def dir_names(self):
+        return []
+
+    @property
+    def root(self):
+        return '.runs'
+
     def test_tmux(self):
         self.assertIn('"' + self.input_name + '"', sessions())
-
 
     def test_db(self):
         for key in ['commit', 'datetime']:
@@ -109,14 +115,9 @@ class TestNewWithSubdir(TestNew):
         self.assertIn('subdir', [child[NAME] for child in self.db[CHILDREN]])
         super().test_db()
 
-        # def test_something(self):
-        #     pprint(self.db)
-
 
 class TestNewWithConfig(TestNew):
     def setUp(self):
-        self.dir_names = ['checkpoints', 'tensorboard']
-        self.root = '.runs'
         Path(self.work_dir, self.input_name).mkdir(parents=True)
         with Path(self.work_dir, '.runsrc').open('w') as f:
             f.write(
@@ -136,16 +137,17 @@ dir_names = {}
             path = Path(self.work_dir, self.root, dir_name, self.input_name)
             self.assertTrue(path.exists())
 
-    def test_db(self):
-        super().test_db()
-
     @property
     def full_command(self):
         return self.input_command + ' --option=1'
 
+    @property
+    def dir_names(self):
+        return ['checkpoints', 'tensorboard']
 
-# class TestNewWithSubdirAndConfig(TestNewWithConfig, TestNewWithSubdir):
-#     pass
+
+class TestNewWithSubdirAndConfig(TestNewWithConfig, TestNewWithSubdir):
+    pass
 
 
 class TestRemoveNoPattern(TestNew):
@@ -193,3 +195,11 @@ class TestChdesc(TestNew):
         description = 'new description'
         main.main(['chdesc', self.input_name, '--description=' + description])
         self.assertEqual(Run(self.input_name).lookup('description'), description)
+
+# class TestMove(TestNew):
+#     def setUp(self):
+#         super().setUp()
+#         self.new_name = 'new_name'
+#         main.main(['mv', self.input_name, self.new_name])
+#
+#     def test_rename(self):
