@@ -35,5 +35,5 @@ setup(name='tf-run-manager',
           'anytree==2.4.3',
           'termcolor==1.1.0',
           'PyYAML==3.12',
-          'tabulate==0.8.1',
+          'tabulate==0.8.1', 'yaml',
       ])

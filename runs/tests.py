@@ -9,13 +9,15 @@ import yaml
 from runs import main
 from runs.pattern import Pattern
 from runs.run import Run
+from runs.util import cmd
 
 
 def sessions():
     try:
-        return subprocess.check_output(
-            'tmux list-session -F "#{session_name}"'.split(),
-            universal_newlines=True).split('\n')
+        output = subprocess.check_output('tmux list-session -F "#{session_name}"'.split(),
+                                         universal_newlines=True)
+        assert isinstance(output, str)
+        return output.split('\n')
     except subprocess.CalledProcessError:
         return []
 
@@ -45,7 +47,7 @@ class TestRuns(TestCase):
 class TestNew(TestRuns):
     def setUp(self):
         super().setUp()
-        self.command = 'python -c "{}"'.format(
+        self.input_command = 'python -c "{}"'.format(
             """\
 import argparse
 
@@ -53,10 +55,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--option', default=0)
 print(vars(parser.parse_args()))\
 """)
-        self.full_command = self.command
         self.description = 'test new command'
-        main.main(['new', self.name, self.command,
+        main.main(['new', self.name, self.input_command,
                    "--description=" + self.description, '-q'])
+
+    @property
+    def full_command(self):
+        return self.input_command
 
     def tearDown(self):
         Run(self.name).kill_tmux()
@@ -76,16 +81,20 @@ print(vars(parser.parse_args()))\
                 self.assertEqual(db[key], getattr(self, key))
         key = 'input_command'
         with self.subTest(key=key):
-            self.assertEqual(db[key], self.command)
+            self.assertEqual(db[key], self.input_command)
 
 
-# class TestNewWithSubdir(TestNew):
-#     @property
-#     def run_name(self):
-#         return 'subdir/test_run'
-#
-#     def test_db(self):
-#         self.
+class TestNewWithSubdir(TestNew):
+    @property
+    def run_name(self):
+        print('//////////////////////////')
+        return 'subdir/test_run'
+
+    def test_tmux_with_subdir(self):
+        super().test_tmux()
+
+    def test_db_with_subdir(self):
+        super().test_db()
 
 
 class TestNewWithConfig(TestNew):
@@ -112,8 +121,19 @@ dir_names = {}
             self.assertTrue(path.exists())
 
     def test_db(self):
-        self.full_command = self.command + ' --option=1'
         super().test_db()
+
+    @property
+    def full_command(self):
+        return self.input_command + ' --option=1'
+
+
+class TestNewWithSubdirAndConfig(TestNewWithConfig, TestNewWithSubdir):
+    pass
+    # def test_something(self):
+    #     with Path(self.path, 'runs.yml').open() as f:
+    #         print(f.read())
+    #     print(subprocess.check_output(['tree', self.root], universal_newlines=True))
 
 
 class TestRemoveNoPattern(TestNew):
@@ -132,25 +152,18 @@ class TestRemoveNoPattern(TestNew):
 
 
 class TestList(TestNew):
-    def setUp(self):
-        self.pattern = '*'
-        super().setUp()
-
     def test_list(self):
-        string = Pattern(self.pattern).tree_string(print_attrs=False)
-        self.assertEqual(string, """\
+        for pattern in ['*', 'test*']:
+            with self.subTest(pattern=pattern):
+                string = Pattern(pattern).tree_string(print_attrs=False)
+                self.assertEqual(string, """\
 .
 └── test_run
 """)
-
-    def test_list_happy_pattern(self):
-        self.pattern = 'test*'
-        self.test_list()
-
-    def test_list_sad_pattern(self):
-        self.pattern = 'x*'
-        with self.assertRaises(SystemExit):
-            self.test_list()
+        pattern = 'x*'
+        with self.subTest(pattern=pattern):
+            with self.assertRaises(SystemExit):
+                Pattern(pattern).tree_string()
 
 
 class TestTable(TestNew):
