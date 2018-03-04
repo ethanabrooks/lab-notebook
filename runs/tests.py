@@ -30,7 +30,7 @@ def sessions():
         return []
 
 
-class TestBase(TestCase):
+class TestNew(TestCase):
     def setUp(self):
         Path(self.work_dir).mkdir(exist_ok=True)
         os.chdir(self.work_dir)
@@ -48,8 +48,11 @@ parser.add_argument('--option', default=0)
 print(vars(parser.parse_args()))\
 """)
         self.description = 'test new command'
+        main.main(['new', self.input_name, self.input_command,
+                   "--description=" + self.description, '-q'])
 
     def tearDown(self):
+        Run(self.input_name).kill_tmux()
         shutil.rmtree(self.work_dir)
 
     @property
@@ -64,13 +67,6 @@ print(vars(parser.parse_args()))\
     def name(self):
         return self.input_name.split('/')[-1]
 
-
-class TestNew(TestBase):
-    def setUp(self):
-        super().setUp()
-        main.main(['new', self.input_name, self.input_command,
-                   "--description=" + self.description, '-q'])
-
     @property
     def full_command(self):
         return self.input_command
@@ -84,12 +80,9 @@ class TestNew(TestBase):
     def db_entry(self):
         return get_name(self.db[CHILDREN], self.name)
 
-    def tearDown(self):
-        Run(self.input_name).kill_tmux()
-        super().tearDown()
-
     def test_tmux(self):
         self.assertIn('"' + self.input_name + '"', sessions())
+
 
     def test_db(self):
         for key in ['commit', 'datetime']:
@@ -113,7 +106,7 @@ class TestNewWithSubdir(TestNew):
         return 'subdir/test_run'
 
     def test_db(self):
-        self.assertEqual(self.db[CHILDREN][0][NAME], 'subdir')
+        self.assertIn('subdir', [child[NAME] for child in self.db[CHILDREN]])
         super().test_db()
 
     # def test_something(self):
