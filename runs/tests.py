@@ -83,6 +83,7 @@ print(vars(parser.parse_args()))\
     def test_tmux(self):
         self.assertIn('"' + self.input_name + '"', sessions())
 
+
     def test_db(self):
         for key in ['commit', 'datetime']:
             with self.subTest(key=key):
