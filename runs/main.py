@@ -122,6 +122,8 @@ def main(argv=sys.argv[1:]):
 
     chdesc_parser = subparsers.add_parser(CHDESCRIPTION, help='Edit description of run.')
     chdesc_parser.add_argument(NAME, help='Name of run whose description you want to edit.')
+    chdesc_parser.add_argument('--description', default=None, help='New description. If None, script will prompt for '
+                                                                   'a description in Vim')
     set_defaults(chdesc_parser, CHDESCRIPTION)
 
     reproduce_parser = subparsers.add_parser(REPRODUCE, help='Print commands to reproduce a run.')
@@ -171,7 +173,7 @@ def main(argv=sys.argv[1:]):
             print("{}: {}".format(run.path, value))
 
     elif args.dest == CHDESCRIPTION:
-        Run(args.name).chdescription()
+        Run(args.name).chdescription(args.description)
 
     elif args.dest == REPRODUCE:
         print(Run(args.name).reproduce())

@@ -143,3 +143,10 @@ class TestTable(TestNew):
 class TestLookup(TestNew):
     def test_lookup(self):
         assert Pattern('*').lookup('name') == [self.run_name]
+
+
+class TestChdesc(TestNew):
+    def test_chdescription(self):
+        description = 'new description'
+        main.main(['chdesc', self.run_name, '--description=' + description])
+        assert Run(self.run_name).lookup('description') == description

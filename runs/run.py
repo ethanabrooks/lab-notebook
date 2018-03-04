@@ -119,6 +119,8 @@ class Run(DBPath):
     def rename_tmux(self, new):
         cmd('tmux rename-session -t '.split() + [self.path, new], fail_ok=True)
 
-    def chdescription(self):
+    def chdescription(self, new_description):
         with self.open() as node:
-            node.description = string_from_vim('Edit description', node.description)
+            if new_description is None:
+                new_description = string_from_vim('Edit description', node.description)
+            node.description = new_description
