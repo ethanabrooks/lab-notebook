@@ -99,6 +99,7 @@ dir_names = {}
         self.full_command = self.command + ' --option=1'
         super().test_db()
 
+
 class TestRemoveNoPattern(TestNew):
     def setUp(self):
         super().setUp()
