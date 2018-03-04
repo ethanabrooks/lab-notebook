@@ -138,3 +138,8 @@ class TestList(TestNew):
 class TestTable(TestNew):
     def test_table(self):
         assert isinstance(Pattern('*').table(100), str)
+
+
+class TestLookup(TestNew):
+    def test_lookup(self):
+        assert Pattern('*').lookup('name') == [self.run_name]

@@ -100,7 +100,7 @@ class Run(DBPath):
 
     def lookup(self, key):
         try:
-            return getattr(self.node, key)
+            return getattr(self.node(), key)
         except AttributeError:
             raise RuntimeError(
                 "`{}` not a valid key. Valid keys are {}.".format(key, self.keys))
