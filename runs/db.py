@@ -56,6 +56,16 @@ class DBPath:
                 self.parts.extend(part.split(self.sep))
         self.path = self.sep.join(self.parts)
 
+    @contextmanager
+    def new(self):
+        with open_db(DBPath.root, self.cfg.db_path) as node:
+            for i, part in enumerate(self.parts):
+                try:
+                    node = Resolver().get(node, self.sep.join(self.parts[:i]))
+                except ChildResolverError:
+                    node = Node(name=part, parent=node)
+            yield node
+
     def read(self):
         tree = read(self.cfg.db_path)
         if tree is None:

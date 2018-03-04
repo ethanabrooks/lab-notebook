@@ -2,10 +2,12 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+import anytree
 from anytree import AnyNode
+from anytree import Resolver
 from anytree.exporter import DictExporter
 
-from runs.db import DBPath
+from runs.db import DBPath, open_db
 from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, highlight, cmd
 
 
@@ -13,8 +15,7 @@ class Run(DBPath):
     def __init__(self, parts):
         super().__init__(parts)
         assert self.parts is not []
-        *ancestors, self.head = self.parts
-        self.parent = DBPath(ancestors)
+        *self.ancestors, self.head = self.parts
 
     @property
     def keys(self):
@@ -48,7 +49,7 @@ class Run(DBPath):
         self.new_tmux(description, full_command)
 
         # new db entry
-        with self.parent.open() as parent:
+        with DBPath(self.ancestors).new() as parent:
             assert parent is not None
             AnyNode(name=self.head,
                     input_command=command,
