@@ -55,16 +55,33 @@ class DBPath:
                 assert isinstance(part, str)
                 self.parts.extend(part.split(self.sep))
         self.path = self.sep.join(self.parts)
+        if self.parts:
+            *self.ancestors, self.head = self.parts
+        else:
+            self.ancestors = []
+            self.head = '.'
 
     @contextmanager
-    def new(self):
-        with open_db(DBPath.root, self.cfg.db_path) as node:
-            for i, part in enumerate(self.parts):
-                try:
-                    node = Resolver().get(node, self.sep.join(self.parts[:i]))
-                except ChildResolverError:
-                    node = Node(name=part, parent=node)
-            yield node
+    def add_to_tree(self):
+        """
+        Add a node corresponding to this path to the db, yield it,
+        and write when finished.
+        """
+        if self.node():
+            with self.open() as node:
+                yield node
+        else:
+            with DBPath(self.ancestors).add_to_tree() as parent:
+                yield Node(name=self.head, parent=parent)
+
+                #
+                # with open_db(DBPath.root, self.cfg.db_path) as node:
+                #     for i, part in enumerate(self.parts):
+                #         try:
+                #             node = Resolver().get(node, self.sep.join(self.parts[:i]))
+                #         except ChildResolverError:
+                #             node = Node(name=part, parent=node)
+                #     yield node
 
     def read(self):
         tree = read(self.cfg.db_path)
@@ -76,6 +93,10 @@ class DBPath:
         write(db, self.cfg.db_path)
 
     def node(self, root=None):
+        """
+         Get the node corresponding to thie path if it exists.
+        Otherwise return None.
+         """
         if root is None:
             root = self.read()
         try:

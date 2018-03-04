@@ -9,7 +9,6 @@ import yaml
 from runs import main
 from runs.pattern import Pattern
 from runs.run import Run
-from runs.util import cmd
 
 
 def sessions():
@@ -22,7 +21,7 @@ def sessions():
         return []
 
 
-class TestRuns(TestCase):
+class TestBase(TestCase):
     def setUp(self):
         Path(self.path).mkdir(exist_ok=True)
         os.chdir(self.path)
@@ -44,7 +43,7 @@ class TestRuns(TestCase):
         return 'test_run'
 
 
-class TestNew(TestRuns):
+class TestNew(TestBase):
     def setUp(self):
         super().setUp()
         self.input_command = 'python -c "{}"'.format(
@@ -84,17 +83,16 @@ print(vars(parser.parse_args()))\
             self.assertEqual(db[key], self.input_command)
 
 
-class TestNewWithSubdir(TestNew):
-    @property
-    def run_name(self):
-        print('//////////////////////////')
-        return 'subdir/test_run'
-
-    def test_tmux_with_subdir(self):
-        super().test_tmux()
-
-    def test_db_with_subdir(self):
-        super().test_db()
+# class TestNewWithSubdir(TestNew):
+#     @property
+#     def name(self):
+#         return 'subdir/test_run'
+#
+#     def test_db(self):
+#         # TODO
+#         with open('runs.yml') as f:
+#             print(f.read())
+#         super().test_db()
 
 
 class TestNewWithConfig(TestNew):
@@ -128,12 +126,8 @@ dir_names = {}
         return self.input_command + ' --option=1'
 
 
-class TestNewWithSubdirAndConfig(TestNewWithConfig, TestNewWithSubdir):
-    pass
-    # def test_something(self):
-    #     with Path(self.path, 'runs.yml').open() as f:
-    #         print(f.read())
-    #     print(subprocess.check_output(['tree', self.root], universal_newlines=True))
+# class TestNewWithSubdirAndConfig(TestNewWithConfig, TestNewWithSubdir):
+#     pass
 
 
 class TestRemoveNoPattern(TestNew):

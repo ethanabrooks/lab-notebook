@@ -2,21 +2,14 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
-import anytree
 from anytree import AnyNode
-from anytree import Resolver
 from anytree.exporter import DictExporter
 
-from runs.db import DBPath, open_db
+from runs.db import DBPath
 from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, highlight, cmd
 
 
 class Run(DBPath):
-    def __init__(self, parts):
-        super().__init__(parts)
-        assert self.parts is not []
-        *self.ancestors, self.head = self.parts
-
     @property
     def keys(self):
         return list(DictExporter().export(self.node()).keys())
@@ -49,7 +42,7 @@ class Run(DBPath):
         self.new_tmux(description, full_command)
 
         # new db entry
-        with DBPath(self.ancestors).new() as parent:
+        with DBPath(self.ancestors).add_to_tree() as parent:
             assert parent is not None
             AnyNode(name=self.head,
                     input_command=command,
@@ -86,7 +79,8 @@ class Run(DBPath):
         self.kill_tmux()
         self.rmdirs()
         with self.open() as node:
-            node.parent = None
+            if node:
+                node.parent = None
 
     def move(self, dest, keep_tmux):
         assert isinstance(dest, Run)
@@ -96,8 +90,9 @@ class Run(DBPath):
         else:
             self.kill_tmux()
         with self.open() as node:
-            node.name = dest.head
-            node.parent = dest.parent
+            if node:
+                node.name = dest.head
+                node.parent = dest.parent
 
     def lookup(self, key):
         try:
