@@ -63,17 +63,17 @@ print(vars(parser.parse_args()))\
         super().tearDown()
 
     def test_tmux(self):
-        assert '"' + self.name + '"' in sessions()
+        self.assertIn('"' + self.name + '"', sessions())
 
     def test_db(self):
         with Path(self.path, 'runs.yml').open() as f:
             db = yaml.load(f)['children'][0]
-        for key in ['commit','datetime']:
+        for key in ['commit', 'datetime']:
             with self.subTest(key=key):
                 self.assertIn(key, db)
         for key in ['description', 'full_command', 'name']:
             with self.subTest(key=key):
-                self.assertEqual(db[key], getattr(self,key))
+                self.assertEqual(db[key], getattr(self, key))
         key = 'input_command'
         with self.subTest(key=key):
             self.assertEqual(db[key], self.command)
@@ -109,7 +109,7 @@ dir_names = {}
     def test_mkdirs(self):
         for dir_name in self.dir_names:
             path = Path(self.path, self.root, dir_name, self.name)
-            assert path.exists()
+            self.assertTrue(path.exists())
 
     def test_db(self):
         self.full_command = self.command + ' --option=1'
@@ -127,7 +127,8 @@ class TestRemoveNoPattern(TestNew):
     def test_rmdirs(self):
         for root, dirs, files in os.walk(self.path):
             for file in files:
-                self.assertNotEqual(self.name, file)
+                with self.subTest(file=file):
+                    self.assertNotEqual(self.name, file)
 
 
 class TestList(TestNew):
