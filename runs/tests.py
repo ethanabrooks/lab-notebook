@@ -38,7 +38,7 @@ class TestRuns(TestCase):
         return '/tmp/test-run-manager'
 
     @property
-    def run_name(self):
+    def name(self):
         return 'test_run'
 
 
@@ -55,40 +55,44 @@ print(vars(parser.parse_args()))\
 """)
         self.full_command = self.command
         self.description = 'test new command'
-        main.main(['new', self.run_name, self.command,
+        main.main(['new', self.name, self.command,
                    "--description=" + self.description, '-q'])
 
     def tearDown(self):
-        Run(self.run_name).kill_tmux()
+        Run(self.name).kill_tmux()
         super().tearDown()
 
     def test_tmux(self):
-        assert '"' + self.run_name + '"' in sessions()
+        assert '"' + self.name + '"' in sessions()
 
     def test_db(self):
         with Path(self.path, 'runs.yml').open() as f:
             db = yaml.load(f)['children'][0]
-        self.assertIn('commit', db)
-        self.assertIn('datetime', db)
-        self.assertEqual(db['description'], self.description)
-        self.assertEqual(db['full_command'], self.full_command)
-        self.assertEqual(db['input_command'], self.command)
-        self.assertEqual(db['name'], self.run_name)
+        for key in ['commit','datetime']:
+            with self.subTest(key=key):
+                self.assertIn(key, db)
+        for key in ['description', 'full_command', 'name']:
+            with self.subTest(key=key):
+                self.assertEqual(db[key], getattr(self,key))
+        key = 'input_command'
+        with self.subTest(key=key):
+            self.assertEqual(db[key], self.command)
 
 
 # class TestNewWithSubdir(TestNew):
-#     def setUp(self):
-#         self.root = '.runs'
-#         self.subdir = 'subdir'
-#         Path(self.path, self.subdir, self.run_name).mkdir(parents=True)
-#         raise NotImplemented
+#     @property
+#     def run_name(self):
+#         return 'subdir/test_run'
+#
+#     def test_db(self):
+#         self.
 
 
 class TestNewWithConfig(TestNew):
     def setUp(self):
         self.dir_names = ['checkpoints', 'tensorboard']
         self.root = '.runs'
-        Path(self.path, self.run_name).mkdir(parents=True)
+        Path(self.path, self.name).mkdir(parents=True)
         with Path(self.path, '.runsrc').open('w') as f:
             f.write(
                 """\
@@ -104,7 +108,7 @@ dir_names = {}
 
     def test_mkdirs(self):
         for dir_name in self.dir_names:
-            path = Path(self.path, self.root, dir_name, self.run_name)
+            path = Path(self.path, self.root, dir_name, self.name)
             assert path.exists()
 
     def test_db(self):
@@ -115,15 +119,15 @@ dir_names = {}
 class TestRemoveNoPattern(TestNew):
     def setUp(self):
         super().setUp()
-        main.main(['rm', '-y', self.run_name])
+        main.main(['rm', '-y', self.name])
 
     def test_tmux(self):
-        self.assertNotIn('"' + self.run_name + '"', sessions())
+        self.assertNotIn('"' + self.name + '"', sessions())
 
     def test_rmdirs(self):
         for root, dirs, files in os.walk(self.path):
             for file in files:
-                self.assertNotEqual(self.run_name, file)
+                self.assertNotEqual(self.name, file)
 
 
 class TestList(TestNew):
@@ -155,11 +159,11 @@ class TestTable(TestNew):
 
 class TestLookup(TestNew):
     def test_lookup(self):
-        self.assertEqual(Pattern('*').lookup('name'), [self.run_name])
+        self.assertEqual(Pattern('*').lookup('name'), [self.name])
 
 
 class TestChdesc(TestNew):
     def test_chdescription(self):
         description = 'new description'
-        main.main(['chdesc', self.run_name, '--description=' + description])
-        self.assertEqual(Run(self.run_name).lookup('description'), description)
+        main.main(['chdesc', self.name, '--description=' + description])
+        self.assertEqual(Run(self.name).lookup('description'), description)
