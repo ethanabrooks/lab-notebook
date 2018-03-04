@@ -88,10 +88,10 @@ class Run(DBPath):
             self.rename_tmux(dest.head)
         else:
             self.kill_tmux()
-        with self.open() as node:
-            if node:
-                node.name = dest.head
-                node.parent = dest.parent.node()
+        with dest.parent.open() as parent:
+            node = self.node()
+            node.name = dest.head
+            node.parent = parent
 
     def lookup(self, key):
         try:

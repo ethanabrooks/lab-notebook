@@ -97,7 +97,10 @@ print(vars(parser.parse_args()))\
         for key in ['description', 'full_command', 'input_command', 'name']:
             with self.subTest(key=key):
                 self.assertIn(key, self.db_entry)
-                attr = self.input_command if key == 'input_command' else getattr(self, key)
+                if key == 'input_command':
+                    attr = self.input_command
+                else:
+                    attr = getattr(self, key)
                 self.assertEqual(self.db_entry[key], attr)
 
 
@@ -196,8 +199,8 @@ class TestChdesc(TestNew):
         self.assertEqual(Run(self.input_name).lookup('description'), description)
 
 
-# class TestMove(TestNew):
-#     def setUp(self):
-#         super().setUp()
-#         self.new_name = 'new_name'
-#         main.main(['mv', '-y', '--keep-tmux', self.input_name, self.new_name])
+class TestMove(TestNew):
+    def setUp(self):
+        super().setUp()
+        self.new_name = 'new_name'
+        main.main(['mv', '-y', '--keep-tmux', self.input_name, self.new_name])
