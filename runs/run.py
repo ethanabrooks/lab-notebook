@@ -5,7 +5,7 @@ from pathlib import Path
 from anytree import AnyNode
 from anytree.exporter import DictExporter
 
-from runs.db_path import DBPath
+from runs.db import DBPath
 from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, highlight, cmd
 
 

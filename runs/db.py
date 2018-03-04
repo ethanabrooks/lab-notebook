@@ -8,6 +8,16 @@ from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
 
 
+def read(cfg):
+    node = DBPath.root
+    db_path = Path(cfg.db_path)
+    if db_path.exists():
+        with db_path.open() as f:
+            data = yaml.load(f)
+        node = DictImporter().import_(data)
+    return node
+
+
 class DBPath:
     cfg = None
     root = Node('.')

@@ -6,7 +6,7 @@ from configparser import ConfigParser
 from pprint import pprint
 
 from runs.cfg import Cfg
-from runs.db_path import DBPath
+from runs.db import DBPath
 from runs.pattern import Pattern
 from runs.run import Run
 from runs.util import search_ancestors, NAME, PATTERN, \

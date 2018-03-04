@@ -7,7 +7,7 @@ from anytree import Resolver, findall
 from tabulate import tabulate
 
 import runs.main
-from runs.db_path import DBPath
+from runs.db import DBPath
 from runs.util import get_permission, highlight, COMMIT, NAME, COMMAND, DESCRIPTION
 
 

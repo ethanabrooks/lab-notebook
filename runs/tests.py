@@ -65,12 +65,12 @@ print(vars(parser.parse_args()))\
     def test_db(self):
         with Path(TestRuns.path, 'runs.yml').open() as f:
             db = yaml.load(f)['children'][0]
-        assert 'commit' in db
-        assert 'datetime' in db
-        assert db['description'] == self.description
-        assert db['full_command'] == self.full_command
-        assert db['input_command'] == self.command
-        assert db['name'] == TestRuns.run_name
+        self.assertIn('commit', db)
+        self.assertIn('datetime', db)
+        self.assertEqual(db['description'], self.description)
+        self.assertEqual(db['full_command'], self.full_command)
+        self.assertEqual(db['input_command'], self.command)
+        self.assertEqual(db['name'], TestRuns.run_name)
 
 
 class TestNewWithConfig(TestNew):
@@ -107,12 +107,12 @@ class TestRemoveNoPattern(TestNew):
         main.main(['rm', '-y', TestRuns.run_name])
 
     def test_tmux(self):
-        assert '"' + TestRuns.run_name + '"' not in sessions()
+        self.assertNotIn('"' + TestRuns.run_name + '"', sessions())
 
     def test_rmdirs(self):
         for root, dirs, files in os.walk(TestRuns.path):
             for file in files:
-                assert TestRuns.run_name != file
+                self.assertNotEqual(TestRuns.run_name, file)
 
 
 class TestList(TestNew):
@@ -120,10 +120,10 @@ class TestList(TestNew):
 
     def test_list(self):
         string = Pattern(TestList.pattern).tree_string(print_attrs=False)
-        assert string == """\
+        self.assertEqual(string, """\
 .
 └── test_run
-"""
+""")
 
     def test_list_happy_pattern(self):
         TestList.pattern = 'test*'
@@ -137,16 +137,16 @@ class TestList(TestNew):
 
 class TestTable(TestNew):
     def test_table(self):
-        assert isinstance(Pattern('*').table(100), str)
+        self.assertIsInstance(Pattern('*').table(100), str)
 
 
 class TestLookup(TestNew):
     def test_lookup(self):
-        assert Pattern('*').lookup('name') == [self.run_name]
+        self.assertEqual(Pattern('*').lookup('name'), [self.run_name])
 
 
 class TestChdesc(TestNew):
     def test_chdescription(self):
         description = 'new description'
         main.main(['chdesc', self.run_name, '--description=' + description])
-        assert Run(self.run_name).lookup('description') == description
+        self.assertEqual(Run(self.run_name).lookup('description'), description)
