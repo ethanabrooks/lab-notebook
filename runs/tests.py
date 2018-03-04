@@ -7,6 +7,7 @@ from unittest import TestCase
 import yaml
 
 from runs import main
+from runs.pattern import Pattern
 from runs.run import Run
 
 
@@ -112,3 +113,28 @@ class TestRemoveNoPattern(TestNew):
         for root, dirs, files in os.walk(TestRuns.path):
             for file in files:
                 assert TestRuns.run_name != file
+
+
+class TestList(TestNew):
+    pattern = '*'
+
+    def test_list(self):
+        string = Pattern(TestList.pattern).tree_string(print_attrs=False)
+        assert string == """\
+.
+└── test_run
+"""
+
+    def test_list_happy_pattern(self):
+        TestList.pattern = 'test*'
+        self.test_list()
+
+    def test_list_sad_pattern(self):
+        TestList.pattern = 'x*'
+        with self.assertRaises(SystemExit):
+            self.test_list()
+
+
+class TestTable(TestNew):
+    def test_table(self):
+        assert isinstance(Pattern('*').table(100), str)

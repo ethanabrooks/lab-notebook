@@ -81,20 +81,6 @@ def string_from_vim(prompt, string=None):
     return string
 
 
-def print_tree(tree, print_attrs=False):
-    for pre, fill, node in RenderTree(tree):
-        public_attrs = {k: v for k, v in vars(node).items()
-                        if not k.startswith('_') and not k == 'name'}
-        if public_attrs:
-            pnode = yaml.dump(public_attrs, default_flow_style=False).split('\n')
-        else:
-            pnode = ''
-        print("{}{}".format(pre, node.name).encode('utf-8'))
-        if print_attrs:
-            for line in pnode:
-                print("{}{}".format(fill, line))
-
-
 FILESYSTEM = 'filesystem'
 NAME = 'name'
 PATTERN = 'pattern'

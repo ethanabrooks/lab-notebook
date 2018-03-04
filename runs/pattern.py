@@ -1,12 +1,14 @@
 from contextlib import contextmanager
 from copy import deepcopy
 
+import yaml
+from anytree import RenderTree
 from anytree import Resolver, findall
 from tabulate import tabulate
 
 import runs.main
 from runs.db_path import DBPath
-from runs.util import get_permission, highlight, COMMIT, NAME, COMMAND, DESCRIPTION, print_tree
+from runs.util import get_permission, highlight, COMMIT, NAME, COMMAND, DESCRIPTION
 
 
 class Pattern(DBPath):
@@ -27,8 +29,8 @@ class Pattern(DBPath):
                      for base in Resolver().glob(root, self.path)
                      for node in findall(base, lambda n: hasattr(n, 'commit'))]
         if not run_nodes:
-            print('No runs match pattern. Recorded runs:')
-            print_tree(self.read())
+            print('No runs match pattern, {}. Recorded runs:'.format(self.path))
+            print(Pattern('*').tree_string().encode('utf-8'))
             exit()
         return run_nodes
 
@@ -37,7 +39,7 @@ class Pattern(DBPath):
 
     @property
     def keys(self):
-        return set([run.keys for run in self.runs()])
+        return set([key for run in self.runs() for key in run.keys])
 
     def remove(self, assume_yes):
         prompt = 'Remove the following runs?\n{}\n'.format('\n'.join(self.names()))
@@ -80,6 +82,22 @@ class Pattern(DBPath):
         for node in findall(tree, lambda n: n not in self.nodes(tree)):
             node.parent = None
         return tree
+
+    def tree_string(self, print_attrs=False):
+        string = ''
+        tree = self.tree()
+        for pre, fill, node in RenderTree(tree):
+            public_attrs = {k: v for k, v in vars(node).items()
+                            if not k.startswith('_') and not k == 'name'}
+            if public_attrs:
+                pnode = yaml.dump(public_attrs, default_flow_style=False).split('\n')
+            else:
+                pnode = ''
+            string += "{}{}\n".format(pre, node.name)
+            if print_attrs:
+                for line in pnode:
+                    string += "{}{}\n".format(fill, line)
+        return string
 
     def table(self, column_width):
         def get_values(node, key):

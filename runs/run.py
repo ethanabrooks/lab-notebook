@@ -18,7 +18,7 @@ class Run(DBPath):
 
     @property
     def keys(self):
-        return DictExporter().export(self.node).keys()
+        return list(DictExporter().export(self.node()).keys())
 
     # Commands
     def new(self, command, description, no_overwrite, quiet):

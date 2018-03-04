@@ -10,7 +10,7 @@ from runs.db_path import DBPath
 from runs.pattern import Pattern
 from runs.run import Run
 from runs.util import search_ancestors, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, print_tree, FILESYSTEM
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, FILESYSTEM
 
 
 def main(argv=sys.argv[1:]):
@@ -100,6 +100,8 @@ def main(argv=sys.argv[1:]):
     pattern_help = 'Only display names matching this pattern.'
     list_parser = subparsers.add_parser(LIST, help='List all names in run database.')
     list_parser.add_argument(PATTERN, nargs='?', default=None, help=pattern_help)
+    list_parser.add_argument('print_attrs', action='store_true',
+                             help='Print run attributes in addition to names.')
     set_defaults(list_parser, LIST)
 
     table_parser = subparsers.add_parser(TABLE, help='Display contents of run database as a table.')
@@ -158,7 +160,7 @@ def main(argv=sys.argv[1:]):
         Pattern(args.old).move(Run(args.new), args.keep_tmux)
 
     elif args.dest == LIST:
-        print_tree(Pattern(args.pattern).tree())
+        print(Pattern(args.pattern).tree_string(args.print_attrs))
 
     elif args.dest == TABLE:
         print(Pattern(args.pattern).table(args.column_width))
