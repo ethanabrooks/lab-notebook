@@ -8,14 +8,29 @@ from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
 
 
-def read(cfg):
-    node = DBPath.root
-    db_path = Path(cfg.db_path)
+def read(db_path):
+    db_path = Path(db_path)
     if db_path.exists():
         with db_path.open() as f:
             data = yaml.load(f)
-        node = DictImporter().import_(data)
-    return node
+        return DictImporter().import_(data)
+    return None
+
+
+def write(tree, db_path):
+    assert isinstance(tree, NodeMixin)
+    data = DictExporter().export(tree)
+    with Path(db_path).open('w') as f:
+        yaml.dump(data, f, default_flow_style=False)
+
+
+@contextmanager
+def open_db(root, db_path):
+    tree = read(db_path)
+    if tree is not None:
+        root = tree
+    yield root
+    write(root, db_path)
 
 
 class DBPath:
@@ -42,20 +57,13 @@ class DBPath:
         self.path = self.sep.join(self.parts)
 
     def read(self):
-        node = DBPath.root
-        db_path = Path(self.cfg.db_path)
-        if db_path.exists():
-            with db_path.open() as f:
-                data = yaml.load(f)
-            node = DictImporter().import_(data)
-        return node
+        tree = read(self.cfg.db_path)
+        if tree is None:
+            tree = DBPath.root
+        return tree
 
     def write(self, db):
-        if db is None:
-            db = DBPath.root
-        data = DictExporter().export(db)
-        with Path(self.cfg.db_path).open('w') as f:
-            yaml.dump(data, f, default_flow_style=False)
+        write(db, self.cfg.db_path)
 
     def node(self, root=None):
         if root is None:
@@ -69,24 +77,23 @@ class DBPath:
     # DB I/O
     @contextmanager
     def open(self):
-        root = self.read()
-        yield self.node(root)
-        self.write(root)
+        with open_db(DBPath.root, self.cfg.db_path) as tree:
+            yield self.node(tree)
 
     @property
-    def Paths(self):
+    def paths(self):
         return [Path(self.cfg.root, dir_name, self.path)
                 for dir_name in self.cfg.dir_names]
 
     # file I/O
     def mkdirs(self, exist_ok=True):
-        for path in self.Paths:
+        for path in self.paths:
             path.mkdir(exist_ok=exist_ok, parents=True)
 
     def rmdirs(self):
-        for path in self.Paths:
+        for path in self.paths:
             shutil.rmtree(str(path), ignore_errors=True)
 
     def mvdirs(self, new):
-        for old_path, new_path in zip(self.Paths, new.Paths):
+        for old_path, new_path in zip(self.paths, new.paths):
             old_path.rename(new_path)
