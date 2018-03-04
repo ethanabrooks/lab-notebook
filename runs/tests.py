@@ -41,7 +41,15 @@ class TestRuns(TestCase):
 class TestNew(TestRuns):
     def setUp(self):
         super().setUp()
-        self.command = 'echo hello'
+        self.command = 'python -c "{}"'.format(
+            """\
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--option', default=0)
+print(vars(parser.parse_args()))\
+""")
+        self.full_command = self.command
         self.description = 'test new command'
         main.main(['new', TestRuns.run_name, self.command,
                    "--description=" + self.description, '-q'])
@@ -50,18 +58,18 @@ class TestNew(TestRuns):
         Run(TestRuns.run_name).kill_tmux()
         super().tearDown()
 
+    def test_tmux(self):
+        assert '"' + TestRuns.run_name + '"' in sessions()
+
     def test_db(self):
         with Path(TestRuns.path, 'runs.yml').open() as f:
             db = yaml.load(f)['children'][0]
         assert 'commit' in db
         assert 'datetime' in db
         assert db['description'] == self.description
-        assert db['full_command'] == self.command
+        assert db['full_command'] == self.full_command
         assert db['input_command'] == self.command
         assert db['name'] == TestRuns.run_name
-
-    def test_tmux(self):
-        assert '"' + TestRuns.run_name + '"' in sessions()
 
 
 class TestNewWithConfig(TestNew):
@@ -72,17 +80,24 @@ class TestNewWithConfig(TestNew):
         with Path(TestRuns.path, '.runsrc').open('w') as f:
             f.write(
                 """\
-[DEFAULT]
+[filesystem]
 root = {}
 db_path = runs.yml
-dir_names = {}\
+dir_names = {}
+
+[flags]
+--option=1\
 """.format(self.root, ' '.join(self.dir_names)))
         super().setUp()
 
     def test_mkdirs(self):
         for dir_name in self.dir_names:
-            assert Path(TestRuns.path, self.root, dir_name, TestRuns.run_name).exists()
+            path = Path(TestRuns.path, self.root, dir_name, TestRuns.run_name)
+            assert path.exists()
 
+    def test_db(self):
+        self.full_command = self.command + ' --option=1'
+        super().test_db()
 
 class TestRemoveNoPattern(TestNew):
     def setUp(self):

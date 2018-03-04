@@ -70,11 +70,12 @@ class Run(DBPath):
             print('tmux attach -t', self.head)
 
     def build_command(self, command):
-        for flag, value in self.cfg.flags:
-            value = value.replace(
-                '<run-name>', self.path).replace(
-                '<runs-dir>', self.cfg.root)
-            command += ' ' + '{}={}'.format(flag, value)
+        for flag in self.cfg.flags:
+            flag = flag.replace(
+                '<path>', self.path).replace(
+                '<root>', str(self.cfg.root)).replace(
+                '<name>', self.head)
+            command += ' ' + flag
 
         if self.cfg.virtualenv_path:
             return 'source ' + self.cfg.virtualenv_path + '/bin/activate; ' + command

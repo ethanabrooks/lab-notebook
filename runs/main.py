@@ -3,13 +3,14 @@ import argparse
 import inspect
 import sys
 from configparser import ConfigParser
+from pprint import pprint
 
 from runs.cfg import Cfg
 from runs.db_path import DBPath
 from runs.pattern import Pattern
 from runs.run import Run
 from runs.util import search_ancestors, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, print_tree, DEFAULT
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, print_tree, FILESYSTEM
 
 
 def main(argv=sys.argv[1:]):
@@ -36,7 +37,7 @@ def main(argv=sys.argv[1:]):
     if config_path:
         config.read(str(config_path))
     else:
-        config[DEFAULT] = default_config
+        config[FILESYSTEM] = default_config
         with open(config_filename, 'w') as f:
             config.write(f)
 
@@ -53,7 +54,8 @@ def main(argv=sys.argv[1:]):
                                        'accessing databses remotely.')
     parser.add_argument('--db-path', help='path to YAML file storing run database information.')
     parser.add_argument('--virtualenv-path')
-    set_defaults(parser, DEFAULT)
+    set_defaults(parser, FILESYSTEM)
+
     subparsers = parser.add_subparsers(dest='dest')
     virtualenv_path_help = 'Path to virtual environment, if one is being ' \
                            'used. If not `None`, the program will source ' \
@@ -65,7 +67,6 @@ def main(argv=sys.argv[1:]):
     new_parser.add_argument('command', help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
                                             'or `--save-path` flag in this argument')
     new_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
-    new_parser.add_argument('--flags')
     new_parser.add_argument('--no-overwrite', action='store_true', help='Check before overwriting existing runs.')
     new_parser.add_argument('--ignore-dirty', action='store_true', help='Create new run even if repo is dirty.'
                                                                         'overwrite any entry with the same name. ')
@@ -136,10 +137,12 @@ def main(argv=sys.argv[1:]):
     set_defaults(reproduce_parser, REPRODUCE)
     args = parser.parse_args(args=argv)
 
-    DBPath.cfg = Cfg(**{
-        k: v for k, v in vars(args).items()
-        if k in inspect.signature(Cfg).parameters
-        })
+    kwargs = {k: v for k, v in vars(args).items()
+              if k in inspect.signature(Cfg).parameters}
+    if 'flags' in config:
+        kwargs['flags'] = config['flags']
+
+    DBPath.cfg = Cfg(**kwargs)
 
     if args.dest == NEW:
         Run(args.name).new(

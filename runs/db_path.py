@@ -1,4 +1,3 @@
-import os
 import shutil
 from contextlib import contextmanager
 from pathlib import Path
@@ -7,8 +6,6 @@ import yaml
 from anytree import NodeMixin, Resolver, ChildResolverError, Node
 from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
-
-from runs.util import print_tree
 
 
 class DBPath:

@@ -95,7 +95,7 @@ def print_tree(tree, print_attrs=False):
                 print("{}{}".format(fill, line))
 
 
-DEFAULT = 'DEFAULT'
+FILESYSTEM = 'filesystem'
 NAME = 'name'
 PATTERN = 'pattern'
 NEW = 'new'
