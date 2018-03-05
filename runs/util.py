@@ -43,10 +43,11 @@ def get_permission(question):
             response = input('Please enter y[es]|n[o]')
 
 
-def cmd(args, fail_ok=False):
+def cmd(args, fail_ok=False, cwd=None):
     process = subprocess.Popen(args,
                                stderr=subprocess.PIPE,
                                stdout=subprocess.PIPE,
+                               cwd=cwd,
                                universal_newlines=True)
     stdout, stderr = process.communicate(timeout=1)
     if stderr and not fail_ok:

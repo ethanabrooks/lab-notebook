@@ -7,6 +7,7 @@ from pathlib import Path
 import yaml
 from anytree import ChildResolverError
 from anytree import Resolver
+from git.util import cwd
 from nose.tools import assert_in, eq_, ok_
 from nose.tools import assert_not_equal
 from nose.tools import assert_not_in
@@ -14,7 +15,7 @@ from nose.tools import assert_raises
 
 from runs import main
 from runs.db import DBPath, read
-from runs.util import NAME
+from runs.util import NAME, cmd
 
 CHILDREN = 'children'
 
@@ -98,14 +99,14 @@ print(vars(parser.parse_args()))\
     [flags]
     {}\
     """.format(self.root, ' '.join(dir_names), '\n'.join(flags)))
-        subprocess.run(['git', 'init', '-q'], cwd=self.work_dir)
+        cmd(['git', 'init', '-q'], cwd=self.work_dir)
         with Path(self.work_dir, '.gitignore').open('w') as f:
             f.write('.runsrc\nruns.yml')
-        subprocess.run(['git', 'add', '.gitignore'], cwd=self.work_dir)
-        subprocess.run(['git', 'commit', '-qam', 'init'], cwd=self.work_dir)
+        cmd(['git', 'add', '.gitignore'], cwd=self.work_dir)
+        cmd(['git', 'commit', '-qam', 'init'], cwd=self.work_dir)
         main.main(['new', path, self.command, "--description=" + self.description, '-q'])
         yield
-        subprocess.run('tmux kill-session -t'.split() + [path])
+        cmd('tmux kill-session -t'.split() + [path], fail_ok=True)
         shutil.rmtree(self.work_dir)
 
     def check_new(self, path, dir_names, flags):
