@@ -44,9 +44,8 @@ class Pattern(DBPath):
     def remove(self, assume_yes):
         prompt = 'Remove the following runs?\n{}\n'.format('\n'.join(self.names()))
         if assume_yes or get_permission(prompt):
-            with self.open() as runs:
-                for run in runs:
-                    run.remove()
+            for run in self.runs():
+                run.remove()
 
     def move(self, dest, keep_tmux, assume_yes):
         assert isinstance(dest, runs.run.Run)

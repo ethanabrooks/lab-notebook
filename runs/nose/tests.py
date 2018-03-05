@@ -1,18 +1,19 @@
 import os
+import shutil
+import subprocess
 from contextlib import contextmanager
 from pathlib import Path
 
-import subprocess
-
-import shutil
-from pprint import pprint
-
 import yaml
+from anytree import ChildResolverError
+from anytree import Resolver
 from nose.tools import assert_in, eq_, ok_
+from nose.tools import assert_not_equal
+from nose.tools import assert_not_in
+from nose.tools import assert_raises
 
 from runs import main
-from runs.db import DBPath
-from runs.run import Run
+from runs.db import DBPath, read
 from runs.util import NAME
 
 CHILDREN = 'children'
@@ -28,8 +29,23 @@ def sessions():
         return []
 
 
+def quote(string):
+    return '"' + string + '"'
+
+
 def get_name(nodes, name):
     return next(n for n in nodes if n[NAME] == name)
+
+
+def param_generator():
+    for path in ['test_run', 'subdir/test_run']:
+        for dir_names in [[], ['checkpoints', 'tensorboard']]:
+            for flags in [[], ['--option=1']]:
+                yield path, dir_names, flags
+
+
+def param_generator2():
+    yield 'test_run', [], []
 
 
 class Tests:
@@ -42,6 +58,7 @@ parser.add_argument('--option', default=0)
 print(vars(parser.parse_args()))\
 """
         self.work_dir = '/tmp/test-run-manager'
+        self.db_path = Path(self.work_dir, 'runs.yml')
         self.root = '.runs'
         self.description = 'test new command'
         self.name = 'test_run'
@@ -49,7 +66,7 @@ print(vars(parser.parse_args()))\
 
     @property
     def db(self):
-        with Path(self.work_dir, 'runs.yml').open() as f:
+        with self.db_path.open() as f:
             return yaml.load(f)
 
     def db_entry(self, path):
@@ -93,7 +110,7 @@ print(vars(parser.parse_args()))\
         name = path.split(self.sep)[-1]
 
         # test tmux
-        assert_in('"' + path + '"', sessions())
+        assert_in(quote(path), sessions())
 
         entry = self.db_entry(path)
 
@@ -116,11 +133,28 @@ print(vars(parser.parse_args()))\
             path = Path(self.work_dir, self.root, dir_name, path)
             ok_(path.exists(), msg="{} does not exist.".format(path))
 
-    def test_new(self):
-        for path in ['test_run', 'subdir/test_run']:
-            for dir_names in [[], ['checkpoints', 'tensorboard']]:
-                for flags in [[], ['--option=1']]:
-                    with self._setup(path, dir_names, flags):
-                        yield self.check_new, path, dir_names, flags
+    def check_rm(self, path):
+        # test tmux
+        assert_not_in(quote(path), sessions())
 
-    # def test_remove(self):
+        with assert_raises(ChildResolverError):
+            Resolver().get(read(self.db_path), path)
+
+        # check file structure
+        for root, dirs, files in os.walk(self.work_dir):
+            for file in files:
+                assert_not_equal(path, file)
+
+    def test_new(self):
+        for path, dir_names, flags in param_generator():
+            with self._setup(path, dir_names, flags):
+                yield self.check_new, path, dir_names, flags
+
+    def test_remove(self):
+        for path, dir_names, flags in param_generator():
+            with self._setup(path, dir_names, flags):
+                main.main(['rm', '-y', path])
+                yield self.check_rm, path
+
+                # TODO: patterns
+                # TODO: sad path

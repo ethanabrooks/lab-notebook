@@ -60,7 +60,11 @@ def dirty_repo():
 
 
 def last_commit():
-    return cmd('git rev-parse HEAD'.split())
+    try:
+        return cmd('git rev-parse HEAD'.split())
+    except OSError:
+        print('Could not detect last commit. Perhaps you have not committed yet?')
+        exit()
 
 
 def string_from_vim(prompt, string=None):
