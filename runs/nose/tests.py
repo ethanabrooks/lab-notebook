@@ -22,10 +22,7 @@ CHILDREN = 'children'
 
 def sessions():
     try:
-        output = subprocess.run('tmux list-session -F "#{session_name}"'.split(),
-                                universal_newlines=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE).stdout
+        output = cmd('tmux list-session -F "#{session_name}"'.split(), fail_ok=True)
         assert isinstance(output, str)
         return output.split('\n')
     except subprocess.CalledProcessError:
