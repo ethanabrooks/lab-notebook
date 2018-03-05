@@ -106,12 +106,10 @@ print(vars(parser.parse_args()))\
         cmd('tmux kill-session -t'.split() + [path], fail_ok=True)
         shutil.rmtree(self.work_dir)
 
-    def check_new(self, path, dir_names, flags):
-        name = path.split(self.sep)[-1]
-
-        # test tmux
+    def check_tmux_new(self, path):
         assert_in(quote(path), sessions())
 
+    def check_db_new(self, path, flags):
         entry = self.db_entry(path)
 
         # check values that should probably be mocks
@@ -119,6 +117,7 @@ print(vars(parser.parse_args()))\
             assert_in(key, entry)
 
         # check known values
+        name = path.split(self.sep)[-1]
         attrs = dict(description=self.description,
                      input_command=self.command,
                      name=name)
@@ -128,19 +127,19 @@ print(vars(parser.parse_args()))\
         for flag in flags:
             assert_in(flag, entry['full_command'])
 
-        # check file structure
+    def check_files_new(self, path, dir_names):
         for dir_name in dir_names:
             path = Path(self.work_dir, self.root, dir_name, path)
             ok_(path.exists(), msg="{} does not exist.".format(path))
 
-    def check_rm(self, path):
-        # test tmux
+    def check_tmux_rm(self, path):
         assert_not_in(quote(path), sessions())
 
+    def check_db_rm(self, path):
         with assert_raises(ChildResolverError):
             Resolver().get(read(self.db_path), path)
 
-        # check file structure
+    def check_files_rm(self, path):
         for root, dirs, files in os.walk(self.work_dir):
             for file in files:
                 assert_not_equal(path, file)
@@ -148,13 +147,17 @@ print(vars(parser.parse_args()))\
     def test_new(self):
         for path, dir_names, flags in param_generator():
             with self._setup(path, dir_names, flags):
-                yield self.check_new, path, dir_names, flags
+                yield self.check_tmux_new, path
+                yield self.check_db_new, path, flags
+                yield self.check_files_new, path, dir_names
 
     def test_remove(self):
         for path, dir_names, flags in param_generator():
             with self._setup(path, dir_names, flags):
                 main.main(['rm', '-y', path])
-                yield self.check_rm, path
+                yield self.check_tmux_rm, path
+                yield self.check_db_rm, path
+                yield self.check_files_rm, path
 
                 # TODO: patterns
                 # TODO: sad path
