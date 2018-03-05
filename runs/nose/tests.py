@@ -18,19 +18,19 @@ from runs.db import DBPath, read
 from runs.util import NAME, cmd
 
 CHILDREN = 'children'
-self.command = """\
+command = """\
 import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--option', default=0)
 print(vars(parser.parse_args()))\
 """
-self.work_dir = '/tmp/test-run-manager'
-self.db_path = Path(self.work_dir, 'runs.yml')
-self.root = '.runs'
-self.description = 'test new command'
-self.name = 'test_run'
-self.sep = DBPath('').sep
+work_dir = '/tmp/test-run-manager'
+db_path = Path(work_dir, 'runs.yml')
+root = '.runs'
+description = 'test new command'
+name = 'test_run'
+sep = DBPath('').sep
 
 
 def sessions():
@@ -61,116 +61,105 @@ def param_generator2():
     yield 'test_run', [], []
 
 
-class Tests:
-    def __init__(self):
-        self.command = """\
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--option', default=0)
-print(vars(parser.parse_args()))\
-"""
-        self.work_dir = '/tmp/test-run-manager'
-        self.db_path = Path(self.work_dir, 'runs.yml')
-        self.root = '.runs'
-        self.description = 'test new command'
-        self.name = 'test_run'
-        self.sep = DBPath('').sep
-
-    @property
-    def db(self):
-        with self.db_path.open() as f:
+def db_entry(path):
+    if not path:
+        with db_path.open() as f:
             return yaml.load(f)
+    *path, name = path.split(sep)
+    entry = db_entry(sep.join(path))
+    assert_in(CHILDREN, entry)
+    return get_name(entry[CHILDREN], name)
 
-    def db_entry(self, path):
-        if not path:
-            return self.db
-        *path, name = path.split(self.sep)
-        entry = self.db_entry(self.sep.join(path))
-        assert_in(CHILDREN, entry)
-        return get_name(entry[CHILDREN], name)
 
-    @contextmanager
-    def _setup(self, path, dir_names, flags):
-        assert isinstance(path, str)
-        assert isinstance(dir_names, list)
-        assert isinstance(flags, list)
-        Path(self.work_dir).mkdir(exist_ok=True)
-        os.chdir(self.work_dir)
-        if any([dir_names, flags]):
-            with Path(self.work_dir, '.runsrc').open('w') as f:
-                f.write(
-                    """\
-    [filesystem]
-    root = {}
-    db_path = runs.yml
-    dir_names = {}
+@contextmanager
+def _setup(path, dir_names, flags):
+    assert isinstance(path, str)
+    assert isinstance(dir_names, list)
+    assert isinstance(flags, list)
+    Path(work_dir).mkdir(exist_ok=True)
+    os.chdir(work_dir)
+    if any([dir_names, flags]):
+        with Path(work_dir, '.runsrc').open('w') as f:
+            f.write(
+                """\
+[filesystem]
+root = {}
+db_path = runs.yml
+dir_names = {}
 
-    [flags]
-    {}\
-    """.format(self.root, ' '.join(dir_names), '\n'.join(flags)))
-        cmd(['git', 'init', '-q'], cwd=self.work_dir)
-        with Path(self.work_dir, '.gitignore').open('w') as f:
-            f.write('.runsrc\nruns.yml')
-        cmd(['git', 'add', '.gitignore'], cwd=self.work_dir)
-        cmd(['git', 'commit', '-qam', 'init'], cwd=self.work_dir)
-        main.main(['new', path, self.command, "--description=" + self.description, '-q'])
-        yield
-        cmd('tmux kill-session -t'.split() + [path], fail_ok=True)
-        shutil.rmtree(self.work_dir)
+[flags]
+{}\
+""".format(root, ' '.join(dir_names), '\n'.join(flags)))
+    cmd(['git', 'init', '-q'], cwd=work_dir)
+    with Path(work_dir, '.gitignore').open('w') as f:
+        f.write('.runsrc\nruns.yml')
+    cmd(['git', 'add', '.gitignore'], cwd=work_dir)
+    cmd(['git', 'commit', '-qam', 'init'], cwd=work_dir)
+    main.main(['new', path, command, "--description=" + description, '-q'])
+    yield
+    cmd('tmux kill-session -t'.split() + [path], fail_ok=True)
+    shutil.rmtree(work_dir)
 
-    def check_tmux_new(self, path):
-        assert_in(quote(path), sessions())
 
-    def check_db_new(self, path, flags):
-        entry = self.db_entry(path)
+def check_tmux_new(path):
+    assert_in(quote(path), sessions())
 
-        # check values that should probably be mocks
-        for key in ['commit', 'datetime']:
-            assert_in(key, entry)
 
-        # check known values
-        name = path.split(self.sep)[-1]
-        attrs = dict(description=self.description,
-                     input_command=self.command,
-                     name=name)
-        for key, attr in attrs.items():
-            assert_in(key, entry)
-            eq_(entry[key], attr)
-        for flag in flags:
-            assert_in(flag, entry['full_command'])
+def check_db_new(path, flags):
+    entry = db_entry(path)
 
-    def check_files_new(self, path, dir_names):
-        for dir_name in dir_names:
-            path = Path(self.work_dir, self.root, dir_name, path)
-            ok_(path.exists(), msg="{} does not exist.".format(path))
+    # check values that should probably be mocks
+    for key in ['commit', 'datetime']:
+        assert_in(key, entry)
 
-    def check_tmux_rm(self, path):
-        assert_not_in(quote(path), sessions())
+    # check known values
+    name = path.split(sep)[-1]
+    attrs = dict(description=description,
+                 input_command=command,
+                 name=name)
+    for key, attr in attrs.items():
+        assert_in(key, entry)
+        eq_(entry[key], attr)
+    for flag in flags:
+        assert_in(flag, entry['full_command'])
 
-    def check_db_rm(self, path):
-        with assert_raises(ChildResolverError):
-            Resolver().get(read(self.db_path), path)
 
-    def check_files_rm(self, path):
-        for root, dirs, files in os.walk(self.work_dir):
-            for file in files:
-                assert_not_equal(path, file)
+def check_files_new(path, dir_names):
+    for dir_name in dir_names:
+        path = Path(work_dir, root, dir_name, path)
+        ok_(path.exists(), msg="{} does not exist.".format(path))
 
-    def test_new(self):
-        for path, dir_names, flags in param_generator():
-            with self._setup(path, dir_names, flags):
-                yield self.check_tmux_new, path
-                yield self.check_db_new, path, flags
-                yield self.check_files_new, path, dir_names
 
-    def test_remove(self):
-        for path, dir_names, flags in param_generator():
-            with self._setup(path, dir_names, flags):
-                main.main(['rm', '-y', path])
-                yield self.check_tmux_rm, path
-                yield self.check_db_rm, path
-                yield self.check_files_rm, path
+def check_tmux_rm(path):
+    assert_not_in(quote(path), sessions())
 
-                # TODO: patterns
-                # TODO: sad path
+
+def check_db_rm(path):
+    with assert_raises(ChildResolverError):
+        Resolver().get(read(db_path), path)
+
+
+def check_files_rm(path):
+    for root, dirs, files in os.walk(work_dir):
+        for file in files:
+            assert_not_equal(path, file)
+
+
+def test_new():
+    for path, dir_names, flags in param_generator():
+        with _setup(path, dir_names, flags):
+            yield check_tmux_new, path
+            yield check_db_new, path, flags
+            yield check_files_new, path, dir_names
+
+
+def test_remove():
+    for path, dir_names, flags in param_generator():
+        with _setup(path, dir_names, flags):
+            main.main(['rm', '-y', path])
+            yield check_tmux_rm, path
+            yield check_db_rm, path
+            yield check_files_rm, path
+
+            # TODO: patterns
+            # TODO: sad path
