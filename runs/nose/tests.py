@@ -18,6 +18,19 @@ from runs.db import DBPath, read
 from runs.util import NAME, cmd
 
 CHILDREN = 'children'
+self.command = """\
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--option', default=0)
+print(vars(parser.parse_args()))\
+"""
+self.work_dir = '/tmp/test-run-manager'
+self.db_path = Path(self.work_dir, 'runs.yml')
+self.root = '.runs'
+self.description = 'test new command'
+self.name = 'test_run'
+self.sep = DBPath('').sep
 
 
 def sessions():
