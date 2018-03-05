@@ -2,20 +2,22 @@ import os
 import shutil
 import subprocess
 from contextlib import contextmanager
+from fnmatch import fnmatch
 from pathlib import Path
 
 import yaml
 from anytree import ChildResolverError
 from anytree import Resolver
-from git.util import cwd
 from nose.tools import assert_in, eq_, ok_
-from nose.tools import assert_not_equal
 from nose.tools import assert_not_in
 from nose.tools import assert_raises
 
 from runs import main
-from runs.db import DBPath, read
+from runs.db import read
+from runs.pattern import Pattern
 from runs.util import NAME, cmd
+
+# TODO: sad path
 
 CHILDREN = 'children'
 COMMAND = """\
@@ -49,15 +51,34 @@ def get_name(nodes, name):
     return next(n for n in nodes if n[NAME] == name)
 
 
-def param_generator():
-    for path in ['test_run', 'subdir/test_run']:
-        for dir_names in [[], ['checkpoints', 'tensorboard']]:
-            for flags in [[], ['--option=1']]:
-                yield path, dir_names, flags
+class ParamGenerator:
+    def __init__(self):
+        self.paths = ['test_run', 'subdir/test_run']
+        self.dir_names = [[], ['checkpoints', 'tensorboard']]
+        self.flags = [[], ['--option=1']]
+
+    def __iter__(self):
+        for path in self.paths:
+            for dir_names in self.dir_names:
+                for flags in self.flags:
+                    yield path, dir_names, flags
+
+    def __next__(self):
+        return next(iter(self))
 
 
-def param_generator2():
-    yield 'test_run', [], []
+class SimpleParamGenerator(ParamGenerator):
+    def __init__(self):
+        super().__init__()
+        self.paths = ['test_run']
+        self.dir_names = [[]]
+        self.flags = [[]]
+
+
+class ParamGeneratorWithPatterns(ParamGenerator):
+    def __init__(self):
+        super().__init__()
+        self.paths += ['*', 'subdir/*', 'test*']
 
 
 def db_entry(path):
@@ -135,25 +156,25 @@ def check_tmux_rm(path):
 
 def check_db_rm(path):
     with assert_raises(ChildResolverError):
-        Resolver().get(read(DB_PATH), path)
+        Resolver().glob(read(DB_PATH), path)
 
 
 def check_files_rm(path):
     for root, dirs, files in os.walk(WORK_DIR):
-        for file in files:
-            assert_not_equal(path, file)
+        for filename in files:
+            ok_(not fnmatch(filename, path))
 
 
 def test_new():
-    for path, dir_names, flags in param_generator():
+    for path, dir_names, flags in ParamGenerator():
         with _setup(path, dir_names, flags):
             yield check_tmux_new, path
             yield check_db_new, path, flags
             yield check_files_new, path, dir_names
 
 
-def test_remove():
-    for path, dir_names, flags in param_generator():
+def test_rm():
+    for path, dir_names, flags in ParamGenerator():
         with _setup(path, dir_names, flags):
             main.main(['rm', '-y', path])
             yield check_tmux_rm, path
@@ -161,4 +182,17 @@ def test_remove():
             yield check_files_rm, path
 
             # TODO: patterns
-            # TODO: sad path
+
+
+# def test_list():
+#     for pattern in ['*', 'test*']:
+#         for path, dir_names, flags in param_generator2():
+#             with _setup(path, dir_names, flags):
+#                 string = Pattern(pattern).tree_string(print_attrs=False)
+
+# eq_(string, """\
+# .
+# └── test_run
+# """)
+#         with assert_raises(SystemExit):
+#             Pattern('x*').tree_string()
