@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 from unittest import TestCase
 
+from parameterized import parameterized
 import yaml
 
 from runs import main
@@ -61,6 +62,10 @@ print(vars(parser.parse_args()))\
         return 'test_run'
 
     @property
+    def test_name(self):
+        return self.input_name
+
+    @property
     def name(self):
         return self.input_name.split('/')[-1]
 
@@ -87,7 +92,7 @@ print(vars(parser.parse_args()))\
         return '.runs'
 
     def test_tmux(self):
-        self.assertIn('"' + self.input_name + '"', sessions())
+        self.assertIn('"' + self.test_name + '"', sessions())
 
     def test_db(self):
         for key in ['commit', 'datetime']:
@@ -104,7 +109,7 @@ print(vars(parser.parse_args()))\
 
     def test_file_structure(self):
         for dir_name in self.dir_names:
-            path = Path(self.work_dir, self.root, dir_name, self.input_name)
+            path = Path(self.work_dir, self.root, dir_name, self.test_name)
             self.assertTrue(path.exists(), msg="{} does not exist.".format(path))
 
 
@@ -187,6 +192,7 @@ class TestList(TestNew):
 
 class TestTable(TestNew):
     def test_table(self):
+        # TODO: there should be a db.table function
         self.assertIsInstance(Pattern('*').table(100), str)
 
 
@@ -205,8 +211,10 @@ class TestChdesc(TestNew):
 class TestMove(TestNew):
     def setUp(self):
         super().setUp()
-        for new_name in ['new_name', 'subdir/new_name']:
-            with self.subTest(new_name=new_name):
-                main.main(['mv', '-y', '--keep-tmux', self.input_name, new_name])
+        main.main(['mv', '-y', '--keep-tmux', self.input_name, self.test_name])
+
+    @property
+    def test_name(self):
+        return 'new_name'
 
 # TODO: Sad cases
