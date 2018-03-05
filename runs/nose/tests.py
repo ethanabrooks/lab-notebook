@@ -18,19 +18,18 @@ from runs.db import DBPath, read
 from runs.util import NAME, cmd
 
 CHILDREN = 'children'
-command = """\
+COMMAND = """\
 import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--option', default=0)
 print(vars(parser.parse_args()))\
 """
-work_dir = '/tmp/test-run-manager'
-db_path = Path(work_dir, 'runs.yml')
-root = '.runs'
-description = 'test new command'
-name = 'test_run'
-sep = DBPath('').sep
+WORK_DIR = '/tmp/test-run-manager'
+DB_PATH = Path(WORK_DIR, 'runs.yml')
+ROOT = '.runs'
+DESCRIPTION = 'test new command'
+SEP = '/'
 
 
 def sessions():
@@ -63,10 +62,10 @@ def param_generator2():
 
 def db_entry(path):
     if not path:
-        with db_path.open() as f:
+        with DB_PATH.open() as f:
             return yaml.load(f)
-    *path, name = path.split(sep)
-    entry = db_entry(sep.join(path))
+    *path, name = path.split(SEP)
+    entry = db_entry(SEP.join(path))
     assert_in(CHILDREN, entry)
     return get_name(entry[CHILDREN], name)
 
@@ -76,10 +75,10 @@ def _setup(path, dir_names, flags):
     assert isinstance(path, str)
     assert isinstance(dir_names, list)
     assert isinstance(flags, list)
-    Path(work_dir).mkdir(exist_ok=True)
-    os.chdir(work_dir)
+    Path(WORK_DIR).mkdir(exist_ok=True)
+    os.chdir(WORK_DIR)
     if any([dir_names, flags]):
-        with Path(work_dir, '.runsrc').open('w') as f:
+        with Path(WORK_DIR, '.runsrc').open('w') as f:
             f.write(
                 """\
 [filesystem]
@@ -89,16 +88,16 @@ dir_names = {}
 
 [flags]
 {}\
-""".format(root, ' '.join(dir_names), '\n'.join(flags)))
-    cmd(['git', 'init', '-q'], cwd=work_dir)
-    with Path(work_dir, '.gitignore').open('w') as f:
+""".format(ROOT, ' '.join(dir_names), '\n'.join(flags)))
+    cmd(['git', 'init', '-q'], cwd=WORK_DIR)
+    with Path(WORK_DIR, '.gitignore').open('w') as f:
         f.write('.runsrc\nruns.yml')
-    cmd(['git', 'add', '.gitignore'], cwd=work_dir)
-    cmd(['git', 'commit', '-qam', 'init'], cwd=work_dir)
-    main.main(['new', path, command, "--description=" + description, '-q'])
+    cmd(['git', 'add', '.gitignore'], cwd=WORK_DIR)
+    cmd(['git', 'commit', '-qam', 'init'], cwd=WORK_DIR)
+    main.main(['new', path, COMMAND, "--description=" + DESCRIPTION, '-q'])
     yield
     cmd('tmux kill-session -t'.split() + [path], fail_ok=True)
-    shutil.rmtree(work_dir)
+    shutil.rmtree(WORK_DIR)
 
 
 def check_tmux_new(path):
@@ -113,9 +112,9 @@ def check_db_new(path, flags):
         assert_in(key, entry)
 
     # check known values
-    name = path.split(sep)[-1]
-    attrs = dict(description=description,
-                 input_command=command,
+    name = path.split(SEP)[-1]
+    attrs = dict(description=DESCRIPTION,
+                 input_command=COMMAND,
                  name=name)
     for key, attr in attrs.items():
         assert_in(key, entry)
@@ -126,7 +125,7 @@ def check_db_new(path, flags):
 
 def check_files_new(path, dir_names):
     for dir_name in dir_names:
-        path = Path(work_dir, root, dir_name, path)
+        path = Path(WORK_DIR, ROOT, dir_name, path)
         ok_(path.exists(), msg="{} does not exist.".format(path))
 
 
@@ -136,11 +135,11 @@ def check_tmux_rm(path):
 
 def check_db_rm(path):
     with assert_raises(ChildResolverError):
-        Resolver().get(read(db_path), path)
+        Resolver().get(read(DB_PATH), path)
 
 
 def check_files_rm(path):
-    for root, dirs, files in os.walk(work_dir):
+    for root, dirs, files in os.walk(WORK_DIR):
         for file in files:
             assert_not_equal(path, file)
 
