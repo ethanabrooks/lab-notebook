@@ -60,35 +60,37 @@ print(vars(parser.parse_args()))\
         assert_in(CHILDREN, entry)
         return get_name(entry[CHILDREN], name)
 
-    @contextmanager
-    def _setup(self, path, dir_names, flags):
-        assert isinstance(path, str)
-        assert isinstance(dir_names, list)
-        assert isinstance(flags, list)
-        Path(self.work_dir).mkdir(exist_ok=True)
-        os.chdir(self.work_dir)
-        if any([dir_names, flags]):
-            with Path(self.work_dir, '.runsrc').open('w') as f:
-                f.write(
-                    """\
-    [filesystem]
-    root = {}
-    db_path = runs.yml
-    dir_names = {}
+    def _setup(self, test_func):
+        def wrapper(path, dir_names, flags):
+            assert isinstance(path, str)
+            assert isinstance(dir_names, list)
+            assert isinstance(flags, list)
+            Path(self.work_dir).mkdir(exist_ok=True)
+            os.chdir(self.work_dir)
+            if any([dir_names, flags]):
+                with Path(self.work_dir, '.runsrc').open('w') as f:
+                    f.write(
+                        """\
+        [filesystem]
+        root = {}
+        db_path = runs.yml
+        dir_names = {}
 
-    [flags]
-    {}\
-    """.format(self.root, ' '.join(dir_names), '\n'.join(flags)))
-        subprocess.run(['git', 'init', '-q'], cwd=self.work_dir)
-        with Path(self.work_dir, '.gitignore').open('w') as f:
-            f.write('.runsrc\nruns.yml')
-        subprocess.run(['git', 'add', '.gitignore'], cwd=self.work_dir)
-        subprocess.run(['git', 'commit', '-qam', 'init'], cwd=self.work_dir)
-        main.main(['new', path, self.command, "--description=" + self.description, '-q'])
-        yield
-        subprocess.run('tmux kill-session -t'.split() + [path])
-        shutil.rmtree(self.work_dir)
+        [flags]
+        {}\
+        """.format(self.root, ' '.join(dir_names), '\n'.join(flags)))
+            subprocess.run(['git', 'init', '-q'], cwd=self.work_dir)
+            with Path(self.work_dir, '.gitignore').open('w') as f:
+                f.write('.runsrc\nruns.yml')
+            subprocess.run(['git', 'add', '.gitignore'], cwd=self.work_dir)
+            subprocess.run(['git', 'commit', '-qam', 'init'], cwd=self.work_dir)
+            main.main(['new', path, self.command, "--description=" + self.description, '-q'])
+            test_func(path, dir_names, flags)
+            subprocess.run('tmux kill-session -t'.split() + [path])
+            shutil.rmtree(self.work_dir)
+        return wrapper
 
+    @_setup
     def check_new(self, path, dir_names, flags):
         name = path.split(self.sep)[-1]
 
@@ -120,7 +122,6 @@ print(vars(parser.parse_args()))\
         for path in ['test_run', 'subdir/test_run']:
             for dir_names in [[], ['checkpoints', 'tensorboard']]:
                 for flags in [[], ['--option=1']]:
-                    with self._setup(path, dir_names, flags):
-                        yield self.check_new, path, dir_names, flags
+                    yield self.check_new, path, dir_names, flags
 
     # def test_remove(self):
