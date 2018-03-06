@@ -86,7 +86,7 @@ class Pattern(DBPath):
         return tree
 
     def tree_string(self, print_attrs=False):
-        return tree_string(self.tree(), print_attrs)
+        return tree_string(tree=self.tree(), print_attrs=print_attrs)
 
     def table(self, column_width):
         return db.table(self.nodes(), self.cfg.hidden_columns, column_width)

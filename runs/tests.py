@@ -214,9 +214,13 @@ def test_rm():
             # TODO: patterns
 
 
-def check_list_happy(pattern):
-    string = Pattern(pattern).tree_string(print_attrs=False)
-    eq_(string, """\
+def check_list_happy(pattern, print_attrs):
+    string = Pattern(pattern).tree_string(print_attrs)
+    if print_attrs:
+        assert_in('test_run', string)
+        assert_in('commit', string)
+    else:
+        eq_(string, """\
 .
 └── test_run
 """)
@@ -232,7 +236,8 @@ def test_list():
     for _, dir_names, flags in ParamGenerator():
         with _setup(path, dir_names, flags):
             for pattern in ['*', 'test*']:
-                yield check_list_happy, pattern
+                for print_attrs in range(2):
+                    yield check_list_happy, pattern, print_attrs
             for pattern in ['x*', 'test']:
                 yield check_list_sad, pattern
 
