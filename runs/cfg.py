@@ -4,8 +4,8 @@ from runs.util import _exit
 
 
 class Cfg:
-    def __init__(self, root, db_path, hidden_columns=None, dir_names=None,
-                 virtualenv_path=None, flags=None, quiet=False):
+    def __init__(self, root, db_path, hidden_columns, dir_names,
+                 virtualenv_path, flags, quiet=False):
         if flags is None:
             flags = {}
         self.root = Path(root)
@@ -15,7 +15,7 @@ class Cfg:
             _exit(should_be_absolute.format('root', self.root))
         if not self.db_path.is_absolute():
             _exit(should_be_absolute.format('db_path', self.db_path))
-        self.virtualenv_path = Path(virtualenv_path) if virtualenv_path else None
+        self.virtualenv_path = virtualenv_path
         self.dir_names = dir_names.split() if dir_names else []
         self.hidden_columns = hidden_columns.split() if hidden_columns else []
         self.flags = [k if v is None else k + '=' + v

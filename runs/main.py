@@ -2,11 +2,9 @@
 import argparse
 import inspect
 import os
-import pprint
 import sys
-from configparser import ConfigParser
+from configparser import ConfigParser, ExtendedInterpolation
 
-from runs import db
 from runs.cfg import Cfg
 from runs.db import DBPath
 from runs.pattern import Pattern
@@ -22,7 +20,7 @@ def nonempty_string(value):
 
 
 def main(argv=sys.argv[1:]):
-    config = ConfigParser(allow_no_value=True)
+    config = ConfigParser(allow_no_value=True, interpolation=ExtendedInterpolation())
     config_filename = '.runsrc'
     config_path = search_ancestors(config_filename)
     default_config = {
@@ -37,8 +35,6 @@ def main(argv=sys.argv[1:]):
         'dir_names': None,
 
         'virtualenv_path': None,
-
-        'flags': None,
 
         'hidden_columns': 'input_command'
     }
@@ -56,33 +52,32 @@ def main(argv=sys.argv[1:]):
         else:
             exit()
 
-    def set_defaults(subparser, name):
-        assert isinstance(subparser, argparse.ArgumentParser)
+    def set_defaults(parser, name):
+        assert isinstance(parser, argparse.ArgumentParser)
         assert isinstance(name, str)
 
         if name in config:
-            subparser.set_defaults(**config[name])
+            parser.set_defaults(**config[name])
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', help='Custom path to directory containing runs database (default, `runs.yml`). '
                                        'Should not need to be specified for local runs but probably required for '
                                        'accessing databses remotely.', type=nonempty_string)
     parser.add_argument('--db-path', help='path to YAML file storing run database information.', type=nonempty_string)
-    parser.add_argument('--virtualenv-path', type=nonempty_string)
+    parser.add_argument('--virtualenv-path', type=nonempty_string, help='Path to virtual environment, if one is being ' \
+                                                                        'used. If not `None`, the program will source ' \
+                                                                        '`<virtualenv-path>/bin/activate`.'
+                        )
     parser.add_argument('--quiet', '-q', action='store_true', help='Suppress print output')
     set_defaults(parser, FILESYSTEM)
 
     subparsers = parser.add_subparsers(dest='dest')
-    virtualenv_path_help = 'Path to virtual environment, if one is being ' \
-                           'used. If not `None`, the program will source ' \
-                           '`<virtualenv-path>/bin/activate`.'
     path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
 
     new_parser = subparsers.add_parser(NEW, help='Start a new run.')
     new_parser.add_argument(NAME, help='Unique name assigned to new run.' + path_clarification, type=nonempty_string)
     new_parser.add_argument('command', help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
                                             'or `--save-path` flag in this argument', type=nonempty_string)
-    new_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help, type=nonempty_string)
     new_parser.add_argument('--no-overwrite', action='store_true', help='Check before overwriting existing runs.')
     new_parser.add_argument('--ignore-dirty', action='store_true', help='Create new run even if repo is dirty.'
                                                                         'overwrite any entry with the same name. ')
@@ -143,7 +138,6 @@ def main(argv=sys.argv[1:]):
     reproduce_parser.add_argument('--description', type=nonempty_string, default=None,
                                   help="Description to be assigned to new run. If None, use the same description as "
                                        "the run being reproduced.")
-    reproduce_parser.add_argument('--virtualenv-path', default=None, help=virtualenv_path_help)
     reproduce_parser.add_argument('--no-overwrite', action='store_true',
                                   help='If this flag is given, a timestamp will be '
                                        'appended to any new name that is already in '

@@ -2,6 +2,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+import re
 from anytree import AnyNode
 from anytree.exporter import DictExporter
 
@@ -63,11 +64,17 @@ class Run(DBPath):
         self.print('tmux attach -t', self.head)
 
     def build_command(self, command):
+        keywords = dict(
+            path=self.path,
+            root=str(self.cfg.root),
+            name=self.head
+        )
         for flag in self.cfg.flags:
-            flag = flag.replace(
-                '<path>', self.path).replace(
-                '<root>', str(self.cfg.root)).replace(
-                '<name>', self.head)
+            match = re.match('.*<(.*)>', flag)
+            if match:
+                assert match.group(1) in keywords
+            for word, replacement in keywords.items():
+                flag = flag.replace('<' + word + '>', replacement)
             command += ' ' + flag
 
         if self.cfg.virtualenv_path:
