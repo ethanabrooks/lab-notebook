@@ -1,16 +1,13 @@
 from contextlib import contextmanager
 from copy import deepcopy
 
-import yaml
 from anytree import ChildResolverError
-from anytree import RenderTree
 from anytree import Resolver, findall
-from tabulate import tabulate
 
 import runs.main
 from runs import db
 from runs.db import DBPath, tree_string
-from runs.util import get_permission, highlight, COMMIT, NAME, COMMAND, DESCRIPTION
+from runs.util import get_permission, COMMIT
 
 
 class Pattern(DBPath):
@@ -51,7 +48,7 @@ class Pattern(DBPath):
                 run.remove()
 
     def move(self, dest, keep_tmux, assume_yes):
-        assert isinstance(dest, runs.run.Run)
+        assert isinstance(dest, runs.run.DBPath)
 
         # check for conflicts with existing runs
         if dest.node() is not None:
@@ -64,7 +61,7 @@ class Pattern(DBPath):
             prompt = 'Move the following runs into {}?\n{}'.format(
                 dest.parent, '\n'.join(run.parent for run in src))
         else:
-            prompt = 'Move {} to {}?'.format(src[0].parent, dest.parent)
+            prompt = 'Move {} to {}?'.format(src[0], dest)
 
         if assume_yes or get_permission(prompt):
             for run in src:
@@ -91,9 +88,3 @@ class Pattern(DBPath):
     def table(self, column_width):
         return db.table(self.nodes(), self.cfg.hidden_columns, column_width)
 
-    def reproduce(self):
-        if self.nodes():
-            return 'To reproduce:\n' + \
-                   highlight('git checkout {}\n'.format(self.lookup(COMMIT))) + \
-                   highlight("runs new {} '{}' --no-overwrite --description='{}'".format(
-                       self.lookup(NAME), self.lookup(COMMAND), self.lookup(DESCRIPTION)))

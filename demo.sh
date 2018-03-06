@@ -24,7 +24,7 @@ runs new train2 'python -m baselines.ppo2.run_mlp' --description='demo lab-noteb
 runs ls
 runs ls '*1'
 runs ls --show-attrs
-runs table
+runs table --column-width=15
 # open tensorboard
 runs lookup description train1
 runs lookup commit train1

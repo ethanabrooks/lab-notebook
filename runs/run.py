@@ -7,7 +7,8 @@ from anytree import AnyNode
 from anytree.exporter import DictExporter
 
 from runs.db import DBPath
-from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, highlight, cmd
+from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, highlight, cmd, COMMIT, DESCRIPTION, \
+    COMMAND, NAME
 
 
 class Run(DBPath):
@@ -89,6 +90,8 @@ class Run(DBPath):
 
     def move(self, dest, keep_tmux):
         assert isinstance(dest, Run)
+        if dest.path.endswith(self.sep):
+            dest = Run(dest.parts[:-1] + [self.head])
         self.mvdirs(dest)
         if keep_tmux:
             self.rename_tmux(dest.head)
@@ -129,5 +132,9 @@ class Run(DBPath):
     def already_exists(self):
         self.exit('{} already exists.'.format(self))
 
-    def __str__(self):
-        return self.path
+    def reproduce(self):
+        return 'To reproduce:\n' + \
+               highlight('git checkout {}\n'.format(self.lookup(COMMIT))) + \
+               highlight("runs new {0} '{1}' --description='Reproduce {0}. "
+                         "Original description: {2}'".format(
+                   self.lookup(NAME), self.lookup('input_command'), self.lookup(DESCRIPTION)))

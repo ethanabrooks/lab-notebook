@@ -4,7 +4,7 @@ positional=()
   while [[ $# -gt 0 ]]; do
     char1=$(cut -c 1 <<< "$1")
     arg=$1
-    if [ "$char1" == '#' ]; then
+    if [ "$char1" == '+' ]; then
       run=$(cut -c 2- <<< "$1")
       arg=$(runs lookup commit "$run")
       if [[ $arg = 'No runs match pattern.*' ]]; then

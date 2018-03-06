@@ -86,6 +86,7 @@ def open_db(root, db_path):
 class DBPath:
     cfg = None
     root_path = '.'
+    sep = '/'
 
     def __init__(self, parts, cfg=None):
         if cfg is None:
@@ -93,7 +94,7 @@ class DBPath:
                 raise RuntimeError('Either `cfg` has to be specified or `DBPath.cfg` has to be set')
             cfg = DBPath.cfg
         self.cfg = cfg
-        self.sep = '/'
+        self.sep = DBPath.sep
         if isinstance(parts, NodeMixin):
             self.parts = [str(node.name) for node in parts.path[1:]]
         elif isinstance(parts, str):
@@ -131,15 +132,6 @@ class DBPath:
         else:
             with DBPath(self.ancestors).add_to_tree() as parent:
                 yield Node(name=self.head, parent=parent)
-
-                #
-                # with open_db(self.root, self.cfg.db_path) as node:
-                #     for i, part in enumerate(self.parts):
-                #         try:
-                #             node = Resolver().get(node, self.sep.join(self.parts[:i]))
-                #         except ChildResolverError:
-                #             node = Node(name=part, parent=node)
-                #     yield node
 
     def read(self):
         tree = read(self.cfg.db_path)
@@ -194,3 +186,6 @@ class DBPath:
 
     def exit(self, *msg):
         _exit(*msg, quiet=self.cfg.quiet)
+
+    def __str__(self):
+        return self.path
