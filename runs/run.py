@@ -16,16 +16,16 @@ class Run(DBPath):
         return list(DictExporter().export(self.node()).keys())
 
     # Commands
-    def new(self, command, description, no_overwrite):
+    def new(self, command, description, assume_yes):
         # Check if repo is dirty
         if dirty_repo():
             prompt = "Repo is dirty. You should commit before run. Run anyway?"
-            if not get_permission(prompt):
+            if not (assume_yes or get_permission(prompt)):
                 exit()
 
         # Check if path already exists
         if self.node() is not None:
-            if get_permission(self.path, 'already exists. Overwrite?'):
+            if assume_yes or get_permission(self.path, 'already exists. Overwrite?'):
                 self.remove()
             else:
                 exit()
@@ -70,9 +70,8 @@ class Run(DBPath):
             name=self.head
         )
         for flag in self.cfg.flags:
-            match = re.match('.*<(.*)>', flag)
-            if match:
-                assert match.group(1) in keywords
+            for match in re.findall('.*<(.*)>', flag):
+                assert match in keywords
             for word, replacement in keywords.items():
                 flag = flag.replace('<' + word + '>', replacement)
             command += ' ' + flag

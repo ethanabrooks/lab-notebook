@@ -78,14 +78,10 @@ def main(argv=sys.argv[1:]):
     new_parser.add_argument(NAME, help='Unique name assigned to new run.' + path_clarification, type=nonempty_string)
     new_parser.add_argument('command', help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
                                             'or `--save-path` flag in this argument', type=nonempty_string)
-    new_parser.add_argument('--no-overwrite', action='store_true', help='Check before overwriting existing runs.')
-    new_parser.add_argument('--ignore-dirty', action='store_true', help='Create new run even if repo is dirty.'
+    new_parser.add_argument('--assume-yes', '-y', action='store_true', help='Create new run even if repo is dirty.'
                                                                         'overwrite any entry with the same name. ')
     new_parser.add_argument('--description', help='Description of this run. Write whatever you want.')
     set_defaults(new_parser, NEW)
-    if NEW in config:
-        new_parser.set_defaults(**{
-            k: v for k, v in config[NEW] if k.endswith('-flag')})
 
     remove_parser = subparsers.add_parser(REMOVE,
                                           help="Delete runs from the database (and all associated tensorboard "
@@ -157,7 +153,7 @@ def main(argv=sys.argv[1:]):
         Run(args.name).new(
             command=args.command,
             description=args.description,
-            no_overwrite=args.no_overwrite)
+            assume_yes=args.assume_yes)
 
     elif args.dest == REMOVE:
         Pattern(args.pattern).remove(args.assume_yes)

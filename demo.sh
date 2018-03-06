@@ -1,13 +1,21 @@
 #! /usr/bin/env bash
 
-echo 'runs.yml .runs' > .gitignore
-runs new train1 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
+#echo 'runs.yml .runs' > .gitignore
+#runs new train1 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
 # show runs.yml
 # show tmux
-# New config: 
-# virtualenv-path
-# dir_names
-# flags
+
+echo '[filesystem]
+root = /Users/ethan/baselines/.runs
+db_path = /Users/ethan/baselines/runs.yml
+dir_names = tensorboard
+virtualenv_path = /Users/ethan/virtualenvs/baselines
+hidden_columns = input_command
+
+[flags]
+--logdir=${filesystem:root}/tensorboard/<path>' > .runsrc
+exit()
+
 runs new train1 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
 runs new train2 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
 runs ls
