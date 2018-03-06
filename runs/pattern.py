@@ -8,6 +8,7 @@ from anytree import Resolver, findall
 from tabulate import tabulate
 
 import runs.main
+from runs import db
 from runs.db import DBPath, tree_string
 from runs.util import get_permission, highlight, COMMIT, NAME, COMMAND, DESCRIPTION
 
@@ -23,7 +24,7 @@ class Pattern(DBPath):
     def runs(self, root=None):
         return list(map(runs.run.Run, self.nodes(root)))
 
-    def nodes(self, root=None):
+    def nodes(self, root=None, quiet=False):
         if root is None:
             root = self.read()
         try:
@@ -33,8 +34,9 @@ class Pattern(DBPath):
             assert run_nodes
             return run_nodes
         except (ChildResolverError, AssertionError):
-            print('No runs match pattern, {}. Recorded runs:'.format(self.path))
-            print(Pattern('*').tree_string().encode('utf-8'))
+            if not quiet:
+                print('No runs match pattern, {}. Recorded runs:'.format(self.path))
+                print(Pattern('*').tree_string().encode('utf-8'))
             exit()
 
     def names(self):
@@ -79,29 +81,17 @@ class Pattern(DBPath):
     def lookup(self, key):
         return [run.lookup(key) for run in self.runs()]
 
-    def tree(self):
+    def tree(self, quiet=False):
         tree = deepcopy(self.read())
-        for node in findall(tree, lambda n: n not in self.nodes(tree)):
+        for node in findall(tree, lambda n: n not in self.nodes(tree, quiet)):
             node.parent = None
         return tree
 
-    def tree_string(self, print_attrs=False):
-        return tree_string(self.tree(), print_attrs)
+    def tree_string(self, print_attrs=False, quiet=False):
+        return tree_string(self.tree(quiet), print_attrs)
 
     def table(self, column_width):
-        def get_values(node, key):
-            try:
-                value = str(getattr(node, key))
-                if len(value) > column_width:
-                    value = value[:column_width] + '...'
-                return value
-            except AttributeError:
-                return '_'
-
-        headers = sorted(set(self.keys) - set(self.cfg.hidden_columns))
-        table = [[node.name] + [get_values(node, key) for key in headers]
-                 for node in sorted(self.nodes(), key=lambda n: n.name)]
-        return tabulate(table, headers=headers)
+        return db.table(self.nodes(), self.cfg.hidden_columns, column_width)
 
     def reproduce(self):
         if self.nodes():

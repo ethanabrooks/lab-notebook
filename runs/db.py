@@ -4,9 +4,11 @@ from pathlib import Path
 
 import yaml
 from anytree import NodeMixin, Resolver, ChildResolverError, Node
+from anytree import PreOrderIter
 from anytree import RenderTree
 from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
+from tabulate import tabulate
 
 from runs.util import NAME
 
@@ -47,6 +49,25 @@ def tree_string(tree, print_attrs=False):
             for line in pnode:
                 string += "{}{}\n".format(fill, line)
     return string
+
+
+def table(nodes, hidden_columns, column_width):
+    assert isinstance(column_width, int)
+
+    def get_values(node, key):
+        try:
+            value = str(getattr(node, key))
+            if len(value) > column_width:
+                value = value[:column_width] + '...'
+            return value
+        except AttributeError:
+            return '_'
+
+    keys = set([key for node in nodes for key in vars(node) if not key.startswith('_')])
+    headers = sorted(set(keys) - set(hidden_columns))
+    table = [[node.name] + [get_values(node, key) for key in headers]
+             for node in sorted(nodes, key=lambda n: n.name)]
+    return tabulate(table, headers=headers)
 
 
 @contextmanager

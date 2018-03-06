@@ -7,11 +7,14 @@ from pathlib import Path
 
 import yaml
 from anytree import ChildResolverError
+from anytree import PreOrderIter
 from anytree import Resolver
 from nose.tools import assert_in, eq_, ok_
+from nose.tools import assert_is_instance
 from nose.tools import assert_not_in
 from nose.tools import assert_raises
 
+from runs import db
 from runs import main
 from runs.db import read
 from runs.pattern import Pattern
@@ -20,13 +23,14 @@ from runs.util import NAME, cmd
 # TODO: sad path
 
 CHILDREN = 'children'
-COMMAND = """\
+EXE = """\
 import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--option', default=0)
 print(vars(parser.parse_args()))\
 """
+COMMAND = 'python test.py'
 WORK_DIR = '/tmp/test-run-manager'
 DB_PATH = Path(WORK_DIR, 'runs.yml')
 ROOT = '.runs'
@@ -99,6 +103,8 @@ def db_entry(path):
     return get_name(entry[CHILDREN], name)
 
 
+# TODO what if config doesn't have required fields?
+
 @contextmanager
 def _setup(path, dir_names, flags):
     assert isinstance(path, str)
@@ -120,9 +126,11 @@ dir_names = {}
 """.format(ROOT, ' '.join(dir_names), '\n'.join(flags)))
     cmd(['git', 'init', '-q'], cwd=WORK_DIR)
     with Path(WORK_DIR, '.gitignore').open('w') as f:
-        f.write('.runsrc\nruns.yml')
-    cmd(['git', 'add', '.gitignore'], cwd=WORK_DIR)
-    cmd(['git', 'commit', '-qam', 'init'], cwd=WORK_DIR)
+        f.write('.runsrc')
+    with Path(WORK_DIR, 'test.py').open('w') as f:
+        f.write(EXE)
+    cmd(['git', 'add', '--all'], cwd=WORK_DIR)
+    cmd(['git', 'commit', '-am', 'init'], cwd=WORK_DIR)
     main.main(['new', path, COMMAND, "--description=" + DESCRIPTION, '-q'])
     yield
     cmd('tmux kill-session -t'.split() + [path], fail_ok=True)
@@ -202,7 +210,7 @@ def check_list_happy(pattern):
 
 def check_list_sad(pattern):
     with assert_raises(SystemExit):
-        print(Pattern(pattern).tree_string())
+        Pattern(pattern).tree_string(quiet=True)
 
 
 def test_list():
@@ -214,5 +222,14 @@ def test_list():
             for pattern in ['x*', 'test']:
                 yield check_list_sad, pattern
 
-# with assert_raises(SystemExit):
-#             Pattern('x*').tree_string()
+
+def check_table(table):
+    assert_is_instance(table, str)
+    for member in [COMMAND, DESCRIPTION, TEST_RUN]:
+        assert_in(member, table)
+
+
+def test_table():
+    with _setup(TEST_RUN, [], []):
+        yield check_table, Pattern('*').table(100)
+        yield check_table, db.table(PreOrderIter(db.read(DB_PATH)), [], 100)
