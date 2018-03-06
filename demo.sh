@@ -13,8 +13,11 @@ virtualenv_path = /Users/ethan/virtualenvs/baselines
 hidden_columns = input_command
 
 [flags]
---logdir=${filesystem:root}/tensorboard/<path>' > .runsrc
-exit()
+--logdir=${filesystem:root}/tensorboard/<path>
+
+[new]
+description = demo lab-notebook
+' > .runsrc
 
 runs new train1 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
 runs new train2 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'

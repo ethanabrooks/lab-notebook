@@ -4,8 +4,8 @@ from runs.util import _exit
 
 
 class Cfg:
-    def __init__(self, root, db_path, hidden_columns, dir_names,
-                 virtualenv_path, flags, quiet=False):
+    def __init__(self, root, db_path, hidden_columns=None, dir_names=None,
+                 virtualenv_path=None, flags=None, quiet=False):
         if flags is None:
             flags = {}
         self.root = Path(root)
