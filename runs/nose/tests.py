@@ -32,6 +32,8 @@ DB_PATH = Path(WORK_DIR, 'runs.yml')
 ROOT = '.runs'
 DESCRIPTION = 'test new command'
 SEP = '/'
+SUBDIR = 'subdir'
+TEST_RUN = 'test_run'
 
 
 def sessions():
@@ -53,7 +55,7 @@ def get_name(nodes, name):
 
 class ParamGenerator:
     def __init__(self):
-        self.paths = ['test_run', 'subdir/test_run']
+        self.paths = [TEST_RUN]
         self.dir_names = [[], ['checkpoints', 'tensorboard']]
         self.flags = [[], ['--option=1']]
 
@@ -70,9 +72,15 @@ class ParamGenerator:
 class SimpleParamGenerator(ParamGenerator):
     def __init__(self):
         super().__init__()
-        self.paths = ['test_run']
+        self.paths = [TEST_RUN]
         self.dir_names = [[]]
         self.flags = [[]]
+
+
+class ParamGeneratorWithSubdir:
+    def __init__(self):
+        super().__init__()
+        self.paths = [SUBDIR + SEP + TEST_RUN]
 
 
 class ParamGeneratorWithPatterns(ParamGenerator):
@@ -184,15 +192,27 @@ def test_rm():
             # TODO: patterns
 
 
-# def test_list():
-#     for pattern in ['*', 'test*']:
-#         for path, dir_names, flags in param_generator2():
-#             with _setup(path, dir_names, flags):
-#                 string = Pattern(pattern).tree_string(print_attrs=False)
+def check_list_happy(pattern):
+    string = Pattern(pattern).tree_string(print_attrs=False)
+    eq_(string, """\
+.
+└── test_run
+""")
 
-# eq_(string, """\
-# .
-# └── test_run
-# """)
-#         with assert_raises(SystemExit):
+
+def check_list_sad(pattern):
+    with assert_raises(SystemExit):
+        print(Pattern(pattern).tree_string())
+
+
+def test_list():
+    path = TEST_RUN
+    for _, dir_names, flags in ParamGenerator():
+        with _setup(path, dir_names, flags):
+            for pattern in ['*', 'test*']:
+                yield check_list_happy, pattern
+            for pattern in ['x*', 'test']:
+                yield check_list_sad, pattern
+
+# with assert_raises(SystemExit):
 #             Pattern('x*').tree_string()

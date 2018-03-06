@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 
 import yaml
+from anytree import ChildResolverError
 from anytree import RenderTree
 from anytree import Resolver, findall
 from tabulate import tabulate
@@ -25,14 +26,16 @@ class Pattern(DBPath):
     def nodes(self, root=None):
         if root is None:
             root = self.read()
-        run_nodes = [node
-                     for base in Resolver().glob(root, self.path)
-                     for node in findall(base, lambda n: hasattr(n, 'commit'))]
-        if not run_nodes:
+        try:
+            run_nodes = [node
+                         for base in Resolver().glob(root, self.path)
+                         for node in findall(base, lambda n: hasattr(n, COMMIT))]
+            assert run_nodes
+            return run_nodes
+        except (ChildResolverError, AssertionError):
             print('No runs match pattern, {}. Recorded runs:'.format(self.path))
             print(Pattern('*').tree_string().encode('utf-8'))
             exit()
-        return run_nodes
 
     def names(self):
         return [node.name for node in self.nodes()]
