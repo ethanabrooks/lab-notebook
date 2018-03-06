@@ -34,7 +34,8 @@ class Pattern(DBPath):
             assert run_nodes
             return run_nodes
         except (ChildResolverError, AssertionError):
-            self.exit('No runs match pattern, {}. Recorded runs:'.format(self.path))
+            self.exit('No runs match pattern, "{}". Recorded runs:\n{}'.format(
+                self.path, db.tree_string(db_path=self.cfg.db_path)))
 
     def names(self):
         return [node.name for node in self.nodes()]

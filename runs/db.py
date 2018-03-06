@@ -34,7 +34,11 @@ def write(tree, db_path):
         yaml.dump(data, f, default_flow_style=False)
 
 
-def tree_string(tree, print_attrs=False):
+def tree_string(tree=None, db_path=None, print_attrs=False):
+    if not tree and not db_path:
+        raise ValueError('Either tree or db_path must be specified.')
+    if db_path:
+        tree = read(db_path)
     assert isinstance(tree, NodeMixin)
     string = ''
     for pre, fill, node in RenderTree(tree):

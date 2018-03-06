@@ -4,6 +4,7 @@ import inspect
 import sys
 from configparser import ConfigParser
 
+from runs import db
 from runs.cfg import Cfg
 from runs.db import DBPath
 from runs.pattern import Pattern
@@ -104,12 +105,12 @@ def main(argv=sys.argv[1:]):
 
     pattern_help = 'Only display names matching this pattern.'
     list_parser = subparsers.add_parser(LIST, help='List all names in run database.')
-    list_parser.add_argument(PATTERN, nargs='?', default=None, help=pattern_help, type=nonempty_string)
-    list_parser.add_argument('print_attrs', action='store_true', help='Print run attributes in addition to names.')
+    list_parser.add_argument(PATTERN, nargs='?', default='*', help=pattern_help, type=nonempty_string)
+    list_parser.add_argument('--show-attrs', action='store_true', help='Print run attributes in addition to names.')
     set_defaults(list_parser, LIST)
 
     table_parser = subparsers.add_parser(TABLE, help='Display contents of run database as a table.')
-    table_parser.add_argument(PATTERN, nargs='?', default=None, help=pattern_help, type=nonempty_string)
+    table_parser.add_argument(PATTERN, nargs='?', default='*', help=pattern_help, type=nonempty_string)
     table_parser.add_argument('--hidden-columns', help='Comma-separated list of columns to not display in table.')
     table_parser.add_argument('--column-width', type=int, default=100,
                               help='Maximum width of table columns. Longer values will '
@@ -162,15 +163,19 @@ def main(argv=sys.argv[1:]):
         Pattern(args.old).move(Run(args.new), args.keep_tmux, args.assume_yes)
 
     elif args.dest == LIST:
-        print(Pattern(args.pattern).tree_string(args.print_attrs))
+        print(Pattern(args.pattern).tree_string(args.show_attrs))
 
     elif args.dest == TABLE:
         print(Pattern(args.pattern).table(args.column_width))
 
     elif args.dest == LOOKUP:
         pattern = Pattern(args.pattern)
-        for run, value in zip(pattern.runs(), pattern.lookup(args.key)):
-            print("{}: {}".format(run.work_dir, value))
+        runs = pattern.runs()
+        if len(runs) == 1:
+            print(pattern.lookup(args.key)[0])
+        else:
+            for run, value in zip(runs, pattern.lookup(args.key)):
+                print("{}: {}".format(run.path, value))
 
     elif args.dest == CHDESCRIPTION:
         Run(args.name).chdescription(args.description)
