@@ -1,7 +1,12 @@
-Tensorflow Run Manager
-======================
+Lab Notebook
+============
 
-Machine learning engineers often run multiple versions of an algorithm concurrently. However, this can make keeping track of and reproducing runs difficult. This simple utility solves this problem by maintaining a database in human-readable YAML formal that tracks
+Lab Notebook is like a package manager, but for long-running software processes.
+It allows users to cleanly set up and tear down runs, to annotate them, and to easily reproduce them.
+
+Computer Science researcher need to keep careful records of the software that they run so that they cleanly set up and tear down runs, and so that runs can be reproduced.
+With this objective in mind, ``Lab Notebook`` emulates a package
+Computer Science researchers often need to launch multiple runs of an algorithm and keep. However, this can make keeping track of and reproducing runs difficult. This simple utility solves this problem by maintaining a database in human-readable YAML formal that tracks
 
 * A unique name assigned to each run.
 * A description of each run.

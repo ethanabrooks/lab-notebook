@@ -3,15 +3,14 @@ import codecs
 
 from setuptools import setup
 
-
 with codecs.open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
-setup(name='tf-run-manager',
+setup(name='lab-notebook',
       version='2.1.6',
       description='A utility for tracking and reproducing Tensorflow runs.',
       long_description=long_description,
-      url='https://github.com/lobachevzky/tf-run-manager',
+      url='https://github.com/lobachevzky/tf-run-manager',  # TODO
       author='Ethan Brooks',
       author_email='ethanbrooks@gmail.com',
       license='MIT',
