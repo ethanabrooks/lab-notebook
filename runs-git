@@ -6,7 +6,11 @@ positional=()
     arg=$1
     if [ "$char1" == '#' ]; then
       run=$(cut -c 2- <<< "$1")
-      arg=$(runs lookup commit --quiet "$run")
+      arg=$(runs lookup commit "$run")
+      if [[ $arg = 'No runs match pattern.*' ]]; then
+        echo $arg
+        exit
+      fi
     fi
     positional+=("$arg") # save it in an array for later
     shift # past argument ;;
