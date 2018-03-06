@@ -87,7 +87,7 @@ class Run(DBPath):
             self.rename_tmux(dest.head)
         else:
             self.kill_tmux()
-        with dest.parent.open() as parent:
+        with dest.parent.add_to_tree() as parent:
             node = self.node()
             node.name = dest.head
             node.parent = parent
