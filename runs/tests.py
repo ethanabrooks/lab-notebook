@@ -35,7 +35,7 @@ print(vars(parser.parse_args()))\
 COMMAND = 'python test.py'
 WORK_DIR = '/tmp/test-run-manager'
 DB_PATH = Path(WORK_DIR, 'runs.yml')
-ROOT = '.runs'
+ROOT = WORK_DIR + '/.runs'
 DESCRIPTION = 'test new command'
 SEP = '/'
 SUBDIR = 'subdir'
@@ -132,12 +132,12 @@ def _setup(path, dir_names=None, flags=None):
                 """\
 [filesystem]
 root = {}
-db_path = runs.yml
+db_path = {}
 dir_names = {}
 
 [flags]
 {}\
-""".format(ROOT, ' '.join(dir_names), '\n'.join(flags)))
+""".format(ROOT, DB_PATH, ' '.join(dir_names), '\n'.join(flags)))
     cmd(['git', 'init', '-q'], cwd=WORK_DIR)
     with Path(WORK_DIR, '.gitignore').open('w') as f:
         f.write('.runsrc')
@@ -176,7 +176,7 @@ def check_db(path, flags):
 
 def check_files(path, dir_names):
     for dir_name in dir_names:
-        path = Path(WORK_DIR, ROOT, dir_name, path)
+        path = Path(ROOT, dir_name, path)
         ok_(path.exists(), msg="{} does not exist.".format(path))
 
 

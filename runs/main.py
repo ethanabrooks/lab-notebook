@@ -41,16 +41,12 @@ def main(argv=sys.argv[1:]):
     if config_path:
         config.read(str(config_path))
     else:
-        prompt = ('Config file not found. Using default settings:'
-                  '\n\n' +
-                  '\n'.join(['{:20}{}'.format(k + ':', v) for k, v in (default_config.items())]) +
-                  '\n\nContinue?')
-        if get_permission(prompt):
-            config[FILESYSTEM] = default_config
-            with open(config_filename, 'w') as f:
-                config.write(f)
-        else:
-            exit()
+        print('Config file not found. Using default settings:\n')
+        for k, v in default_config.items():
+            print('{:20}{}'.format(k + ':', v))
+        config[FILESYSTEM] = default_config
+        with open(config_filename, 'w') as f:
+            config.write(f)
 
     def set_defaults(parser, name):
         assert isinstance(parser, argparse.ArgumentParser)
