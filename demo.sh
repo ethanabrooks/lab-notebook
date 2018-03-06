@@ -1,8 +1,8 @@
 #! /usr/bin/env bash
 
 echo 'runs.yml .runs' > .gitignore
-runs new train1
-runs new train2
+runs new train1 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
+runs new train2 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
 runs ls
 runs ls '*1'
 runs ls --show-attrs

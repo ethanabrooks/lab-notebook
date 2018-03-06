@@ -3,20 +3,38 @@ Lab Notebook
 
 Lab Notebook is like a package manager, but for long-running software processes.
 It allows users to cleanly set up and tear down runs, to annotate them, and to easily reproduce them.
+Specifically the tool allows you to
 
-Computer Science researcher need to keep careful records of the software that they run so that they cleanly set up and tear down runs, and so that runs can be reproduced.
-With this objective in mind, ``Lab Notebook`` emulates a package
-Computer Science researchers often need to launch multiple runs of an algorithm and keep. However, this can make keeping track of and reproducing runs difficult. This simple utility solves this problem by maintaining a database in human-readable YAML formal that tracks
-
-* A unique name assigned to each run.
-* A description of each run.
-* The exact command used for the run.
-* The date and time of the run.
-* The most recent commit before the run.
+* Launch new runs in tmux with configurable flags and automatically created directories.
+* Cleanly delete runs including associated directories.
+* Organize runs into subdirectories and move them around using *nix-style commands.
+* Reproduce runs by accessing their associated commits.
 
 Installation
 ------------
-The only external prerequisites of this tool are ``tmux`` and ``git``. After that, ``pip install run-manager``.
+The only external prerequisites of this tool are ``tmux`` and ``git``. After that, ``pip install lab-notebook``.
+
+Configuration
+-------------
+Order of precedence for configuration is
+1. command-line arguments
+2. configuration file (``.runsrc``)
+3. defaults
+
+Any command-line argument can be given a default using ``.runsrc``.
+Runs can be extensively configured using command-line arguments, but the following values can also be configured in a ``.runsrc`` file:
+
+===================  ===============  ======================================================================================================================================================
+name                 default          description
+===================  ===============  ======================================================================================================================================================
+``root``            ``.runs/``        The directory in which any
+``db-filename``      ``.runs.yml``    The name that you choose to save your runs database with.
+``tb-dir-flag``      ``--tb-dir``     The flag that gets passed to your program that specifies ``<tensorboard directory>/<Run Name>/``. If ``None``, no flag will be passed to your program.
+``save-path-flag``   ``--save-path``  The flag that gets passed to your program that specifies ``<checkpoints directory>/<Run Name>``. If ``None``, no flag will be passed to your program.
+``column-width``     ``30``           The default column width for the ``runs table`` command.
+``virtualenv-path``  ``None``         The path to your virtual environment directory, if you're using one. Used in the following command: ``Source <virtualenv-path>/bin/activate``.
+``extra-flags``      ``[]``           Flag, value pairs for extra, custom flags. The strings ``<runs-dir>`` and ``<run-name>`` will get replaced with the appropriate value.
+===================  ===============  ======================================================================================================================================================
 
 Important paths and files
 -------------------------
@@ -24,8 +42,9 @@ When you run ``runs new``, the utility automatically creates the following direc
 
 .. code-block:: console
 
+  <Runs Database>
   <Runs Directory>/
-      <Runs Database>
+
       checkpoints/
       tensorboard/<Run Name>/
 
@@ -36,14 +55,6 @@ YAML file that stores historical information about Tensorflow runs.
 Run Name
 ~~~~~~~~
 This is a unique value that you assign to each run. The ``runs`` section explains how the program deals with collisions.
-
-``checkpoints`` directory
-~~~~~~~~~~~~~~~~~~~~~~~~~
-Directory where model checkpoints are saved. Used in ``tf.train.Saver().save(sess, <checkpoints directory>/<Run Name>.ckpt)``.
-
-``tensorboard`` directory
-~~~~~~~~~~~~~~~~~~~~~~~~~
-Directory where events are saved. Used in ``tf.summary.FileWriter(<tensorboard directory>/<Run Name>/)``.
 
 Configuration
 -------------

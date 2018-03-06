@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import inspect
+import os
+import pprint
 import sys
 from configparser import ConfigParser
 
@@ -10,7 +12,7 @@ from runs.db import DBPath
 from runs.pattern import Pattern
 from runs.run import Run
 from runs.util import search_ancestors, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, FILESYSTEM
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, FILESYSTEM, get_permission
 
 
 def nonempty_string(value):
@@ -26,10 +28,10 @@ def main(argv=sys.argv[1:]):
     default_config = {
         # Custom path to directory containing runs database (default, `runs.yml`). Should not need to be
         # specified for local runs but probably required for accessing databses remotely.
-        'root': '.runs',
+        'root': os.getcwd() + '/.runs',
 
         # path to YAML file storing run database information.
-        'db_path': 'runs.yml',
+        'db_path': os.getcwd() + 'runs.yml',
 
         # directories that runs should create
         'dir_names': None,
@@ -43,9 +45,13 @@ def main(argv=sys.argv[1:]):
     if config_path:
         config.read(str(config_path))
     else:
-        config[FILESYSTEM] = default_config
-        with open(config_filename, 'w') as f:
-            config.write(f)
+        prompt = 'Config file not found. Use default?\n{}'.format(pprint.pformat(default_config))
+        if get_permission(prompt):
+            config[FILESYSTEM] = default_config
+            with open(config_filename, 'w') as f:
+                config.write(f)
+        else:
+            exit()
 
     def set_defaults(subparser, name):
         assert isinstance(subparser, argparse.ArgumentParser)
