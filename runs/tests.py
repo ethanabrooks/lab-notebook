@@ -1,136 +1,133 @@
 import os
 import shutil
 import subprocess
+from contextlib import contextmanager
+from fnmatch import fnmatch
 from pathlib import Path
-from unittest import TestCase
 
-from parameterized import parameterized
 import yaml
+from anytree import ChildResolverError
+from anytree import PreOrderIter
+from anytree import Resolver
+from nose.tools import assert_in, eq_, ok_
+from nose.tools import assert_is_instance
+from nose.tools import assert_not_in
+from nose.tools import assert_raises
 
+from runs import db
 from runs import main
+from runs.cfg import Cfg
+from runs.db import read
 from runs.pattern import Pattern
 from runs.run import Run
-from runs.util import NAME
+from runs.util import NAME, cmd
+
+# TODO: sad path
 
 CHILDREN = 'children'
+EXE = """\
+import argparse
 
-
-def get_name(nodes, name):
-    return next(n for n in nodes if n[NAME] == name)
+parser = argparse.ArgumentParser()
+parser.add_argument('--option', default=0)
+print(vars(parser.parse_args()))\
+"""
+COMMAND = 'python test.py'
+WORK_DIR = '/tmp/test-run-manager'
+DB_PATH = Path(WORK_DIR, 'runs.yml')
+ROOT = '.runs'
+DESCRIPTION = 'test new command'
+SEP = '/'
+SUBDIR = 'subdir'
+TEST_RUN = 'test_run'
+DEFAULT_CFG = Cfg(root=ROOT, db_path=DB_PATH, quiet=True)
 
 
 def sessions():
     try:
-        output = subprocess.check_output('tmux list-session -F "#{session_name}"'.split(),
-                                         universal_newlines=True)
+        output = cmd('tmux list-session -F "#{session_name}"'.split(), fail_ok=True)
         assert isinstance(output, str)
         return output.split('\n')
     except subprocess.CalledProcessError:
         return []
 
 
-class TestNew(TestCase):
-    def setUp(self):
-        Path(self.work_dir).mkdir(exist_ok=True)
-        os.chdir(self.work_dir)
-        subprocess.run(['git', 'init', '-q'], cwd=self.work_dir)
-        with Path(self.work_dir, '.gitignore').open('w') as f:
-            f.write('.runsrc\nruns.yml')
-        subprocess.run(['git', 'add', '.gitignore'], cwd=self.work_dir)
-        subprocess.run(['git', 'commit', '-qam', 'init'], cwd=self.work_dir)
-        self.input_command = 'python -c "{}"'.format("""\
-import argparse
+def quote(string):
+    return '"' + string + '"'
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--option', default=0)
-print(vars(parser.parse_args()))\
-""")
-        self.description = 'test new command'
-        main.main(['new', self.input_name, self.input_command,
-                   "--description=" + self.description, '-q'])
 
-    def tearDown(self):
-        Run(self.input_name).kill_tmux()
-        shutil.rmtree(self.work_dir)
+def get_name(nodes, name):
+    return next(n for n in nodes if n[NAME] == name)
 
-    @property
-    def work_dir(self):
-        return '/tmp/test-run-manager'
 
-    @property
-    def input_name(self):
-        return 'test_run'
+class ParamGenerator:
+    def __init__(self, paths=None, dir_names=None, flags=None):
+        if paths is None:
+            paths = [TEST_RUN]
+        if dir_names is None:
+            dir_names = [[], ['checkpoints', 'tensorboard']]
+        if flags is None:
+            flags = [[], ['--option=1']]
+        self.paths = paths
+        self.dir_names = dir_names
+        self.flags = flags
 
-    @property
-    def test_name(self):
-        return self.input_name
+    def __iter__(self):
+        for path in self.paths:
+            for dir_names in self.dir_names:
+                for flags in self.flags:
+                    yield path, dir_names, flags
 
-    @property
-    def name(self):
-        return self.input_name.split('/')[-1]
+    def __next__(self):
+        return next(iter(self))
 
-    @property
-    def full_command(self):
-        return self.input_command
+    def __add__(self, other):
+        assert isinstance(other, ParamGenerator)
+        return ParamGenerator(self.paths + other.paths,
+                              self.dir_names + other.dir_names,
+                              self.flags + other.flags)
 
-    @property
-    def db(self):
-        with Path(self.work_dir, 'runs.yml').open() as f:
+
+class SimpleParamGenerator(ParamGenerator):
+    def __init__(self):
+        super().__init__([TEST_RUN], [['checkpoints', 'tensorboard']], [[]])
+
+
+class ParamGeneratorWithSubdir(ParamGenerator):
+    def __init__(self):
+        super().__init__(paths=[SUBDIR + SEP + TEST_RUN])
+
+
+class ParamGeneratorWithPatterns(ParamGenerator):
+    def __init__(self):
+        super().__init__(paths=['*', 'subdir/*', 'test*'])
+
+
+def db_entry(path):
+    if not path:
+        with DB_PATH.open() as f:
             return yaml.load(f)
-
-    @property
-    def db_entry(self):
-        self.assertIn(CHILDREN, self.db)
-        return get_name(self.db[CHILDREN], self.name)
-
-    @property
-    def dir_names(self):
-        return []
-
-    @property
-    def root(self):
-        return '.runs'
-
-    def test_tmux(self):
-        self.assertIn('"' + self.test_name + '"', sessions())
-
-    def test_db(self):
-        for key in ['commit', 'datetime']:
-            with self.subTest(key=key):
-                self.assertIn(key, self.db_entry)
-        for key in ['description', 'full_command', 'input_command', 'name']:
-            with self.subTest(key=key):
-                self.assertIn(key, self.db_entry)
-                if key == 'input_command':
-                    attr = self.input_command
-                else:
-                    attr = getattr(self, key)
-                self.assertEqual(self.db_entry[key], attr)
-
-    def test_file_structure(self):
-        for dir_name in self.dir_names:
-            path = Path(self.work_dir, self.root, dir_name, self.test_name)
-            self.assertTrue(path.exists(), msg="{} does not exist.".format(path))
+    *path, name = path.split(SEP)
+    entry = db_entry(SEP.join(path))
+    assert_in(CHILDREN, entry)
+    return get_name(entry[CHILDREN], name)
 
 
-class TestNewWithSubdir(TestNew):
-    @property
-    def db_entry(self):
-        return get_name(get_name(self.db[CHILDREN], 'subdir')[CHILDREN], self.name)
+# TODO what if config doesn't have required fields?
 
-    @property
-    def input_name(self):
-        return 'subdir/test_run'
-
-    def test_db(self):
-        self.assertIn('subdir', [child[NAME] for child in self.db[CHILDREN]])
-        super().test_db()
-
-
-class TestNewWithConfig(TestNew):
-    def setUp(self):
-        Path(self.work_dir, self.input_name).mkdir(parents=True)
-        with Path(self.work_dir, '.runsrc').open('w') as f:
+@contextmanager
+def _setup(path, dir_names=None, flags=None):
+    if dir_names is None:
+        dir_names = []
+    if flags is None:
+        flags = []
+    assert isinstance(path, str)
+    assert isinstance(dir_names, list)
+    assert isinstance(flags, list)
+    Path(WORK_DIR).mkdir(exist_ok=True)
+    os.chdir(WORK_DIR)
+    if any([dir_names, flags]):
+        with Path(WORK_DIR, '.runsrc').open('w') as f:
             f.write(
                 """\
 [filesystem]
@@ -139,82 +136,145 @@ db_path = runs.yml
 dir_names = {}
 
 [flags]
---option=1\
-""".format(self.root, ' '.join(self.dir_names)))
-        super().setUp()
-
-    @property
-    def full_command(self):
-        return self.input_command + ' --option=1'
-
-    @property
-    def dir_names(self):
-        return ['checkpoints', 'tensorboard']
-
-
-class TestNewWithSubdirAndConfig(TestNewWithConfig, TestNewWithSubdir):
-    pass
+{}\
+""".format(ROOT, ' '.join(dir_names), '\n'.join(flags)))
+    cmd(['git', 'init', '-q'], cwd=WORK_DIR)
+    with Path(WORK_DIR, '.gitignore').open('w') as f:
+        f.write('.runsrc')
+    with Path(WORK_DIR, 'test.py').open('w') as f:
+        f.write(EXE)
+    cmd(['git', 'add', '--all'], cwd=WORK_DIR)
+    cmd(['git', 'commit', '-am', 'init'], cwd=WORK_DIR)
+    main.main(['-q', 'new', path, COMMAND, "--description=" + DESCRIPTION])
+    yield
+    cmd('tmux kill-session -t'.split() + [path], fail_ok=True)
+    shutil.rmtree(WORK_DIR)
 
 
-class TestRemove(TestNew):
-    def setUp(self):
-        super().setUp()
-        main.main(['rm', '-y', self.input_name])
-
-    def test_tmux(self):
-        self.assertNotIn('"' + self.input_name + '"', sessions())
-
-    def test_file_structure(self):
-        for root, dirs, files in os.walk(self.work_dir):
-            for file in files:
-                with self.subTest(file=file):
-                    self.assertNotEqual(self.input_name, file)
+def check_tmux(path):
+    assert_in(quote(path), sessions())
 
 
-class TestRemoveWithConfig(TestNewWithConfig, TestRemove):
-    pass
+def check_db(path, flags):
+    entry = db_entry(path)
+
+    # check values that should probably be mocks
+    for key in ['commit', 'datetime']:
+        assert_in(key, entry)
+
+    # check known values
+    name = path.split(SEP)[-1]
+    attrs = dict(description=DESCRIPTION,
+                 input_command=COMMAND,
+                 name=name)
+    for key, attr in attrs.items():
+        assert_in(key, entry)
+        eq_(entry[key], attr)
+    for flag in flags:
+        assert_in(flag, entry['full_command'])
 
 
-class TestList(TestNew):
-    def test_list(self):
-        for pattern in ['*', 'test*']:
-            with self.subTest(pattern=pattern):
-                string = Pattern(pattern).tree_string(print_attrs=False)
-                self.assertEqual(string, """\
+def check_files(path, dir_names):
+    for dir_name in dir_names:
+        path = Path(WORK_DIR, ROOT, dir_name, path)
+        ok_(path.exists(), msg="{} does not exist.".format(path))
+
+
+def check_tmux_killed(path):
+    assert_not_in(quote(path), sessions())
+
+
+def check_del_entry(path):
+    with assert_raises(ChildResolverError):
+        Resolver().glob(read(DB_PATH), path)
+
+
+def check_rm_files(path):
+    for root, dirs, files in os.walk(WORK_DIR):
+        for filename in files:
+            ok_(not fnmatch(filename, path))
+
+
+def test_new():
+    for path, dir_names, flags in ParamGenerator():
+        with _setup(path, dir_names, flags):
+            yield check_tmux, path
+            yield check_db, path, flags
+            yield check_files, path, dir_names
+
+
+def test_rm():
+    for path, dir_names, flags in ParamGenerator():
+        with _setup(path, dir_names, flags):
+            main.main(['-q', 'rm', '-y', path])
+            yield check_tmux_killed, path
+            yield check_del_entry, path
+            yield check_rm_files, path
+
+            # TODO: patterns
+
+
+def check_list_happy(pattern):
+    string = Pattern(pattern).tree_string(print_attrs=False)
+    eq_(string, """\
 .
 └── test_run
 """)
-        pattern = 'x*'
-        with self.subTest(pattern=pattern):
-            with self.assertRaises(SystemExit):
-                Pattern(pattern).tree_string()
 
 
-class TestTable(TestNew):
-    def test_table(self):
-        # TODO: there should be a db.table function
-        self.assertIsInstance(Pattern('*').table(100), str)
+def check_list_sad(pattern):
+    with assert_raises(SystemExit):
+        Pattern(pattern, cfg=DEFAULT_CFG).tree_string()
 
 
-class TestLookup(TestNew):
-    def test_lookup(self):
-        self.assertEqual(Pattern('*').lookup('name'), [self.input_name])
+def test_list():
+    path = TEST_RUN
+    for _, dir_names, flags in ParamGenerator():
+        with _setup(path, dir_names, flags):
+            for pattern in ['*', 'test*']:
+                yield check_list_happy, pattern
+            for pattern in ['x*', 'test']:
+                yield check_list_sad, pattern
 
 
-class TestChdesc(TestNew):
-    def test_chdescription(self):
+def check_table(table):
+    assert_is_instance(table, str)
+    for member in [COMMAND, DESCRIPTION, TEST_RUN]:
+        assert_in(member, table)
+
+
+def test_table():
+    with _setup(TEST_RUN):
+        yield check_table, Pattern('*').table(100)
+        yield check_table, db.table(PreOrderIter(db.read(DB_PATH)), [], 100)
+
+
+def test_lookup():
+    with _setup(TEST_RUN):
+        pattern = Pattern('*', cfg=DEFAULT_CFG)
+        for key, value in dict(name=TEST_RUN,
+                               description=DESCRIPTION,
+                               input_command=COMMAND).items():
+            eq_(pattern.lookup(key), [value])
+        with assert_raises(SystemExit):
+            pattern.lookup('x')
+
+
+def test_chdesc():
+    with _setup(TEST_RUN):
         description = 'new description'
-        main.main(['chdesc', self.input_name, '--description=' + description])
-        self.assertEqual(Run(self.input_name).lookup('description'), description)
+        main.main(['chdesc', TEST_RUN, '--description=' + description])
+        eq_(Run(TEST_RUN).lookup('description'), description)
 
 
-class TestMove(TestNew):
-    def setUp(self):
-        super().setUp()
-        main.main(['mv', '-y', '--keep-tmux', self.input_name, self.test_name])
-
-    @property
-    def test_name(self):
-        return 'new_name'
-
-# TODO: Sad cases
+def test_move():
+    generator = ParamGenerator() + ParamGeneratorWithSubdir()
+    for path, dir_names, flags in generator:
+        for new_path in generator.paths:
+            with _setup(path, dir_names, flags):
+                args = ['mv', '-y', '--keep-tmux', path, new_path]
+                if path != new_path:
+                    main.main(args)
+                    yield check_db, new_path, flags
+                    yield check_files, new_path, dir_names
+                    yield check_tmux, new_path.split('/')[-1]
