@@ -31,7 +31,7 @@ def main(argv=sys.argv[1:]):
         'root': os.getcwd() + '/.runs',
 
         # path to YAML file storing run database information.
-        'db_path': os.getcwd() + 'runs.yml',
+        'db_path': os.getcwd() + '/runs.yml',
 
         # directories that runs should create
         'dir_names': None,
@@ -45,7 +45,10 @@ def main(argv=sys.argv[1:]):
     if config_path:
         config.read(str(config_path))
     else:
-        prompt = 'Config file not found. Use default?\n{}'.format(pprint.pformat(default_config))
+        prompt = ('Config file not found. Using default settings:'
+                  '\n\n' +
+                  '\n'.join(['{:20}{}'.format(k + ':', v) for k, v in (default_config.items())]) +
+                  '\n\nContinue?')
         if get_permission(prompt):
             config[FILESYSTEM] = default_config
             with open(config_filename, 'w') as f:
@@ -106,7 +109,7 @@ def main(argv=sys.argv[1:]):
     move_parser.add_argument('--keep-tmux', action='store_true',
                              help='Rename tmux session instead of killing it.')
     move_parser.add_argument('--assume-yes', '-y', action='store_true',
-                               help='Don\'t request permission from user before deleting.')
+                             help='Don\'t request permission from user before deleting.')
     set_defaults(move_parser, MOVE)
 
     pattern_help = 'Only display names matching this pattern.'

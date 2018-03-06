@@ -2,13 +2,18 @@
 
 echo 'runs.yml .runs' > .gitignore
 runs new train1 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
+# show runs.yml
+# show tmux
+# New config: 
+# virtualenv-path
+# dir_names
+# flags
+runs new train1 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
 runs new train2 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
 runs ls
 runs ls '*1'
 runs ls --show-attrs
 runs table
-# add log-dir flag to config
-runs new train1
 # open tensorboard
 runs lookup description train1
 runs lookup commit train1
