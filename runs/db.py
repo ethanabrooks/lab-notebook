@@ -10,7 +10,7 @@ from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
 from tabulate import tabulate
 
-from runs.util import NAME
+from runs.util import NAME, _print, _exit
 
 
 def read(db_path):
@@ -186,9 +186,7 @@ class DBPath:
             old_path.rename(new_path)
 
     def print(self, *msg):
-        if not self.cfg.quiet:
-            print(*msg)
+        _print(*msg, quiet=self.cfg.quiet)
 
     def exit(self, *msg):
-        self.print(*msg)
-        exit()
+        _exit(*msg, quiet=self.cfg.quiet)

@@ -43,7 +43,7 @@ def get_permission(question):
             response = input('Please enter y[es]|n[o]')
 
 
-def cmd(args, fail_ok=False, cwd=None):
+def cmd(args, fail_ok=False, cwd=None, quiet=False):
     process = subprocess.Popen(args,
                                stderr=subprocess.PIPE,
                                stdout=subprocess.PIPE,
@@ -51,13 +51,23 @@ def cmd(args, fail_ok=False, cwd=None):
                                universal_newlines=True)
     stdout, stderr = process.communicate(timeout=1)
     if stderr and not fail_ok:
-        raise OSError("Command `{}` failed: {}".format(args, stderr))
+        _exit("Command `{}` failed: {}".format(' '.join(args), stderr), quiet=quiet)
     else:
         return stdout.strip()
 
 
-def dirty_repo():
-    return cmd('git status --porcelain'.split()) is not ''
+def dirty_repo(quiet=False):
+    return cmd('git status --porcelain'.split(), quiet=quiet) is not ''
+
+
+def _print(*msg, quiet=False):
+    if not quiet:
+        print(*msg)
+
+
+def _exit(*msg, quiet=False):
+    _print(*msg, quiet=quiet)
+    exit()
 
 
 def last_commit(quiet=False):
@@ -85,7 +95,6 @@ def string_from_vim(prompt, string=None):
         prompt, string = file_contents.split(delimiter)
     path.unlink()
     return string
-
 
 
 FILESYSTEM = 'filesystem'
