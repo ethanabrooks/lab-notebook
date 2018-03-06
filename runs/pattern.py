@@ -24,7 +24,7 @@ class Pattern(DBPath):
     def runs(self, root=None):
         return list(map(runs.run.Run, self.nodes(root)))
 
-    def nodes(self, root=None, quiet=False):
+    def nodes(self, root=None):
         if root is None:
             root = self.read()
         try:
@@ -34,10 +34,7 @@ class Pattern(DBPath):
             assert run_nodes
             return run_nodes
         except (ChildResolverError, AssertionError):
-            if not quiet:
-                print('No runs match pattern, {}. Recorded runs:'.format(self.path))
-                print(Pattern('*').tree_string().encode('utf-8'))
-            exit()
+            self.quit('No runs match pattern, {}. Recorded runs:'.format(self.path))
 
     def names(self):
         return [node.name for node in self.nodes()]
@@ -81,14 +78,14 @@ class Pattern(DBPath):
     def lookup(self, key):
         return [run.lookup(key) for run in self.runs()]
 
-    def tree(self, quiet=False):
+    def tree(self):
         tree = deepcopy(self.read())
-        for node in findall(tree, lambda n: n not in self.nodes(tree, quiet)):
+        for node in findall(tree, lambda n: n not in self.nodes(tree)):
             node.parent = None
         return tree
 
-    def tree_string(self, print_attrs=False, quiet=False):
-        return tree_string(self.tree(quiet), print_attrs)
+    def tree_string(self, print_attrs=False):
+        return tree_string(self.tree(), print_attrs)
 
     def table(self, column_width):
         return db.table(self.nodes(), self.cfg.hidden_columns, column_width)

@@ -16,6 +16,7 @@ from nose.tools import assert_raises
 
 from runs import db
 from runs import main
+from runs.cfg import Cfg
 from runs.db import read
 from runs.pattern import Pattern
 from runs.util import NAME, cmd
@@ -38,6 +39,7 @@ DESCRIPTION = 'test new command'
 SEP = '/'
 SUBDIR = 'subdir'
 TEST_RUN = 'test_run'
+DEFAULT_CFG = Cfg(root=ROOT, db_path=DB_PATH, quiet=True)
 
 
 def sessions():
@@ -131,7 +133,7 @@ dir_names = {}
         f.write(EXE)
     cmd(['git', 'add', '--all'], cwd=WORK_DIR)
     cmd(['git', 'commit', '-am', 'init'], cwd=WORK_DIR)
-    main.main(['new', path, COMMAND, "--description=" + DESCRIPTION, '-q'])
+    main.main(['-q', 'new', path, COMMAND, "--description=" + DESCRIPTION])
     yield
     cmd('tmux kill-session -t'.split() + [path], fail_ok=True)
     shutil.rmtree(WORK_DIR)
@@ -192,7 +194,7 @@ def test_new():
 def test_rm():
     for path, dir_names, flags in ParamGenerator():
         with _setup(path, dir_names, flags):
-            main.main(['rm', '-y', path])
+            main.main(['-q', 'rm', '-y', path])
             yield check_tmux_rm, path
             yield check_db_rm, path
             yield check_files_rm, path
@@ -210,7 +212,7 @@ def check_list_happy(pattern):
 
 def check_list_sad(pattern):
     with assert_raises(SystemExit):
-        Pattern(pattern).tree_string(quiet=True)
+        Pattern(pattern, cfg=DEFAULT_CFG).tree_string()
 
 
 def test_list():
@@ -233,3 +235,14 @@ def test_table():
     with _setup(TEST_RUN, [], []):
         yield check_table, Pattern('*').table(100)
         yield check_table, db.table(PreOrderIter(db.read(DB_PATH)), [], 100)
+
+
+def test_lookup():
+    with _setup(TEST_RUN, [], []):
+        pattern = Pattern('*', cfg=DEFAULT_CFG)
+        for key, value in dict(name=TEST_RUN,
+                               description=DESCRIPTION,
+                               input_command=COMMAND).items():
+            eq_(pattern.lookup(key), [value])
+        with assert_raises(SystemExit):
+            pattern.lookup('x')

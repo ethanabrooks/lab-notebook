@@ -59,6 +59,7 @@ def main(argv=sys.argv[1:]):
                                        'accessing databses remotely.', type=nonempty_string)
     parser.add_argument('--db-path', help='path to YAML file storing run database information.', type=nonempty_string)
     parser.add_argument('--virtualenv-path', type=nonempty_string)
+    parser.add_argument('--quiet', '-q', action='store_true', help='Suppress print output')
     set_defaults(parser, FILESYSTEM)
 
     subparsers = parser.add_subparsers(dest='dest')
@@ -76,7 +77,6 @@ def main(argv=sys.argv[1:]):
     new_parser.add_argument('--ignore-dirty', action='store_true', help='Create new run even if repo is dirty.'
                                                                         'overwrite any entry with the same name. ')
     new_parser.add_argument('--description', help='Description of this run. Write whatever you want.')
-    new_parser.add_argument('--quiet', '-q', action='store_true', help='Suppress print ouput')
     set_defaults(new_parser, NEW)
     if NEW in config:
         new_parser.set_defaults(**{
@@ -120,7 +120,6 @@ def main(argv=sys.argv[1:]):
     lookup_parser.add_argument('key', help='Key that value is associated with. To view all available keys, '
                                            'use `--key=None`.')
     lookup_parser.add_argument(PATTERN, help='Pattern of runs for which to retrieve key.', type=nonempty_string)
-    lookup_parser.add_argument('--quiet', '-q', action='store_true', help='Suppress any explanatory output.')
     set_defaults(lookup_parser, LOOKUP)
 
     chdesc_parser = subparsers.add_parser(CHDESCRIPTION, help='Edit description of run.')
@@ -154,8 +153,7 @@ def main(argv=sys.argv[1:]):
         Run(args.name).new(
             command=args.command,
             description=args.description,
-            no_overwrite=args.no_overwrite,
-            quiet=args.quiet)
+            no_overwrite=args.no_overwrite)
 
     elif args.dest == REMOVE:
         Pattern(args.pattern).remove(args.assume_yes)

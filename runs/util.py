@@ -60,11 +60,12 @@ def dirty_repo():
     return cmd('git status --porcelain'.split()) is not ''
 
 
-def last_commit():
+def last_commit(quiet=False):
     try:
         return cmd('git rev-parse HEAD'.split())
     except OSError:
-        print('Could not detect last commit. Perhaps you have not committed yet?')
+        if not quiet:
+            print('Could not detect last commit. Perhaps you have not committed yet?')
         exit()
 
 

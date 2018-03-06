@@ -182,3 +182,11 @@ class DBPath:
     def mvdirs(self, new):
         for old_path, new_path in zip(self.paths, new.paths):
             old_path.rename(new_path)
+
+    def print(self, *str):
+        if not self.cfg.quiet:
+            print(*str)
+
+    def quit(self, *msg):
+        self.print(*msg)
+        exit()

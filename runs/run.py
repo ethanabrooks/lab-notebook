@@ -15,7 +15,7 @@ class Run(DBPath):
         return list(DictExporter().export(self.node()).keys())
 
     # Commands
-    def new(self, command, description, no_overwrite, quiet):
+    def new(self, command, description, no_overwrite):
         # Check if repo is dirty
         if dirty_repo():
             prompt = "Repo is dirty. You should commit before run. Run anyway?"
@@ -52,15 +52,14 @@ class Run(DBPath):
                     parent=parent)
 
         # print result
-        if not quiet:
-            print(highlight('Description:'))
-            print(description)
-            print(highlight('Command sent to session:'))
-            print(full_command)
-            print(highlight('List active:'))
-            print('tmux list-session')
-            print(highlight('Attach:'))
-            print('tmux attach -t', self.head)
+        self.print(highlight('Description:'))
+        self.print(description)
+        self.print(highlight('Command sent to session:'))
+        self.print(full_command)
+        self.print(highlight('List active:'))
+        self.print('tmux list-session')
+        self.print(highlight('Attach:'))
+        self.print('tmux attach -t', self.head)
 
     def build_command(self, command):
         for flag in self.cfg.flags:
@@ -97,7 +96,7 @@ class Run(DBPath):
         try:
             return getattr(self.node(), key)
         except AttributeError:
-            raise RuntimeError(
+            self.quit(
                 "`{}` not a valid key. Valid keys are {}.".format(key, self.keys))
 
     # tmux
@@ -121,8 +120,7 @@ class Run(DBPath):
             node.description = new_description
 
     def already_exists(self):
-        print('{} already exists.'.format(self))
-        exit()
+        self.quit('{} already exists.'.format(self))
 
     def __str__(self):
         return self.path
