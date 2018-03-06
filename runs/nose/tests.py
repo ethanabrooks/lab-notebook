@@ -269,12 +269,12 @@ def test_chdesc():
 
 def test_move():
     generator = ParamGenerator() + ParamGeneratorWithSubdir()
-    # generator = SimpleParamGenerator()
     for path, dir_names, flags in generator:
-        # for new_path in ['subdir/test_name']:
         for new_path in generator.paths:
             with _setup(path, dir_names, flags):
                 args = ['mv', '-y', '--keep-tmux', path, new_path]
                 if path != new_path:
                     main.main(args)
                     yield check_db, new_path, flags
+                    yield check_files, new_path, dir_names
+                    yield check_tmux, new_path.split('/')[-1]
