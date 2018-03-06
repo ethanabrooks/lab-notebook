@@ -19,6 +19,7 @@ from runs import main
 from runs.cfg import Cfg
 from runs.db import read
 from runs.pattern import Pattern
+from runs.run import Run
 from runs.util import NAME, cmd
 
 # TODO: sad path
@@ -108,7 +109,11 @@ def db_entry(path):
 # TODO what if config doesn't have required fields?
 
 @contextmanager
-def _setup(path, dir_names, flags):
+def _setup(path, dir_names=None, flags=None):
+    if dir_names is None:
+        dir_names = []
+    if flags is None:
+        flags = []
     assert isinstance(path, str)
     assert isinstance(dir_names, list)
     assert isinstance(flags, list)
@@ -232,13 +237,13 @@ def check_table(table):
 
 
 def test_table():
-    with _setup(TEST_RUN, [], []):
+    with _setup(TEST_RUN):
         yield check_table, Pattern('*').table(100)
         yield check_table, db.table(PreOrderIter(db.read(DB_PATH)), [], 100)
 
 
 def test_lookup():
-    with _setup(TEST_RUN, [], []):
+    with _setup(TEST_RUN):
         pattern = Pattern('*', cfg=DEFAULT_CFG)
         for key, value in dict(name=TEST_RUN,
                                description=DESCRIPTION,
@@ -246,3 +251,10 @@ def test_lookup():
             eq_(pattern.lookup(key), [value])
         with assert_raises(SystemExit):
             pattern.lookup('x')
+
+
+def test_chdesc():
+    with _setup(TEST_RUN):
+        description = 'new description'
+        main.main(['chdesc', TEST_RUN, '--description=' + description])
+        eq_(Run(TEST_RUN).lookup('description'), description)
