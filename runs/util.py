@@ -29,7 +29,8 @@ def search_ancestors(filename):
         dirpath = dirpath.parent
 
 
-def get_permission(question):
+def get_permission(*question):
+    question = ' '.join(question)
     if not question.endswith(' '):
         question += ' '
     response = input(question)

@@ -24,9 +24,10 @@ class Run(DBPath):
 
         # Check if path already exists
         if self.node() is not None:
-            if no_overwrite:
-                self.already_exists()
-            self.remove()
+            if get_permission(self.path, 'already exists. Overwrite?'):
+                self.remove()
+            else:
+                exit()
 
         # create directories
         self.mkdirs()
