@@ -87,6 +87,7 @@ def string_from_vim(prompt, string=None):
     return string
 
 
+
 FILESYSTEM = 'filesystem'
 NAME = 'name'
 PATTERN = 'pattern'

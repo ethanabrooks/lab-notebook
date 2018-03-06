@@ -96,7 +96,7 @@ class Run(DBPath):
         try:
             return getattr(self.node(), key)
         except AttributeError:
-            self.quit(
+            self.exit(
                 "`{}` not a valid key. Valid keys are {}.".format(key, self.keys))
 
     # tmux
@@ -120,7 +120,7 @@ class Run(DBPath):
             node.description = new_description
 
     def already_exists(self):
-        self.quit('{} already exists.'.format(self))
+        self.exit('{} already exists.'.format(self))
 
     def __str__(self):
         return self.path

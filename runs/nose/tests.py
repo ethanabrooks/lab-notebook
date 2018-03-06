@@ -61,10 +61,16 @@ def get_name(nodes, name):
 
 
 class ParamGenerator:
-    def __init__(self):
-        self.paths = [TEST_RUN]
-        self.dir_names = [[], ['checkpoints', 'tensorboard']]
-        self.flags = [[], ['--option=1']]
+    def __init__(self, paths=None, dir_names=None, flags=None):
+        if paths is None:
+            paths = [TEST_RUN]
+        if dir_names is None:
+            dir_names = [[], ['checkpoints', 'tensorboard']]
+        if flags is None:
+            flags = [[], ['--option=1']]
+        self.paths = paths
+        self.dir_names = dir_names
+        self.flags = flags
 
     def __iter__(self):
         for path in self.paths:
@@ -75,25 +81,26 @@ class ParamGenerator:
     def __next__(self):
         return next(iter(self))
 
+    def __add__(self, other):
+        assert isinstance(other, ParamGenerator)
+        return ParamGenerator(self.paths + other.paths,
+                              self.dir_names + other.dir_names,
+                              self.flags + other.flags)
+
 
 class SimpleParamGenerator(ParamGenerator):
     def __init__(self):
-        super().__init__()
-        self.paths = [TEST_RUN]
-        self.dir_names = [[]]
-        self.flags = [[]]
+        super().__init__([TEST_RUN], [['checkpoints', 'tensorboard']], [[]])
 
 
-class ParamGeneratorWithSubdir:
+class ParamGeneratorWithSubdir(ParamGenerator):
     def __init__(self):
-        super().__init__()
-        self.paths = [SUBDIR + SEP + TEST_RUN]
+        super().__init__(paths=[SUBDIR + SEP + TEST_RUN])
 
 
 class ParamGeneratorWithPatterns(ParamGenerator):
     def __init__(self):
-        super().__init__()
-        self.paths += ['*', 'subdir/*', 'test*']
+        super().__init__(paths=['*', 'subdir/*', 'test*'])
 
 
 def db_entry(path):
@@ -144,11 +151,11 @@ dir_names = {}
     shutil.rmtree(WORK_DIR)
 
 
-def check_tmux_new(path):
+def check_tmux(path):
     assert_in(quote(path), sessions())
 
 
-def check_db_new(path, flags):
+def check_db(path, flags):
     entry = db_entry(path)
 
     # check values that should probably be mocks
@@ -167,22 +174,22 @@ def check_db_new(path, flags):
         assert_in(flag, entry['full_command'])
 
 
-def check_files_new(path, dir_names):
+def check_files(path, dir_names):
     for dir_name in dir_names:
         path = Path(WORK_DIR, ROOT, dir_name, path)
         ok_(path.exists(), msg="{} does not exist.".format(path))
 
 
-def check_tmux_rm(path):
+def check_tmux_killed(path):
     assert_not_in(quote(path), sessions())
 
 
-def check_db_rm(path):
+def check_del_entry(path):
     with assert_raises(ChildResolverError):
         Resolver().glob(read(DB_PATH), path)
 
 
-def check_files_rm(path):
+def check_rm_files(path):
     for root, dirs, files in os.walk(WORK_DIR):
         for filename in files:
             ok_(not fnmatch(filename, path))
@@ -191,18 +198,18 @@ def check_files_rm(path):
 def test_new():
     for path, dir_names, flags in ParamGenerator():
         with _setup(path, dir_names, flags):
-            yield check_tmux_new, path
-            yield check_db_new, path, flags
-            yield check_files_new, path, dir_names
+            yield check_tmux, path
+            yield check_db, path, flags
+            yield check_files, path, dir_names
 
 
 def test_rm():
     for path, dir_names, flags in ParamGenerator():
         with _setup(path, dir_names, flags):
             main.main(['-q', 'rm', '-y', path])
-            yield check_tmux_rm, path
-            yield check_db_rm, path
-            yield check_files_rm, path
+            yield check_tmux_killed, path
+            yield check_del_entry, path
+            yield check_rm_files, path
 
             # TODO: patterns
 
@@ -258,3 +265,17 @@ def test_chdesc():
         description = 'new description'
         main.main(['chdesc', TEST_RUN, '--description=' + description])
         eq_(Run(TEST_RUN).lookup('description'), description)
+
+
+def test_move():
+    generator = ParamGenerator() + ParamGeneratorWithSubdir()
+    # generator = SimpleParamGenerator()
+    for path, dir_names, flags in generator:
+        # for new_name in ['subdir/test_run']:
+        for new_name in generator.paths:
+            # with _setup(path, dir_names, flags):
+            #     args = ['mv', '-y', '--keep-tmux', path, new_name]
+            #     if path != new_name:
+                    pass
+                    # main.main(args)
+            #         assert 0

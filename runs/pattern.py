@@ -34,7 +34,7 @@ class Pattern(DBPath):
             assert run_nodes
             return run_nodes
         except (ChildResolverError, AssertionError):
-            self.quit('No runs match pattern, {}. Recorded runs:'.format(self.path))
+            self.exit('No runs match pattern, {}. Recorded runs:'.format(self.path))
 
     def names(self):
         return [node.name for node in self.nodes()]

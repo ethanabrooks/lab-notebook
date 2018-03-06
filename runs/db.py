@@ -180,13 +180,15 @@ class DBPath:
             shutil.rmtree(str(path), ignore_errors=True)
 
     def mvdirs(self, new):
+        assert isinstance(new, DBPath)
         for old_path, new_path in zip(self.paths, new.paths):
+            new_path.parent.mkdir(exist_ok=True, parents=True)
             old_path.rename(new_path)
 
-    def print(self, *str):
+    def print(self, *msg):
         if not self.cfg.quiet:
-            print(*str)
+            print(*msg)
 
-    def quit(self, *msg):
+    def exit(self, *msg):
         self.print(*msg)
         exit()
