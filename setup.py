@@ -7,7 +7,7 @@ with codecs.open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='lab-notebook',
-      version='2.1.6',
+      version='3.1.6',
       description='A utility for tracking and reproducing Tensorflow runs.',
       long_description=long_description,
       url='https://github.com/lobachevzky/tf-run-manager',  # TODO
