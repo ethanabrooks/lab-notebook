@@ -6,13 +6,12 @@ from pathlib import Path
 from anytree import AnyNode
 from anytree.exporter import DictExporter
 
-from runs.db import tree_string
-from runs.route import Route
+import runs.route
 from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, highlight, cmd, COMMIT, DESCRIPTION, \
     NAME, prune_leaves
 
 
-class Run(Route):
+class Run(runs.route.Route):
     @property
     def keys(self):
         return list(DictExporter().export(self.node()).keys())

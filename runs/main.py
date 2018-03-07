@@ -4,17 +4,14 @@ import inspect
 import os
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
-from pprint import pprint
-
-import shutil
 
 from runs.cfg import Cfg
 from runs.db import tree_string, killall
-from runs.route import Route
 from runs.pattern import Pattern
+from runs.route import Route
 from runs.run import Run
-from runs.util import search_ancestors, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MULTI, get_permission, KILLALL
+from runs.util import search_ancestors, PATTERN, \
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MULTI, KILLALL, PATH
 
 
 def nonempty_string(value):
@@ -77,7 +74,7 @@ def main(argv=sys.argv[1:]):
     path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
 
     new_parser = subparsers.add_parser(NEW, help='Start a new run.')
-    new_parser.add_argument(NAME, help='Unique name assigned to new run.' + path_clarification, type=nonempty_string)
+    new_parser.add_argument(PATH, help='Unique name assigned to new run.' + path_clarification, type=nonempty_string)
     new_parser.add_argument('command', help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
                                             'or `--save-path` flag in this argument', type=nonempty_string)
     new_parser.add_argument('--assume-yes', '-y', action='store_true', help='Create new run even if repo is dirty.'
@@ -126,13 +123,13 @@ def main(argv=sys.argv[1:]):
     set_defaults(lookup_parser, LOOKUP)
 
     chdesc_parser = subparsers.add_parser(CHDESCRIPTION, help='Edit description of run.')
-    chdesc_parser.add_argument(NAME, help='Name of run whose description you want to edit.', type=nonempty_string)
+    chdesc_parser.add_argument(PATH, help='Name of run whose description you want to edit.', type=nonempty_string)
     chdesc_parser.add_argument('--description', default=None, help='New description. If None, script will prompt for '
                                                                    'a description in Vim')
     set_defaults(chdesc_parser, CHDESCRIPTION)
 
     reproduce_parser = subparsers.add_parser(REPRODUCE, help='Print commands to reproduce a run.')
-    reproduce_parser.add_argument(NAME)
+    reproduce_parser.add_argument(PATH)
     reproduce_parser.add_argument('--description', type=nonempty_string, default=None,
                                   help="Description to be assigned to new run. If None, use the same description as "
                                        "the run being reproduced.")
@@ -154,7 +151,7 @@ def main(argv=sys.argv[1:]):
     Route.cfg = Cfg(**kwargs)
 
     if args.dest == NEW:
-        Run(args.name).new(
+        Run(args.path).new(
             command=args.command,
             description=args.description,
             assume_yes=args.assume_yes)
@@ -184,10 +181,10 @@ def main(argv=sys.argv[1:]):
                 print("{}: {}".format(run.path, value))
 
     elif args.dest == CHDESCRIPTION:
-        Run(args.name).chdescription(args.description)
+        Run(args.path).chdescription(args.description)
 
     elif args.dest == REPRODUCE:
-        print(Run(args.name).reproduce())
+        print(Run(args.path).reproduce())
 
     elif args.dest == KILLALL:
         killall(Route.cfg.db_path, Route.cfg.root)

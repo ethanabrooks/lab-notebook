@@ -129,7 +129,7 @@ def string_from_vim(prompt, string=None):
     path.unlink()
     return string
 
-
+PATH = 'path'
 ROOT_PATH = '.'
 SEP = '/'
 MULTI = 'multi'
