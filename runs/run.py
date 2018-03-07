@@ -1,14 +1,14 @@
+import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
 
-import re
 from anytree import AnyNode
 from anytree.exporter import DictExporter
 
-from runs.db import DBPath, open_db, tree_string
+from runs.db import DBPath, tree_string
 from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, highlight, cmd, COMMIT, DESCRIPTION, \
-    COMMAND, NAME
+    NAME
 
 
 class Run(DBPath):

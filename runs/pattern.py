@@ -42,7 +42,7 @@ class Pattern(DBPath):
         return set([key for run in self.runs() for key in run.keys])
 
     def remove(self, assume_yes):
-        prompt = 'Remove the following runs?\n{}\n'.format('\n'.join(self.names()))
+        prompt = 'Runs to be removed:\n{}\nContinue?'.format('\n'.join(self.names()))
         if assume_yes or get_permission(prompt):
             for run in self.runs():
                 run.remove()
@@ -58,7 +58,7 @@ class Pattern(DBPath):
 
         # prompt depends on number of runs being moved
         if len(src) > 1:
-            prompt = 'Move the following runs into {}?\n{}'.format(
+            prompt = 'Runs to be moved into {}:\n{}\nContinue?'.format(
                 dest.parent, '\n'.join(run.parent for run in src))
         else:
             prompt = 'Move {} to {}?'.format(src[0], dest)

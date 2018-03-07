@@ -5,6 +5,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import shutil
 import yaml
 from anytree import RenderTree
 from termcolor import colored
@@ -29,9 +30,21 @@ def search_ancestors(filename):
         dirpath = dirpath.parent
 
 
+def prune(path):
+    assert isinstance(path, Path)
+
+    # directory is not empty, stop
+    if [p for p in path.iterdir() if p.name != '.DS_Store']:
+        return
+
+    # otherwise, remove it
+    shutil.rmtree(str(path), ignore_errors=True)
+    prune(path.parent)
+
+
 def get_permission(*question):
     question = ' '.join(question)
-    if not question.endswith(' '):
+    if not question.endswith((' ', '\n')):
         question += ' '
     response = input(question)
     while True:
