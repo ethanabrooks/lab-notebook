@@ -120,18 +120,24 @@ class DBPath:
     def root(self):
         return Node(self.root_path)
 
-    @contextmanager
-    def add_to_tree(self):
+    def add_to_tree(self, root=None):
         """
-        Add a node corresponding to this path to the db, yield it,
-        and write when finished.
+        Add a node corresponding to this path to the db
         """
-        if self.node():
-            with self.open() as node:
-                yield node
-        else:
-            with DBPath(self.ancestors).add_to_tree() as parent:
-                yield Node(name=self.head, parent=parent)
+        node = self.node(root)
+        if node:
+            return node
+        parent = self.parent.add_to_tree(root)
+        return Node(name=self.head, parent=parent)
+
+        # if root is None:
+        #     root =
+        #     self.node(root):
+        #     with self.open() as node:
+        #         yield node
+        # else:
+        #     with DBPath(self.ancestors).add_to_tree() as parent:
+        #         yield Node(name=self.head, parent=parent)
 
     def read(self):
         tree = read(self.cfg.db_path)
@@ -144,7 +150,7 @@ class DBPath:
 
     def node(self, root=None):
         """
-         Get the node corresponding to thie path if it exists.
+         Get the node corresponding to this path if it exists.
         Otherwise return None.
          """
         if root is None:
@@ -157,9 +163,14 @@ class DBPath:
 
     # DB I/O
     @contextmanager
+    def open_root(self):
+        with open_db(self.root, self.cfg.db_path) as root:
+            yield root
+
+    @contextmanager
     def open(self):
-        with open_db(self.root, self.cfg.db_path) as tree:
-            yield self.node(tree)
+        with self.open_root() as root:
+            yield self.node(root)
 
     @property
     def paths(self):

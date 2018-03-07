@@ -28,9 +28,12 @@ runs table --column-width=15
 # open tensorboard
 runs lookup description train1
 runs lookup commit train1
-runs-git checkout #train1
+runs-git diff +train1
+runs-git checkout +train1
 runs reproduce train1
 runs mv train1 archive/
+# Show file structure
+runs ls
 runs mv archive/train1 ./
 runs mv '*' rldl4/
 runs rm 'rldl4/*'

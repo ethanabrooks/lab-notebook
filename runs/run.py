@@ -6,7 +6,7 @@ import re
 from anytree import AnyNode
 from anytree.exporter import DictExporter
 
-from runs.db import DBPath
+from runs.db import DBPath, open_db, tree_string
 from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, highlight, cmd, COMMIT, DESCRIPTION, \
     COMMAND, NAME
 
@@ -44,15 +44,14 @@ class Run(DBPath):
         self.new_tmux(description, full_command)
 
         # new db entry
-        with self.parent.add_to_tree() as parent:
-            assert parent is not None
+        with self.open_root() as root:
             AnyNode(name=self.head,
                     input_command=command,
                     full_command=full_command,
                     commit=last_commit(),
                     datetime=datetime.now().isoformat(),
                     description=description,
-                    parent=parent)
+                    parent=self.parent.add_to_tree(root))
 
         # print result
         self.print(highlight('Description:'))
@@ -97,10 +96,10 @@ class Run(DBPath):
             self.rename_tmux(dest.head)
         else:
             self.kill_tmux()
-        with dest.parent.add_to_tree() as parent:
-            node = self.node()
+        with self.open_root() as root:
+            node = self.node(root)
             node.name = dest.head
-            node.parent = parent
+            node.parent = dest.parent.add_to_tree(root)
 
     def lookup(self, key):
         try:

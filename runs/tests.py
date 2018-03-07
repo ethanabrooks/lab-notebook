@@ -280,6 +280,8 @@ def test_move():
                 args = ['mv', '-y', '--keep-tmux', path, new_path]
                 if path != new_path:
                     main.main(args)
+                    yield check_del_entry, path
+                    yield check_rm_files, path
                     yield check_db, new_path, flags
                     yield check_files, new_path, dir_names
                     yield check_tmux, new_path.split('/')[-1]
