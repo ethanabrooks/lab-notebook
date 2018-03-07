@@ -288,7 +288,6 @@ def check_move(path, new_path, dir_names=None, flags=None):
     check_rm_files(path)
     check_db(new_path, flags)
     check_files(new_path, dir_names)
-    check_tmux(new_path.split('/')[-1])
 
 
 def test_move():
@@ -300,10 +299,10 @@ def test_move():
                 if path != new_path:
                     main.main(args)
                     yield check_move, path, new_path, dir_names, flags
+                    yield check_tmux, new_path.split('/')[-1]
 
 
 def test_move_dirs():
-    #GOOD
     with _setup('sub/sub/test_run'):
         main.main(['mv', '-y', 'sub/sub/test_run', 'new_dir/'])
         # dest is dir -> move src into dest

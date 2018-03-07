@@ -57,21 +57,23 @@ class Pattern(Route):
         assert isinstance(dest, Route)
 
         dest_is_dir = dest.node() is not None or dest.is_dir
-        dest_parts = dest.parts
 
         moves = []
-        for src_node in self.nodes():
-            if dest_is_dir:
+        nodes = self.nodes()
+        for src_node in nodes:
+
+            _dest = dest
+            if dest_is_dir or len(nodes) > 1:
                 # put the current node into base
-                dest = Route(dest.parts + [get_parts(src_node)[-1]])
+                _dest = Route(dest.parts + [get_parts(src_node)[-1]])
 
             # check for conflicts with existing runs
-            if dest.node() is not None:
-                dest.already_exists()
+            if _dest.node() is not None:
+                _dest.already_exists()
 
             for child_run_node in findall(src_node, lambda n: hasattr(n, COMMIT)):
                 stem = get_parts(child_run_node)[len(get_parts(src_node)):]
-                dest_run = runs.run.Run(dest_parts + stem)
+                dest_run = runs.run.Run(_dest.parts + stem)
                 src_run = runs.run.Run(child_run_node)
                 moves.append((src_run, dest_run))
 
