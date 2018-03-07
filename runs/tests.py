@@ -234,8 +234,8 @@ def check_list_happy(pattern, print_attrs):
 
 
 def check_list_sad(pattern):
-    with assert_raises(SystemExit):
-        Pattern(pattern, cfg=DEFAULT_CFG).tree_string()
+    string = Pattern(pattern, cfg=DEFAULT_CFG).tree_string()
+    eq_(string, '.\n')
 
 
 def test_list():
