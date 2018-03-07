@@ -125,6 +125,8 @@ def string_from_vim(prompt, string=None):
     return string
 
 
+ROOT_PATH = '.'
+SEP = '/'
 MULTI = 'multi'
 NAME = 'name'
 PATTERN = 'pattern'

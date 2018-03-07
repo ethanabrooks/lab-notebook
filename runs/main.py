@@ -9,7 +9,8 @@ from pprint import pprint
 import shutil
 
 from runs.cfg import Cfg
-from runs.db import DBPath, tree_string, killall
+from runs.db import tree_string, killall
+from runs.route import Route
 from runs.pattern import Pattern
 from runs.run import Run
 from runs.util import search_ancestors, NAME, PATTERN, \
@@ -150,7 +151,7 @@ def main(argv=sys.argv[1:]):
     if 'flags' in config:
         kwargs['flags'] = config['flags']
 
-    DBPath.cfg = Cfg(**kwargs)
+    Route.cfg = Cfg(**kwargs)
 
     if args.dest == NEW:
         Run(args.name).new(
@@ -168,7 +169,7 @@ def main(argv=sys.argv[1:]):
         if args.pattern:
             print(Pattern(args.pattern).tree_string(args.show_attrs))
         else:
-            print(tree_string(db_path=DBPath.cfg.db_path))
+            print(tree_string(db_path=Route.cfg.db_path))
 
     elif args.dest == TABLE:
         print(Pattern(args.pattern).table(args.column_width))
@@ -189,7 +190,7 @@ def main(argv=sys.argv[1:]):
         print(Run(args.name).reproduce())
 
     elif args.dest == KILLALL:
-        killall(DBPath.cfg.db_path, DBPath.cfg.root)
+        killall(Route.cfg.db_path, Route.cfg.root)
     else:
         raise RuntimeError("'{}' is not a supported dest.".format(args.dest))
 

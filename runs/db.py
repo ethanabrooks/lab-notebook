@@ -3,14 +3,13 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import yaml
-from anytree import NodeMixin, Resolver, ChildResolverError, Node
-from anytree import PreOrderIter
+from anytree import NodeMixin
 from anytree import RenderTree
 from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
 from tabulate import tabulate
 
-from runs.util import NAME, _print, _exit, get_permission, prune_empty, prune_leaves
+from runs.util import NAME, get_permission, ROOT_PATH
 
 
 def read(db_path):
@@ -40,7 +39,7 @@ def tree_string(tree=None, db_path=None, print_attrs=False):
     if db_path:
         tree = read(db_path)
     if tree is None:
-        return DBPath.root_path
+        return ROOT_PATH
     assert isinstance(tree, NodeMixin)
     string = ''
     for pre, fill, node in RenderTree(tree):
@@ -93,116 +92,3 @@ def open_db(root, db_path):
     write(root, db_path)
 
 
-class DBPath:
-    cfg = None
-    root_path = '.'
-    sep = '/'
-
-    def __init__(self, parts, cfg=None):
-        if cfg is None:
-            if DBPath is None:
-                raise RuntimeError('Either `cfg` has to be specified or `DBPath.cfg` has to be set')
-            cfg = DBPath.cfg
-        self.cfg = cfg
-        self.sep = DBPath.sep
-        if isinstance(parts, NodeMixin):
-            self.parts = [str(node.name) for node in parts.path[1:]]
-        elif isinstance(parts, str):
-            self.parts = parts.split(self.sep)
-        else:
-            assert isinstance(parts, (list, tuple)), (parts, type(parts))
-            self.parts = []
-            for part in parts:
-                assert isinstance(part, str)
-                self.parts.extend(part.split(self.sep))
-        assert isinstance(self.parts, list)
-        self.is_dir = not self.parts or self.parts[-1] == ''
-        self.parts = [p for p in self.parts if p]
-        self.path = self.sep.join(self.parts)
-
-        parts = self.parts
-        if not parts:
-            parts = self.root_path
-        *self.ancestors, self.head = parts
-
-    @property
-    def parent(self):
-        return DBPath(self.ancestors)
-
-    @property
-    def root(self):
-        return Node(self.root_path)
-
-    def add_to_tree(self, root=None):
-        """
-        Add a node corresponding to this path to root (or to the db if root is None)
-        """
-        node = self.node(root)
-        if node:
-            return node
-        parent = self.parent.add_to_tree(root)
-        return Node(name=self.head, parent=parent)
-
-    def read(self):
-        tree = read(self.cfg.db_path)
-        if tree is None:
-            tree = self.root
-        return tree
-
-    def write(self, db):
-        write(db, self.cfg.db_path)
-
-    def node(self, root=None):
-        """
-         Get the node corresponding to this path if it exists.
-        Otherwise return None.
-         """
-        if root is None:
-            root = self.read()
-        try:
-            assert root is not None
-            return Resolver().get(root, self.path)
-        except (ChildResolverError, AssertionError):
-            return None
-
-    # DB I/O
-    @contextmanager
-    def open_root(self):
-        with open_db(self.root, self.cfg.db_path) as root:
-            yield root
-
-    @contextmanager
-    def open(self):
-        with self.open_root() as root:
-            yield self.node(root)
-
-    @property
-    def paths(self):
-        return [Path(self.cfg.root, dir_name, self.path)
-                for dir_name in self.cfg.dir_names]
-
-    # file I/O
-    def mkdirs(self, exist_ok=True):
-        for path in self.paths:
-            path.mkdir(exist_ok=exist_ok, parents=True)
-
-    def rmdirs(self):
-        for path in self.paths:
-            shutil.rmtree(str(path), ignore_errors=True)
-            prune_empty(path.parent)
-
-    def mvdirs(self, new):
-        assert isinstance(new, DBPath)
-        for old_path, new_path in zip(self.paths, new.paths):
-            new_path.parent.mkdir(exist_ok=True, parents=True)
-            old_path.rename(new_path)
-            prune_empty(old_path.parent)
-
-    def print(self, *msg):
-        _print(*msg, quiet=self.cfg.quiet)
-
-    def exit(self, *msg):
-        _exit(*msg, quiet=self.cfg.quiet)
-
-    def __str__(self):
-        return self.path

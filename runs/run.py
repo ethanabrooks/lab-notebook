@@ -6,12 +6,13 @@ from pathlib import Path
 from anytree import AnyNode
 from anytree.exporter import DictExporter
 
-from runs.db import DBPath, tree_string
+from runs.db import tree_string
+from runs.route import Route
 from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, highlight, cmd, COMMIT, DESCRIPTION, \
     NAME, prune_leaves
 
 
-class Run(DBPath):
+class Run(Route):
     @property
     def keys(self):
         return list(DictExporter().export(self.node()).keys())
@@ -127,9 +128,6 @@ class Run(DBPath):
             if new_description is None:
                 new_description = string_from_vim('Edit description', node.description)
             node.description = new_description
-
-    def already_exists(self):
-        self.exit('{} already exists.'.format(self))
 
     def reproduce(self):
         return 'To reproduce:\n' + \

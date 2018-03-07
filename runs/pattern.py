@@ -1,16 +1,19 @@
 from contextlib import contextmanager
 from copy import deepcopy
+from itertools import zip_longest
 
 from anytree import ChildResolverError
+from anytree import NodeMixin
 from anytree import Resolver, findall
 
 import runs.main
 from runs import db
-from runs.db import DBPath, tree_string
+from runs.db import tree_string
+from runs.route import Route
 from runs.util import get_permission, COMMIT
 
 
-class Pattern(DBPath):
+class Pattern(Route):
     # DB I/O
     @contextmanager
     def open(self):
@@ -19,21 +22,19 @@ class Pattern(DBPath):
         self.write(tree)
 
     def runs(self, root=None):
-        return [runs.run.Run(node) for node in self.nodes(root) if hasattr(node, COMMIT)]
-        # return list(map(runs.run.Run, self.nodes(root)))
+        return [runs.run.Run(run)
+                for base in self.nodes(root)
+                for run in findall(base, lambda n: hasattr(n, COMMIT))]
 
     def nodes(self, root=None):
         if root is None:
             root = self.read()
         try:
-            run_nodes = [node
-                         for base in Resolver().glob(root, self.path.rstrip(self.sep))
-                         for node in findall(base, lambda n: hasattr(n, COMMIT))]
-            assert run_nodes
-            return run_nodes
-        except (ChildResolverError, AssertionError):
-            self.exit('No runs match pattern, "{}". Recorded runs:\n{}'.format(
-                self.path, db.tree_string(db_path=self.cfg.db_path)))
+            return Resolver().glob(root, self.path.rstrip(self.sep))
+        except ChildResolverError:
+            return []
+            # self.exit('No nodes match pattern, "{}". Current tree:\n{}'.format(
+            #     self.path, db.tree_string(db_path=self.cfg.db_path)))
 
     def names(self):
         return [node.name for node in self.nodes()]
@@ -48,31 +49,40 @@ class Pattern(DBPath):
             for run in self.runs():
                 run.remove()
 
-    def move(self, dest, keep_tmux, assume_yes):
-        assert isinstance(dest, runs.run.DBPath)
+    def move(self, dest_route, keep_tmux, assume_yes):
+        assert isinstance(dest_route, Route)
 
-        src = self.runs()
+        dest_is_dir = dest_route.node() is not None or dest_route.is_dir
+        dest_parts = dest_route.parts
+
+        def get_parts(node):
+            assert isinstance(node, NodeMixin)
+            return [n.name for n in node.path]
+
         moves = []
-        for run in src:
-
-            # # if the dest exists or we are moving multiple runs,
-            # if dest.node() is not None or len(src) > 1 or dest.is_dir:
-                # preserve the current name of the run
-
-            new_path = run.path.replace(self.path, dest.path, 1)
-            dest = runs.run.Run(new_path)
+        for src_node in self.nodes():
+            if dest_is_dir:
+                # put the current node into base
+                dest_parts.append(get_parts(src_node)[-1])
 
             # check for conflicts with existing runs
-            if dest.node() is not None:
-                dest.already_exists()
+            dest_route = Route(dest_parts)
+            if dest_route.node() is not None:
+                dest_route.already_exists()
 
-            moves.append((run, dest))
+            for child_run_node in findall(src_node, lambda n: hasattr(n, COMMIT)):
+                stem = get_parts(child_run_node)[len(get_parts(src_node)):]
+                dest_run = runs.run.Run(dest_parts + stem)
+                src_run = runs.run.Run(child_run_node)
+                moves.append((src_run, dest_run))
 
         prompt = ("Planned moves:\n\n" +
                   '\n'.join(s.path + ' -> ' + d.path for s, d in moves) +
                   '\n\nContinue?')
         if assume_yes or get_permission(prompt):
             for src, dest in moves:
+                assert isinstance(src, runs.run.Run)
+                assert isinstance(dest, runs.run.Run)
                 src.move(dest, keep_tmux)
 
     def lookup(self, key):

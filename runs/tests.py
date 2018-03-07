@@ -155,7 +155,7 @@ dir_names = {}
     main.main(['-q', 'new', path, COMMAND, "--description=" + DESCRIPTION])
     yield
     cmd('tmux kill-session -t'.split() + [path], fail_ok=True)
-    shutil.rmtree(WORK_DIR)
+    shutil.rmtree(WORK_DIR, ignore_errors=True)
 
 
 def check_tmux(path):
@@ -192,7 +192,6 @@ def check_tmux_killed(path):
 
 
 def check_del_entry(path):
-    print('HERE')
     with assert_raises(ChildResolverError):
         Resolver().glob(read(DB_PATH), path)
 
@@ -285,11 +284,11 @@ def check_move(path, new_path, dir_names=None, flags=None):
         dir_names = []
     if flags is None:
         flags = []
-    yield check_del_entry, path
-    yield check_rm_files, path
-    yield check_db, new_path, flags
-    yield check_files, new_path, dir_names
-    yield check_tmux, new_path.split('/')[-1]
+    check_del_entry(path)
+    check_rm_files(path)
+    check_db(new_path, flags)
+    check_files(new_path, dir_names)
+    check_tmux(new_path.split('/')[-1])
 
 
 def test_move():
@@ -304,24 +303,52 @@ def test_move():
 
 
 def test_move_dirs():
+    #GOOD
     with _setup('sub/sub/test_run'):
         main.main(['mv', '-y', 'sub/sub/test_run', 'new_dir/'])
+        # dest is dir -> move src into dest
         yield check_move, 'sub/sub/test_run', 'new_dir/test_run'
         yield check_del_entry, 'sub'
         yield check_rm_files, 'sub'
 
     with _setup('sub/test_run'):
         main.main(['mv', '-y', 'sub', 'new_dir'])
+        # src is dir -> change src to dest and bring children
         yield check_move, 'sub/test_run', 'new_dir/test_run'
 
     with _setup('sub/sub/test_run'):
         main.main(['mv', '-y', 'sub/sub', 'sub/new_dir'])
+        # src is dir -> change src to dest and bring children
         yield check_move, 'sub/sub/test_run', 'sub/new_dir/test_run'
 
     with _setup('sub/test_run'):
         main.main(['mv', '-y', 'sub', 'new_dir/'])
+        # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/test_run', 'new_dir/sub/test_run'
 
-    with _setup('sub/test_run'):
-        main.main(['mv', '-y', 'sub/', '.'])
-        yield check_move, 'sub/test_run', 'test_run'
+    with _setup('sub/sub/test_run'):
+        main.main(['mv', '-y', 'sub/sub/', '.'])
+        # src is dir and dest is dir -> move src into dest and bring children
+        yield check_move, 'sub/sub/test_run', 'sub/test_run'
+
+    with _setup('sub/test_run1'), _setup('sub/test_run2'):
+        main.main(['mv', '-y', 'sub/*', 'new'])
+        # src is multi -> for each node match, move head into dest
+        yield check_move, 'sub/test_run1', 'new/test_run1'
+        yield check_move, 'sub/test_run2', 'new/test_run2'
+
+    with _setup('sub/sub1/test_run1'), _setup('sub/sub2/test_run2'):
+        main.main(['mv', '-y', 'sub/*', 'new'])
+        # src is multi -> for each node match, move head into dest
+        yield check_move, 'sub/sub1/test_run1', 'new/sub1/test_run1'
+        yield check_move, 'sub/sub2/test_run2', 'new/sub2/test_run2'
+
+    with _setup('sub1/test_run1'), _setup('sub2/test_run2'):
+        main.main(['mv', '-y', 'sub1/test_run1', 'sub2'])
+        # dest is dir -> move node into dest
+        yield check_move, 'sub1/test_run1', 'sub2/test_run1'
+
+    with _setup('sub1/sub1/test_run1'), _setup('sub2/test_run2'):
+        main.main(['mv', '-y', 'sub1/sub1', 'sub2'])
+        # dest is dir and src is dir -> move node into dest
+        yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
