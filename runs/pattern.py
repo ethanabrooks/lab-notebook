@@ -55,10 +55,12 @@ class Pattern(DBPath):
         moves = []
         for run in src:
 
-            # if the dest exists or we are moving multiple runs,
-            if dest.node() is not None or len(src) > 1 or dest.path.endswith(self.sep):
+            # # if the dest exists or we are moving multiple runs,
+            # if dest.node() is not None or len(src) > 1 or dest.is_dir:
                 # preserve the current name of the run
-                dest = runs.run.Run(dest.ancestors + [run.head])
+
+            new_path = run.path.replace(self.path, dest.path, 1)
+            dest = runs.run.Run(new_path)
 
             # check for conflicts with existing runs
             if dest.node() is not None:

@@ -139,6 +139,7 @@ COMMAND = 'command'
 COMMIT = 'commit'
 DESCRIPTION = 'description'
 CHDESCRIPTION = 'chdesc'
+KILLALL = 'killall'
 
 # @contextmanager
 # def read_remote_file(remote_filename, host, username):

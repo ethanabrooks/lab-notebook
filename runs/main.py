@@ -6,12 +6,14 @@ import sys
 from configparser import ConfigParser, ExtendedInterpolation
 from pprint import pprint
 
+import shutil
+
 from runs.cfg import Cfg
-from runs.db import DBPath, tree_string
+from runs.db import DBPath, tree_string, killall
 from runs.pattern import Pattern
 from runs.run import Run
 from runs.util import search_ancestors, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MULTI, get_permission
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MULTI, get_permission, KILLALL
 
 
 def nonempty_string(value):
@@ -139,6 +141,8 @@ def main(argv=sys.argv[1:]):
                                        'the database.  Otherwise this entry will '
                                        'overwrite any entry with the same name. ')
     set_defaults(reproduce_parser, REPRODUCE)
+
+    subparsers.add_parser(KILLALL, help='Destroy all runs.')
     args = parser.parse_args(args=argv)
 
     kwargs = {k: v for k, v in vars(args).items()
@@ -184,6 +188,8 @@ def main(argv=sys.argv[1:]):
     elif args.dest == REPRODUCE:
         print(Run(args.name).reproduce())
 
+    elif args.dest == KILLALL:
+        killall(DBPath.cfg.db_path, DBPath.cfg.root)
     else:
         raise RuntimeError("'{}' is not a supported dest.".format(args.dest))
 

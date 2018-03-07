@@ -192,6 +192,7 @@ def check_tmux_killed(path):
 
 
 def check_del_entry(path):
+    print('HERE')
     with assert_raises(ChildResolverError):
         Resolver().glob(read(DB_PATH), path)
 
@@ -279,6 +280,18 @@ def test_chdesc():
         eq_(Run(TEST_RUN).lookup('description'), description)
 
 
+def check_move(path, new_path, dir_names=None, flags=None):
+    if dir_names is None:
+        dir_names = []
+    if flags is None:
+        flags = []
+    yield check_del_entry, path
+    yield check_rm_files, path
+    yield check_db, new_path, flags
+    yield check_files, new_path, dir_names
+    yield check_tmux, new_path.split('/')[-1]
+
+
 def test_move():
     generator = ParamGenerator() + ParamGeneratorWithSubdir()
     for path, dir_names, flags in generator:
@@ -287,8 +300,28 @@ def test_move():
                 args = ['mv', '-y', '--keep-tmux', path, new_path]
                 if path != new_path:
                     main.main(args)
-                    yield check_del_entry, path
-                    yield check_rm_files, path
-                    yield check_db, new_path, flags
-                    yield check_files, new_path, dir_names
-                    yield check_tmux, new_path.split('/')[-1]
+                    yield check_move, path, new_path, dir_names, flags
+
+
+def test_move_dirs():
+    with _setup('sub/sub/test_run'):
+        main.main(['mv', '-y', 'sub/sub/test_run', 'new_dir/'])
+        yield check_move, 'sub/sub/test_run', 'new_dir/test_run'
+        yield check_del_entry, 'sub'
+        yield check_rm_files, 'sub'
+
+    with _setup('sub/test_run'):
+        main.main(['mv', '-y', 'sub', 'new_dir'])
+        yield check_move, 'sub/test_run', 'new_dir/test_run'
+
+    with _setup('sub/sub/test_run'):
+        main.main(['mv', '-y', 'sub/sub', 'sub/new_dir'])
+        yield check_move, 'sub/sub/test_run', 'sub/new_dir/test_run'
+
+    with _setup('sub/test_run'):
+        main.main(['mv', '-y', 'sub', 'new_dir/'])
+        yield check_move, 'sub/test_run', 'new_dir/sub/test_run'
+
+    with _setup('sub/test_run'):
+        main.main(['mv', '-y', 'sub/', '.'])
+        yield check_move, 'sub/test_run', 'test_run'

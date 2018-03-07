@@ -39,6 +39,8 @@ def tree_string(tree=None, db_path=None, print_attrs=False):
         raise ValueError('Either tree or db_path must be specified.')
     if db_path:
         tree = read(db_path)
+    if tree is None:
+        return DBPath.root_path
     assert isinstance(tree, NodeMixin)
     string = ''
     for pre, fill, node in RenderTree(tree):
@@ -74,6 +76,14 @@ def table(nodes, hidden_columns, column_width):
     return tabulate(table, headers=headers)
 
 
+def killall(db_path, root):
+    if db_path.exists():
+        if get_permission("Curent runs:\n{}\nDestroy all?".format(
+                tree_string(db_path=db_path))):
+            db_path.unlink()
+    shutil.rmtree(root, ignore_errors=True)
+
+
 @contextmanager
 def open_db(root, db_path):
     tree = read(db_path)
@@ -105,6 +115,9 @@ class DBPath:
             for part in parts:
                 assert isinstance(part, str)
                 self.parts.extend(part.split(self.sep))
+        assert isinstance(self.parts, list)
+        self.is_dir = not self.parts or self.parts[-1] == ''
+        self.parts = [p for p in self.parts if p]
         self.path = self.sep.join(self.parts)
 
         parts = self.parts
