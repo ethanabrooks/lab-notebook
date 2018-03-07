@@ -1,7 +1,10 @@
 from contextlib import contextmanager
 from copy import deepcopy
 
+import anytree
 from anytree import ChildResolverError
+from anytree import Node
+from anytree import NodeMixin
 from anytree import Resolver, findall
 
 import runs.main
@@ -78,7 +81,13 @@ class Pattern(DBPath):
 
     def tree(self):
         tree = deepcopy(self.read())
-        for node in findall(tree, lambda n: n not in self.nodes(tree)):
+        nodes = self.nodes(tree)
+
+        def not_part_of_tree(node):
+            return not any(node is n for n in nodes) and \
+                   not any(node is a for n in nodes for a in n.ancestors)
+
+        for node in findall(tree, not_part_of_tree):
             node.parent = None
         return tree
 
@@ -87,4 +96,3 @@ class Pattern(DBPath):
 
     def table(self, column_width):
         return db.table(self.nodes(), self.cfg.hidden_columns, column_width)
-

@@ -1,11 +1,11 @@
 #! /usr/bin/env bash
 
-#echo 'runs.yml .runs' > .gitignore
-#runs new train1 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
+echo 'runs.yml .runs' > .gitignore
+runs new train1 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
 # show runs.yml
 # show tmux
 
-echo '[filesystem]
+echo '[multi]
 root = /Users/ethan/baselines/.runs
 db_path = /Users/ethan/baselines/runs.yml
 dir_names = tensorboard
@@ -13,7 +13,7 @@ virtualenv_path = /Users/ethan/virtualenvs/baselines
 hidden_columns = input_command
 
 [flags]
---logdir=${filesystem:root}/tensorboard/<path>
+--logdir=${multi:root}/tensorboard/<path>
 
 [new]
 description = demo lab-notebook

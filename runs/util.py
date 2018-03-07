@@ -33,13 +33,14 @@ def search_ancestors(filename):
 def prune(path):
     assert isinstance(path, Path)
 
-    # directory is not empty, stop
-    if [p for p in path.iterdir() if p.name != '.DS_Store']:
-        return
+    if path.exists():
+        # directory is not empty, stop
+        if [p for p in path.iterdir() if p.name != '.DS_Store']:
+            return
 
-    # otherwise, remove it
-    shutil.rmtree(str(path), ignore_errors=True)
-    prune(path.parent)
+        # otherwise, remove it
+        shutil.rmtree(str(path), ignore_errors=True)
+        prune(path.parent)
 
 
 def get_permission(*question):
@@ -111,7 +112,7 @@ def string_from_vim(prompt, string=None):
     return string
 
 
-FILESYSTEM = 'filesystem'
+MULTI = 'multi'
 NAME = 'name'
 PATTERN = 'pattern'
 NEW = 'new'

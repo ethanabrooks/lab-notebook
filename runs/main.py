@@ -4,13 +4,14 @@ import inspect
 import os
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
+from pprint import pprint
 
 from runs.cfg import Cfg
 from runs.db import DBPath
 from runs.pattern import Pattern
 from runs.run import Run
 from runs.util import search_ancestors, NAME, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, FILESYSTEM, get_permission
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MULTI, get_permission
 
 
 def nonempty_string(value):
@@ -35,8 +36,6 @@ def main(argv=sys.argv[1:]):
         'dir_names': None,
 
         'virtualenv_path': None,
-
-        'hidden_columns': 'input_command'
     }
     if config_path:
         config.read(str(config_path))
@@ -44,7 +43,11 @@ def main(argv=sys.argv[1:]):
         print('Config file not found. Using default settings:\n')
         for k, v in default_config.items():
             print('{:20}{}'.format(k + ':', v))
-        config[FILESYSTEM] = default_config
+        print()
+        msg = 'Writing default settings to ' + config_filename
+        print(msg)
+        print('-' * len(msg))
+        config[MULTI] = default_config
         with open(config_filename, 'w') as f:
             config.write(f)
 
@@ -65,7 +68,7 @@ def main(argv=sys.argv[1:]):
                                                                         '`<virtualenv-path>/bin/activate`.'
                         )
     parser.add_argument('--quiet', '-q', action='store_true', help='Suppress print output')
-    set_defaults(parser, FILESYSTEM)
+    set_defaults(parser, MULTI)
 
     subparsers = parser.add_subparsers(dest='dest')
     path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
