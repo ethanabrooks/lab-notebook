@@ -8,7 +8,7 @@ from anytree.exporter import DictExporter
 
 from runs.db import DBPath, tree_string
 from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, highlight, cmd, COMMIT, DESCRIPTION, \
-    NAME
+    NAME, prune_leaves
 
 
 class Run(DBPath):
@@ -46,11 +46,11 @@ class Run(DBPath):
         # new db entry
         with self.open_root() as root:
             AnyNode(name=self.head,
-                    input_command=command,
                     full_command=full_command,
                     commit=last_commit(),
                     datetime=datetime.now().isoformat(),
                     description=description,
+                    _input_command=command,
                     parent=self.parent.add_to_tree(root))
 
         # print result
@@ -85,7 +85,7 @@ class Run(DBPath):
         self.rmdirs()
         with self.open() as node:
             if node:
-                node.parent = None
+                prune_leaves(node)
 
     def move(self, dest, keep_tmux):
         assert isinstance(dest, Run)
@@ -97,7 +97,9 @@ class Run(DBPath):
         with self.open_root() as root:
             node = self.node(root)
             node.name = dest.head
+            old_parent = node.parent
             node.parent = dest.parent.add_to_tree(root)
+            prune_leaves(old_parent)
 
     def lookup(self, key):
         try:

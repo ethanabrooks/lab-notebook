@@ -27,7 +27,7 @@ class Pattern(DBPath):
             root = self.read()
         try:
             run_nodes = [node
-                         for base in Resolver().glob(root, self.path)
+                         for base in Resolver().glob(root, self.path.rstrip(self.sep))
                          for node in findall(base, lambda n: hasattr(n, COMMIT))]
             assert run_nodes
             return run_nodes

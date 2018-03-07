@@ -10,7 +10,7 @@ from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
 from tabulate import tabulate
 
-from runs.util import NAME, _print, _exit, get_permission, prune
+from runs.util import NAME, _print, _exit, get_permission, prune_empty, prune_leaves
 
 
 def read(db_path):
@@ -176,14 +176,14 @@ class DBPath:
     def rmdirs(self):
         for path in self.paths:
             shutil.rmtree(str(path), ignore_errors=True)
-            prune(path.parent)
+            prune_empty(path.parent)
 
     def mvdirs(self, new):
         assert isinstance(new, DBPath)
         for old_path, new_path in zip(self.paths, new.paths):
             new_path.parent.mkdir(exist_ok=True, parents=True)
             old_path.rename(new_path)
-            prune(old_path.parent)
+            prune_empty(old_path.parent)
 
     def print(self, *msg):
         _print(*msg, quiet=self.cfg.quiet)

@@ -28,7 +28,7 @@ from runs.util import NAME, cmd
 # TODO: sad path
 
 CHILDREN = 'children'
-EXE = """\
+SCRIPT = """\
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -137,7 +137,7 @@ def _setup(path, dir_names=None, flags=None):
         with Path(WORK_DIR, '.runsrc').open('w') as f:
             f.write(
                 """\
-[filesystem]
+[multi]
 root = {}
 db_path = {}
 dir_names = {}
@@ -149,7 +149,7 @@ dir_names = {}
     with Path(WORK_DIR, '.gitignore').open('w') as f:
         f.write('.runsrc')
     with Path(WORK_DIR, 'test.py').open('w') as f:
-        f.write(EXE)
+        f.write(SCRIPT)
     cmd(['git', 'add', '--all'], cwd=WORK_DIR)
     cmd(['git', 'commit', '-am', 'init'], cwd=WORK_DIR)
     main.main(['-q', 'new', path, COMMAND, "--description=" + DESCRIPTION])
@@ -172,7 +172,7 @@ def check_db(path, flags):
     # check known values
     name = path.split(SEP)[-1]
     attrs = dict(description=DESCRIPTION,
-                 input_command=COMMAND,
+                 _input_command=COMMAND,
                  name=name)
     for key, attr in attrs.items():
         assert_in(key, entry)
@@ -266,7 +266,7 @@ def test_lookup():
         pattern = Pattern('*', cfg=DEFAULT_CFG)
         for key, value in dict(name=TEST_RUN,
                                description=DESCRIPTION,
-                               input_command=COMMAND).items():
+                               _input_command=COMMAND).items():
             eq_(pattern.lookup(key), [value])
         with assert_raises(SystemExit):
             pattern.lookup('x')

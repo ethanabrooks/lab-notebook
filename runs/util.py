@@ -7,6 +7,7 @@ from pathlib import Path
 
 import shutil
 import yaml
+from anytree import NodeMixin
 from anytree import RenderTree
 from termcolor import colored
 
@@ -30,7 +31,7 @@ def search_ancestors(filename):
         dirpath = dirpath.parent
 
 
-def prune(path):
+def prune_empty(path):
     assert isinstance(path, Path)
 
     if path.exists():
@@ -40,7 +41,19 @@ def prune(path):
 
         # otherwise, remove it
         shutil.rmtree(str(path), ignore_errors=True)
-        prune(path.parent)
+        prune_empty(path.parent)
+
+
+def prune_leaves(node):
+    assert isinstance(node, (NodeMixin, type(None)))
+
+    # if the node has children or is a run node, terminate
+    if node is None or node.children:
+        return node
+
+    parent = node.parent
+    node.parent = None
+    prune_leaves(parent)
 
 
 def get_permission(*question):

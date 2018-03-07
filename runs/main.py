@@ -7,7 +7,7 @@ from configparser import ConfigParser, ExtendedInterpolation
 from pprint import pprint
 
 from runs.cfg import Cfg
-from runs.db import DBPath
+from runs.db import DBPath, tree_string
 from runs.pattern import Pattern
 from runs.run import Run
 from runs.util import search_ancestors, NAME, PATTERN, \
@@ -104,7 +104,7 @@ def main(argv=sys.argv[1:]):
 
     pattern_help = 'Only display names matching this pattern.'
     list_parser = subparsers.add_parser(LIST, help='List all names in run database.')
-    list_parser.add_argument(PATTERN, nargs='?', default='*', help=pattern_help, type=nonempty_string)
+    list_parser.add_argument(PATTERN, nargs='?', help=pattern_help, type=nonempty_string)
     list_parser.add_argument('--show-attrs', action='store_true', help='Print run attributes in addition to names.')
     set_defaults(list_parser, LIST)
 
@@ -161,7 +161,10 @@ def main(argv=sys.argv[1:]):
         Pattern(args.old).move(Run(args.new), args.keep_tmux, args.assume_yes)
 
     elif args.dest == LIST:
-        print(Pattern(args.pattern).tree_string(args.show_attrs))
+        if args.pattern:
+            print(Pattern(args.pattern).tree_string(args.show_attrs))
+        else:
+            print(tree_string(db_path=DBPath.cfg.db_path))
 
     elif args.dest == TABLE:
         print(Pattern(args.pattern).table(args.column_width))
