@@ -124,7 +124,7 @@ Query information about current runs:
 
 .. code-block:: console
 
-  echo '# Hello' > mnist_with_summaries.py
+  echo '# Hello' >> mnist_with_summaries.py
   runs-git diff +train
 
 Organize runs

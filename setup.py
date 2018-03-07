@@ -7,8 +7,8 @@ with codecs.open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='lab-notebook',
-      version='3.1.7',
-      description='A utility for tracking and reproducing Tensorflow runs.',
+      version='3.1.8',
+      description='A utility for tracking, documenting, and reproducing software runs.',
       long_description=long_description,
       url='https://github.com/lobachevzky/lab-notebook',
       author='Ethan Brooks',
