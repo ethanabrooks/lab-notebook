@@ -128,7 +128,8 @@ def main(argv=sys.argv[1:]):
                                                                    'a description in Vim')
     set_defaults(chdesc_parser, CHDESCRIPTION)
 
-    reproduce_parser = subparsers.add_parser(REPRODUCE, help='Print commands to reproduce a run.')
+    reproduce_parser = subparsers.add_parser(REPRODUCE, help='Print commands to reproduce a run. This command '
+                                                             'does not have side-effects (besides printing).')
     reproduce_parser.add_argument(PATH)
     reproduce_parser.add_argument('--description', type=nonempty_string, default=None,
                                   help="Description to be assigned to new run. If None, use the same description as "

@@ -82,11 +82,18 @@ Create a new run. The run will be launched in ``tmux``:
 
   runs new train 'python mnist_with_summaries.py' --description='demo new command'
 
-Check out your run.
+Check out your run:
 
 .. code-block:: console
 
   tmux attach -t train
+
+Reproduce your run:
+
+.. code-block:: console
+
+  runs reproduce train
+  runs reproduce --no-overwrite train
 
 Try modifying the ``.runsrc`` file to look like the example in the
 `Configuration`_ section with appropriate changes for your system.
