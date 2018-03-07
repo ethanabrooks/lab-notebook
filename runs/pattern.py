@@ -1,10 +1,7 @@
 from contextlib import contextmanager
 from copy import deepcopy
 
-import anytree
 from anytree import ChildResolverError
-from anytree import Node
-from anytree import NodeMixin
 from anytree import Resolver, findall
 
 import runs.main
@@ -22,7 +19,8 @@ class Pattern(DBPath):
         self.write(tree)
 
     def runs(self, root=None):
-        return list(map(runs.run.Run, self.nodes(root)))
+        return [runs.run.Run(node) for node in self.nodes(root) if hasattr(node, COMMIT)]
+        # return list(map(runs.run.Run, self.nodes(root)))
 
     def nodes(self, root=None):
         if root is None:
@@ -53,28 +51,27 @@ class Pattern(DBPath):
     def move(self, dest, keep_tmux, assume_yes):
         assert isinstance(dest, runs.run.DBPath)
 
-        # check for conflicts with existing runs
-        if dest.node() is not None:
-            dest.already_exists()
-
         src = self.runs()
+        moves = []
+        for run in src:
 
-        # prompt depends on number of runs being moved
-        if len(src) > 1:
-            prompt = 'Runs to be moved into {}:\n{}\nContinue?'.format(
-                dest.parent, '\n'.join(run.parent for run in src))
-        else:
-            prompt = 'Move {} to {}?'.format(src[0], dest)
+            # if the dest exists or we are moving multiple runs,
+            if dest.node() is not None or len(src) > 1 or dest.path.endswith(self.sep):
+                # preserve the current name of the run
+                dest = runs.run.Run(dest.ancestors + [run.head])
 
+            # check for conflicts with existing runs
+            if dest.node() is not None:
+                dest.already_exists()
+
+            moves.append((run, dest))
+
+        prompt = ("Planned moves:\n\n" +
+                  '\n'.join(s.path + ' -> ' + d.path for s, d in moves) +
+                  '\n\nContinue?')
         if assume_yes or get_permission(prompt):
-            for run in src:
-
-                # if the dest exists or we are moving multiple runs,
-                if dest.node() is not None or len(src) > 1:
-                    # preserve the current name of the run
-                    dest = runs.run.Run(dest.parent, run.head)
-
-                run.move(dest, keep_tmux)
+            for src, dest in moves:
+                src.move(dest, keep_tmux)
 
     def lookup(self, key):
         return [run.lookup(key) for run in self.runs()]

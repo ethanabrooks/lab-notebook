@@ -89,8 +89,6 @@ class Run(DBPath):
 
     def move(self, dest, keep_tmux):
         assert isinstance(dest, Run)
-        if dest.path.endswith(self.sep):
-            dest = Run(dest.parts[:-1] + [self.head])
         self.mvdirs(dest)
         if keep_tmux:
             self.rename_tmux(dest.head)
