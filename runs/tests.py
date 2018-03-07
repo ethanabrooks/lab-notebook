@@ -326,10 +326,10 @@ def test_move_dirs():
         # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/test_run', 'new_dir/sub/test_run'
 
-    with _setup('sub/sub/test_run'):
-        main.main(['mv', '-y', 'sub/sub/', '.'])
+    with _setup('sub/sub1/test_run'):
+        main.main(['mv', '-y', 'sub/sub1/', '.'])
         # src is dir and dest is dir -> move src into dest and bring children
-        yield check_move, 'sub/sub/test_run', 'sub/test_run'
+        yield check_move, 'sub/sub1/test_run', 'sub1/test_run'
 
     with _setup('sub/test_run1'), _setup('sub/test_run2'):
         main.main(['mv', '-y', 'sub/*', 'new'])

@@ -1,6 +1,5 @@
 from contextlib import contextmanager
 from copy import deepcopy
-from itertools import zip_longest
 
 from anytree import ChildResolverError
 from anytree import NodeMixin
@@ -11,6 +10,11 @@ from runs import db
 from runs.db import tree_string
 from runs.route import Route
 from runs.util import get_permission, COMMIT
+
+
+def get_parts(node):
+    assert isinstance(node, NodeMixin)
+    return [n.name for n in node.path]
 
 
 class Pattern(Route):
@@ -49,26 +53,21 @@ class Pattern(Route):
             for run in self.runs():
                 run.remove()
 
-    def move(self, dest_route, keep_tmux, assume_yes):
-        assert isinstance(dest_route, Route)
+    def move(self, dest, keep_tmux, assume_yes):
+        assert isinstance(dest, Route)
 
-        dest_is_dir = dest_route.node() is not None or dest_route.is_dir
-        dest_parts = dest_route.parts
-
-        def get_parts(node):
-            assert isinstance(node, NodeMixin)
-            return [n.name for n in node.path]
+        dest_is_dir = dest.node() is not None or dest.is_dir
+        dest_parts = dest.parts
 
         moves = []
         for src_node in self.nodes():
             if dest_is_dir:
                 # put the current node into base
-                dest_parts.append(get_parts(src_node)[-1])
+                dest = Route(dest.parts + [get_parts(src_node)[-1]])
 
             # check for conflicts with existing runs
-            dest_route = Route(dest_parts)
-            if dest_route.node() is not None:
-                dest_route.already_exists()
+            if dest.node() is not None:
+                dest.already_exists()
 
             for child_run_node in findall(src_node, lambda n: hasattr(n, COMMIT)):
                 stem = get_parts(child_run_node)[len(get_parts(src_node)):]
@@ -76,13 +75,12 @@ class Pattern(Route):
                 src_run = runs.run.Run(child_run_node)
                 moves.append((src_run, dest_run))
 
+        # check before moving
         prompt = ("Planned moves:\n\n" +
                   '\n'.join(s.path + ' -> ' + d.path for s, d in moves) +
                   '\n\nContinue?')
         if assume_yes or get_permission(prompt):
             for src, dest in moves:
-                assert isinstance(src, runs.run.Run)
-                assert isinstance(dest, runs.run.Run)
                 src.move(dest, keep_tmux)
 
     def lookup(self, key):
