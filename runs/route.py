@@ -25,9 +25,13 @@ class Route:
             self.parts = parts.split(self.sep)
         else:
             assert isinstance(parts, (list, tuple)), (parts, type(parts))
-            self.parts = [part
-                          for string in parts
-                          for part in string.split(self.sep)]
+            for part in parts:
+                assert isinstance(part, (str, NodeMixin))
+            strings = [p for p in parts if isinstance(p, str)]
+            nodes = [p for p in parts if isinstance(p, NodeMixin)]
+            self.parts = [s for string in strings
+                          for s in string.split(self.sep)] + \
+                         [n.name for n in nodes]
         assert isinstance(self.parts, list)
         self.is_dir = not self.parts or self.parts[-1] == ''
         self.parts = [p for p in self.parts if p]

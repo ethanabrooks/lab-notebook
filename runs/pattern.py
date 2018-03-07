@@ -9,12 +9,7 @@ import runs.main
 from runs import db
 from runs.db import tree_string
 from runs.route import Route
-from runs.util import get_permission, COMMIT
-
-
-def get_parts(node):
-    assert isinstance(node, NodeMixin)
-    return [n.name for n in node.path]
+from runs.util import get_permission, COMMIT, is_run_node
 
 
 class Pattern(Route):
@@ -28,7 +23,7 @@ class Pattern(Route):
     def runs(self, root=None):
         return [runs.run.Run(run)
                 for base in self.nodes(root)
-                for run in findall(base, lambda n: hasattr(n, COMMIT))]
+                for run in findall(base, is_run_node)]
 
     def nodes(self, root=None):
         if root is None:
@@ -65,15 +60,16 @@ class Pattern(Route):
             _dest = dest
             if dest_is_dir or len(nodes) > 1:
                 # put the current node into base
-                _dest = Route(dest.parts + [get_parts(src_node)[-1]])
+                _dest = Route(dest.parts + [src_node.path[-1]])
 
             # check for conflicts with existing runs
             if _dest.node() is not None:
                 _dest.already_exists()
 
-            for child_run_node in findall(src_node, lambda n: hasattr(n, COMMIT)):
-                stem = get_parts(child_run_node)[len(get_parts(src_node)):]
-                dest_run = runs.run.Run(_dest.parts + stem)
+            # add child runs to moves list
+            for child_run_node in findall(src_node, is_run_node):
+                stem = child_run_node.path[len(src_node.path):]
+                dest_run = runs.run.Run(_dest.parts + list(stem))
                 src_run = runs.run.Run(child_run_node)
                 moves.append((src_run, dest_run))
 

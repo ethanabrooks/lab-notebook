@@ -71,6 +71,11 @@ def get_permission(*question):
             response = input('Please enter y[es]|n[o]')
 
 
+def is_run_node(node):
+    assert isinstance(node, NodeMixin)
+    return hasattr(node, COMMIT)
+
+
 def cmd(args, fail_ok=False, cwd=None, quiet=False):
     process = subprocess.Popen(args,
                                stderr=subprocess.PIPE,
