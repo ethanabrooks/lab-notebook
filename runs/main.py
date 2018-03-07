@@ -24,39 +24,40 @@ def main(argv=sys.argv[1:]):
     config = ConfigParser(allow_no_value=True, interpolation=ExtendedInterpolation())
     config_filename = '.runsrc'
     config_path = search_ancestors(config_filename)
-    default_config = {
-        # Custom path to directory containing runs database (default, `runs.yml`). Should not need to be
-        # specified for local runs but probably required for accessing databses remotely.
-        'root': os.getcwd() + '/.runs',
+    if KILLALL not in argv:
+        default_config = {
+            # Custom path to directory containing runs database (default, `runs.yml`). Should not need to be
+            # specified for local runs but probably required for accessing databses remotely.
+            'root': os.getcwd() + '/.runs',
 
-        # path to YAML file storing run database information.
-        'db_path': os.getcwd() + '/runs.yml',
+            # path to YAML file storing run database information.
+            'db_path': os.getcwd() + '/runs.yml',
 
-        # directories that runs should create
-        'dir_names': None,
+            # directories that runs should create
+            'dir_names': None,
 
-        'virtualenv_path': None,
-    }
-    if config_path:
-        config.read(str(config_path))
-    else:
-        print('Config file not found. Using default settings:\n')
-        for k, v in default_config.items():
-            print('{:20}{}'.format(k + ':', v))
-        print()
-        msg = 'Writing default settings to ' + config_filename
-        print(msg)
-        print('-' * len(msg))
-        config[MULTI] = default_config
-        with open(config_filename, 'w') as f:
-            config.write(f)
+            'virtualenv_path': None,
+        }
+        if config_path:
+            config.read(str(config_path))
+        else:
+            print('Config file not found. Using default settings:\n')
+            for k, v in default_config.items():
+                print('{:20}{}'.format(k + ':', v))
+            print()
+            msg = 'Writing default settings to ' + config_filename
+            print(msg)
+            print('-' * len(msg))
+            config[MULTI] = default_config
+            with open(config_filename, 'w') as f:
+                config.write(f)
 
-    def set_defaults(parser, name):
-        assert isinstance(parser, argparse.ArgumentParser)
-        assert isinstance(name, str)
+        def set_defaults(parser, name):
+            assert isinstance(parser, argparse.ArgumentParser)
+            assert isinstance(name, str)
 
-        if name in config:
-            parser.set_defaults(**config[name])
+            if name in config:
+                parser.set_defaults(**config[name])
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', help='Custom path to directory where config directories (if any) are automatically '
