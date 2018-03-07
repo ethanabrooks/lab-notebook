@@ -66,7 +66,6 @@ class Run(runs.route.Route):
     def build_command(self, command):
         keywords = dict(
             path=self.path,
-            root=str(self.cfg.root),
             name=self.head
         )
         for flag in self.cfg.flags:

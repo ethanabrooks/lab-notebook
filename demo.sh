@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 echo 'runs.yml .runs' > .gitignore
-runs new train1 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
+runs new train1 'python -m baselines.deepq.experiments.train_cartpole' --description='demo lab-notebook'
 # show runs.yml
 # show tmux
 
@@ -13,14 +13,14 @@ virtualenv_path = /Users/ethan/virtualenvs/baselines
 hidden_columns = input_command
 
 [flags]
---logdir=${multi:root}/tensorboard/<path>
+--log_dir=${multi:root}/tensorboard/<path>
 
 [new]
 description = demo lab-notebook
 ' > .runsrc
 
-runs new train1 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
-runs new train2 'python -m baselines.ppo2.run_mlp' --description='demo lab-notebook'
+runs new train1 'python -m baselines.deepq.experiments.train_cartpole' --description='demo lab-notebook'
+runs new train2 'python -m baselines.deepq.experiments.train_cartpole' --description='demo lab-notebook'
 runs ls
 runs ls '*1'
 runs ls --show-attrs
