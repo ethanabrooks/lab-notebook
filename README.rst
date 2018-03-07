@@ -4,7 +4,7 @@ Researchers in computer science often need to compare difference versions of a p
 ``Lab Notebook`` helps document, track, and organize process runs.
 This is essential for reproducibility of runs and helps researchers figure out what changes in code led to different outcomes.
 The goals of ``Lab Notebook`` are reproducibility, modularity, and organization.
- Specifically, ``Lab Notebook`` provides the following functionality:
+Specifically, ``Lab Notebook`` provides the following functionality:
 
 * Maintain metadata about each run, including a description, a timestamp, and a git commit.
 * Automatically set up runs, building flags and directories with unique name corresponding to each run and launching runs in tmux.
@@ -22,20 +22,20 @@ The program will default to any arguments specified in ``.runsrc``.
 The user can always override the ``.runsrc`` file with command-line arguments.
 For descriptions of arguments, use ``runs -h`` or ``runs [command] -h``
 The program searched for the ``.runsrc`` file in ancestors (inclusive) of the current working directory.
-If the program does not find a ``.runsrc`` file, it will create one with default values in the current working direcoty.
+If the program does not find a ``.runsrc`` file, it will create one with default values in the current working directory.
 The user can use two keyword in the ``.runsrc``:
 
-* ``<path>`` will be replaced by the *path* to the run. Paths look just like ordinary file paths ('/' delimited).
+* ``<path>`` will be replaced by the *path* to the run. Paths look just like ordinary file paths (``/``-delimited).
 * ``<name>`` will be replaced by the head of *path*.
 
 Also users can interpolate strings from other sections of ``.runsrc`` using the syntax ``${section:value}``.
-For more details see `configparser ExtendedInterpolation
-<https://docs.python.org/3/library/configparser.html#configparser.ExtendedInterpolation>
-`_.
+For more details see
+`configparser ExtendedInterpolation <https://docs.python.org/3/library/configparser.html#configparser.ExtendedInterpolation>`_.
 
 Here is an example ``.runsrc`` file:
 
 .. code-block:: ini
+
     [multi]
     root = /Users/ethan/lab-notebook-demo/.runs
     db_path = /Users/ethan/demo-lab-notebook/runs.yml
@@ -55,7 +55,9 @@ to any program launched with ``run``, where ``<path>`` will be replaced by the `
 ------------
 This is a simple wrapper around ``git`` that substitutes ``+your-path`` with ``runs lookup commit your-path``.
 For example, to see changes since when you launched ``your-run``:
+
 .. code-block:: console
+
   runs-git diff +your-run
 
 If you want to live on the wild side, use `direnv <https://direnv.net/>`_ to alias ``git`` to ``runs-git`` when you
@@ -64,7 +66,9 @@ are in your project directory.
 Example Usage
 -------------
 Setup environment:
+
 .. code-block:: console
+
   mkdir ~/lab-notebook-demo/ && cd ~/lab-notebook-demo
   wget https://raw.githubusercontent.com/tensorflow/tensorflow/master/tensorflow/examples/tutorials/mnist/mnist_with_summaries.py
   pip install tensorflow lab-notebook
@@ -73,34 +77,45 @@ Setup environment:
   git commit -am init
 
 Create a new run. The run will be launched in ``tmux``:
+
 .. code-block:: console
+
   runs new train 'python mnist_with_summaries.py' --description='demo new command'
 
 Check out your run.
+
 .. code-block:: console
+
   tmux attach -t train
 
 Try modifying the ``.runsrc`` file to look like the example in the
-Configuration section with appropriate changes for your system.
+`Configuration`_ section with appropriate changes for your system.
 Then create a new run:
 
 .. code-block:: console
+
   runs new subdir/train 'python mnist_with_summaries.py' --description='demo categorization'
 
 Get an overview of what runs are in the database:
+
 .. code-block:: console
+
   runs ls
   runs ls 'tra*'
   runs ls --show-attrs
   runs table --column-width=15
 
 Query information about current runs:
+
 .. code-block:: console
+
   runs lookup description train
   runs lookup commit train
 
 ``runs-git``: avoid typing `runs lookup commit <path>` all the time:
+
 .. code-block:: console
+
   echo 'Hello' > hello.txt
   runs-git diff +train
 
@@ -121,6 +136,7 @@ Subcommands
 For an overview of subcommands, run
 
 .. code-block:: console
+
   runs -h
 
 For detailed descriptions of each subcommand and its arguments, run

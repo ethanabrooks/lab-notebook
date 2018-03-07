@@ -145,7 +145,7 @@ REPRODUCE = 'reproduce'
 COMMAND = 'command'
 COMMIT = 'commit'
 DESCRIPTION = 'description'
-CHDESCRIPTION = 'chdesc'
+CHDESCRIPTION = 'change-description'
 KILLALL = 'killall'
 
 # @contextmanager

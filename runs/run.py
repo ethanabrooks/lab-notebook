@@ -127,9 +127,12 @@ class Run(runs.route.Route):
                 new_description = string_from_vim('Edit description', node.description)
             node.description = new_description
 
-    def reproduce(self):
+    def reproduce(self, no_overwrite):
+        path = self.path
+        if no_overwrite:
+            path += datetime.now().isoformat()
         return 'To reproduce:\n' + \
                highlight('git checkout {}\n'.format(self.lookup(COMMIT))) + \
-               highlight("runs new {0} '{1}' --description='Reproduce {0}. "
-                         "Original description: {2}'".format(
-                   self.lookup(NAME), self.lookup('input_command'), self.lookup(DESCRIPTION)))
+               highlight("runs new {} '{}' --description='Reproduce {}. "
+                         "Original description: {}'".format(
+                   path, self.lookup('_input_command'), self.path, self.lookup(DESCRIPTION)))

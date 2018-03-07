@@ -59,14 +59,12 @@ def main(argv=sys.argv[1:]):
             parser.set_defaults(**config[name])
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root', help='Custom path to directory containing runs database (default, `runs.yml`). '
-                                       'Should not need to be specified for local runs but probably required for '
-                                       'accessing databses remotely.', type=nonempty_string)
+    parser.add_argument('--root', help='Custom path to directory where config directories (if any) are automatically '
+                                       'created', type=nonempty_string)
     parser.add_argument('--db-path', help='path to YAML file storing run database information.', type=nonempty_string)
-    parser.add_argument('--virtualenv-path', type=nonempty_string, help='Path to virtual environment, if one is being ' \
-                                                                        'used. If not `None`, the program will source ' \
-                                                                        '`<virtualenv-path>/bin/activate`.'
-                        )
+    parser.add_argument('--virtualenv-path', type=nonempty_string, help="Path to virtual environment, if one is being "
+                                                                        "used. If not `None`, the program will source"
+                                                                        " `<virtualenv-path>/bin/activate`. ")
     parser.add_argument('--quiet', '-q', action='store_true', help='Suppress print output')
     set_defaults(parser, MULTI)
 
@@ -74,35 +72,38 @@ def main(argv=sys.argv[1:]):
     path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
 
     new_parser = subparsers.add_parser(NEW, help='Start a new run.')
-    new_parser.add_argument(PATH, help='Unique name assigned to new run.' + path_clarification, type=nonempty_string)
-    new_parser.add_argument('command', help='Command to run to start tensorflow program. Do not include the `--tb-dir` '
-                                            'or `--save-path` flag in this argument', type=nonempty_string)
-    new_parser.add_argument('--assume-yes', '-y', action='store_true', help='Create new run even if repo is dirty.'
-                                                                        'overwrite any entry with the same name. ')
-    new_parser.add_argument('--description', help='Description of this run. Write whatever you want.')
+    new_parser.add_argument(PATH, help='Unique path assigned to new run. "\\"-delimited.', type=nonempty_string)
+    new_parser.add_argument('command', help='Command that will be run in tmux.', type=nonempty_string)
+    new_parser.add_argument('--assume-yes', '-y', action='store_true', help='Don\'t ask permission before overwriting '
+                                                                            'existing entries.')
+    new_parser.add_argument('--description', help='Description of this run. Explain what this run was all about or '
+                                                  'just write whatever your heart desires.')
     set_defaults(new_parser, NEW)
 
     remove_parser = subparsers.add_parser(REMOVE,
                                           help="Delete runs from the database (and all associated tensorboard "
                                                "and checkpoint files). Don't worry, the script will ask for "
                                                "confirmation before deleting anything.")
-    remove_parser.add_argument(PATTERN, default='*',
-                               help='This script will only delete entries in the database whose names are a '
-                                    'complete (not partial) match of this regex pattern.', type=nonempty_string)
+    remove_parser.add_argument(PATTERN,
+                               help='This script will only delete entries in the database whose names are a complete '
+                                    '(not partial) match of this glob pattern.',
+                               type=nonempty_string)
     remove_parser.add_argument('--assume-yes', '-y', action='store_true',
                                help='Don\'t request permission from user before deleting.')
     set_defaults(remove_parser, REMOVE)
 
-    move_parser = subparsers.add_parser(MOVE, help='Move a run from OLD to NEW.')
+    move_parser = subparsers.add_parser(MOVE, help='Move a run from OLD to NEW. The program will show you planned '
+                                                   'moves and ask permission before changing anything')
     move_parser.add_argument('old', help='Name of run to rename.' + path_clarification, type=nonempty_string)
     move_parser.add_argument('new', help='New name for run.' + path_clarification, type=nonempty_string)
     move_parser.add_argument('--keep-tmux', action='store_true',
                              help='Rename tmux session instead of killing it.')
     move_parser.add_argument('--assume-yes', '-y', action='store_true',
-                             help='Don\'t request permission from user before deleting.')
+                             help='Don\'t request permission from user before moving.')
     set_defaults(move_parser, MOVE)
 
-    pattern_help = 'Only display names matching this pattern.'
+    pattern_help = 'Only display paths matching this pattern.'
+
     list_parser = subparsers.add_parser(LIST, help='List all names in run database.')
     list_parser.add_argument(PATTERN, nargs='?', help=pattern_help, type=nonempty_string)
     list_parser.add_argument('--show-attrs', action='store_true', help='Print run attributes in addition to names.')
@@ -117,8 +118,7 @@ def main(argv=sys.argv[1:]):
     set_defaults(table_parser, TABLE)
 
     lookup_parser = subparsers.add_parser(LOOKUP, help='Lookup specific value associated with database entry')
-    lookup_parser.add_argument('key', help='Key that value is associated with. To view all available keys, '
-                                           'use `--key=None`.')
+    lookup_parser.add_argument('key', help='Key that value is associated with.')
     lookup_parser.add_argument(PATTERN, help='Pattern of runs for which to retrieve key.', type=nonempty_string)
     set_defaults(lookup_parser, LOOKUP)
 
@@ -184,7 +184,7 @@ def main(argv=sys.argv[1:]):
         Run(args.path).chdescription(args.description)
 
     elif args.dest == REPRODUCE:
-        print(Run(args.path).reproduce())
+        print(Run(args.path).reproduce(args.no_overwrite))
 
     elif args.dest == KILLALL:
         killall(Route.cfg.db_path, Route.cfg.root)
