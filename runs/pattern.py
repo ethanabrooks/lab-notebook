@@ -36,12 +36,15 @@ class Pattern(Route):
     def names(self):
         return [node.name for node in self.nodes()]
 
+    def paths(self):
+        return [self.sep.join([n.name for n in node.path]) for node in self.nodes()]
+
     @property
     def keys(self):
         return set([key for run in self.runs() for key in run.keys])
 
     def remove(self, assume_yes):
-        prompt = 'Runs to be removed:\n{}\nContinue?'.format('\n'.join(self.names()))
+        prompt = 'Runs to be removed:\n{}\nContinue?'.format('\n'.join(self.paths()))
         if assume_yes or get_permission(prompt):
             for run in self.runs():
                 run.remove()
@@ -81,7 +84,7 @@ class Pattern(Route):
         prompt = ("Planned moves:\n\n" +
                   '\n'.join(s.path + ' -> ' + d.path for s, d in moves) +
                   '\n\nContinue?')
-        if assume_yes or get_permission(prompt):
+        if moves and (assume_yes or get_permission(prompt)):
             for src, dest in moves:
                 src.move(dest, keep_tmux)
 
@@ -104,4 +107,4 @@ class Pattern(Route):
         return tree_string(tree=self.tree(), print_attrs=print_attrs)
 
     def table(self, column_width):
-        return db.table(self.nodes(), self.cfg.hidden_columns, column_width)
+        return db.table(self.runs(), self.cfg.hidden_columns, column_width)

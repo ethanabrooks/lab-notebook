@@ -37,10 +37,10 @@ Here is an example ``.runsrc`` file:
 .. code-block:: ini
 
     [multi]
-    root = /Users/ethan/lab-notebook-demo/.runs
+    root = /Users/ethan/demo-lab-notebook/.runs
     db_path = /Users/ethan/demo-lab-notebook/runs.yml
     dir_names = tensorboard
-    virtualenv_path = /Users/ethan/virtualenvs/lab-notebook-demo/
+    virtualenv_path = /Users/ethan/virtualenvs/demo-lab-notebook/
 
     [flags]
     --log-dir=${multi:root}/tensorboard/<path>
@@ -73,6 +73,7 @@ Setup environment:
   wget https://raw.githubusercontent.com/tensorflow/tensorflow/master/tensorflow/examples/tutorials/mnist/mnist_with_summaries.py
   pip install tensorflow lab-notebook
   git init
+  echo 'runs.yml .runs .runsrc' > .gitignore
   git add -A
   git commit -am init
 
@@ -119,22 +120,28 @@ Query information about current runs:
   runs lookup description train
   runs lookup commit train
 
-``runs-git``: avoid typing `runs lookup commit <path>` all the time:
+``runs-git``: avoid typing ``runs lookup commit <path>`` all the time:
 
 .. code-block:: console
 
-  echo 'Hello' > hello.txt
+  echo '# Hello' > mnist_with_summaries.py
   runs-git diff +train
 
-  # Organize runs
+Organize runs
+
+.. code-block:: console
+
   runs mv train subdir/train2
   runs ls
   tree .runs  # note that directories are synchronized with database entries
   runs mv subdir archive
   runs ls
 
-  # Delete runs
-  runs rm archive/train1
+Delete runs
+
+.. code-block:: console
+
+  runs rm archive/train
   runs killall
 
 

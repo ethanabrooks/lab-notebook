@@ -6,7 +6,7 @@ import sys
 from configparser import ConfigParser, ExtendedInterpolation
 
 from runs.cfg import Cfg
-from runs.db import tree_string, killall
+from runs.db import tree_string, killall, no_match
 from runs.pattern import Pattern
 from runs.route import Route
 from runs.run import Run
@@ -24,23 +24,23 @@ def main(argv=sys.argv[1:]):
     config = ConfigParser(allow_no_value=True, interpolation=ExtendedInterpolation())
     config_filename = '.runsrc'
     config_path = search_ancestors(config_filename)
-    if KILLALL not in argv:
-        default_config = {
-            # Custom path to directory containing runs database (default, `runs.yml`). Should not need to be
-            # specified for local runs but probably required for accessing databses remotely.
-            'root': os.getcwd() + '/.runs',
+    default_config = {
+        # Custom path to directory containing runs database (default, `runs.yml`). Should not need to be
+        # specified for local runs but probably required for accessing databses remotely.
+        'root': os.getcwd() + '/.runs',
 
-            # path to YAML file storing run database information.
-            'db_path': os.getcwd() + '/runs.yml',
+        # path to YAML file storing run database information.
+        'db_path': os.getcwd() + '/runs.yml',
 
-            # directories that runs should create
-            'dir_names': None,
+        # directories that runs should create
+        'dir_names': None,
 
-            'virtualenv_path': None,
-        }
-        if config_path:
-            config.read(str(config_path))
-        else:
+        'virtualenv_path': None,
+    }
+    if config_path:
+        config.read(str(config_path))
+    else:
+        if KILLALL not in argv:
             print('Config file not found. Using default settings:\n')
             for k, v in default_config.items():
                 print('{:20}{}'.format(k + ':', v))
@@ -48,16 +48,17 @@ def main(argv=sys.argv[1:]):
             msg = 'Writing default settings to ' + config_filename
             print(msg)
             print('-' * len(msg))
-            config[MULTI] = default_config
-            with open(config_filename, 'w') as f:
-                config.write(f)
 
-        def set_defaults(parser, name):
-            assert isinstance(parser, argparse.ArgumentParser)
-            assert isinstance(name, str)
+        config[MULTI] = default_config
+        with open(config_filename, 'w') as f:
+            config.write(f)
 
-            if name in config:
-                parser.set_defaults(**config[name])
+    def set_defaults(parser, name):
+        assert isinstance(parser, argparse.ArgumentParser)
+        assert isinstance(name, str)
+
+        if name in config:
+            parser.set_defaults(**config[name])
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', help='Custom path to directory where config directories (if any) are automatically '
@@ -159,16 +160,20 @@ def main(argv=sys.argv[1:]):
             assume_yes=args.assume_yes)
 
     elif args.dest == REMOVE:
+        if not Pattern(args.pattern).runs():
+            no_match(args.pattern, db_path=Route.cfg.db_path)
         Pattern(args.pattern).remove(args.assume_yes)
 
     elif args.dest == MOVE:
+        if not Pattern(args.old).runs():
+            no_match(args.pattern, db_path=Route.cfg.db_path)
         Pattern(args.old).move(Run(args.new), args.keep_tmux, args.assume_yes)
 
     elif args.dest == LIST:
         if args.pattern:
             print(Pattern(args.pattern).tree_string(args.show_attrs))
         else:
-            print(tree_string(db_path=Route.cfg.db_path))
+            print(tree_string(db_path=Route.cfg.db_path, print_attrs=args.show_attrs))
 
     elif args.dest == TABLE:
         print(Pattern(args.pattern).table(args.column_width))

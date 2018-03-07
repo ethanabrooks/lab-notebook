@@ -9,7 +9,7 @@ from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
 from tabulate import tabulate
 
-from runs.util import NAME, get_permission, ROOT_PATH
+from runs.util import NAME, get_permission, ROOT_PATH, _exit
 
 
 def read(db_path):
@@ -56,22 +56,22 @@ def tree_string(tree=None, db_path=None, print_attrs=False):
     return string
 
 
-def table(nodes, hidden_columns, column_width):
+def table(runs, hidden_columns, column_width):
     assert isinstance(column_width, int)
 
-    def get_values(node, key):
+    def get_values(run, key):
         try:
-            value = str(getattr(node, key))
+            value = str(getattr(run.node(), key))
             if len(value) > column_width:
                 value = value[:column_width] + '...'
             return value
         except AttributeError:
             return '_'
 
-    keys = set([key for node in nodes for key in vars(node) if not key.startswith('_')])
+    keys = set([key for run in runs for key in vars(run.node()) if not key.startswith('_')])
     headers = sorted(set(keys) - set(hidden_columns))
-    table = [[node.name] + [get_values(node, key) for key in headers]
-             for node in sorted(nodes, key=lambda n: n.name)]
+    table = [[run.path] + [get_values(run, key) for key in headers]
+             for run in sorted(runs, key=lambda r: r.path)]
     return tabulate(table, headers=headers)
 
 
@@ -83,6 +83,11 @@ def killall(db_path, root):
     shutil.rmtree(root, ignore_errors=True)
 
 
+def no_match(pattern, tree=None, db_path=None):
+    _exit('No runs match pattern "{}". Recorded runs:\n{}'.format(
+        pattern, tree_string(tree, db_path)))
+
+
 @contextmanager
 def open_db(root, db_path):
     tree = read(db_path)
@@ -90,5 +95,3 @@ def open_db(root, db_path):
         root = tree
     yield root
     write(root, db_path)
-
-
