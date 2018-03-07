@@ -122,22 +122,13 @@ class DBPath:
 
     def add_to_tree(self, root=None):
         """
-        Add a node corresponding to this path to the db
+        Add a node corresponding to this path to root (or to the db if root is None)
         """
         node = self.node(root)
         if node:
             return node
         parent = self.parent.add_to_tree(root)
         return Node(name=self.head, parent=parent)
-
-        # if root is None:
-        #     root =
-        #     self.node(root):
-        #     with self.open() as node:
-        #         yield node
-        # else:
-        #     with DBPath(self.ancestors).add_to_tree() as parent:
-        #         yield Node(name=self.head, parent=parent)
 
     def read(self):
         tree = read(self.cfg.db_path)

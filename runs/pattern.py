@@ -78,8 +78,8 @@ class Pattern(DBPath):
 
     def tree(self):
         tree = deepcopy(self.read())
-        # for node in findall(tree, lambda n: n not in self.nodes(tree)):
-        #     node.parent = None
+        for node in findall(tree, lambda n: n not in self.nodes(tree)):
+            node.parent = None
         return tree
 
     def tree_string(self, print_attrs=False):
