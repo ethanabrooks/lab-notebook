@@ -21,7 +21,7 @@ Configuration
 The program will default to any arguments specified in ``.runsrc``.
 The user can always override the ``.runsrc`` file with command-line arguments.
 For descriptions of arguments, use ``runs -h`` or ``runs [command] -h``
-The program searched for the ``.runsrc`` file in ancestors (inclusive) of the current working directory.
+The program searches for the ``.runsrc`` file in ancestors (inclusive) of the current working directory.
 If the program does not find a ``.runsrc`` file, it will create one with default values in the current working directory.
 The user can use two keyword in the ``.runsrc``:
 

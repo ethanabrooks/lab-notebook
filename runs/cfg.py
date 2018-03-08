@@ -16,12 +16,9 @@ class Cfg:
         if not self.db_path.is_absolute():
             _exit(should_be_absolute.format('db_path', self.db_path))
         self.virtualenv_path = virtualenv_path
-        invalid_paths = [str(path) for path in
-                         (self.root.parent, self.db_path.parent, Path(self.virtualenv_path))
-                         if not path.exists()]
-        if invalid_paths:
-            _exit("There are invalid paths in your config. The following paths do not exist:\n{}".format(
-                '\n'.join(invalid_paths)))
+        if virtualenv_path is not None and not Path(virtualenv_path).exists():
+            _exit("virtualenv path {} does not exist.".format(
+                '\n'.join(virtualenv_path)))
         self.dir_names = dir_names.split() if dir_names else []
         self.hidden_columns = hidden_columns.split() if hidden_columns else []
         self.flags = [k if v is None else k + '=' + v

@@ -23,7 +23,7 @@ from runs.cfg import Cfg
 from runs.db import read
 from runs.pattern import Pattern
 from runs.run import Run
-from runs.util import NAME, cmd
+from runs.util import NAME, cmd, CHDESCRIPTION
 
 # TODO: sad path
 
@@ -258,7 +258,6 @@ def check_table(table):
 def test_table():
     with _setup(TEST_RUN):
         yield check_table, Pattern('*').table(100)
-        yield check_table, db.table(PreOrderIter(db.read(DB_PATH)), [], 100)
 
 
 def test_lookup():
@@ -275,7 +274,7 @@ def test_lookup():
 def test_chdesc():
     with _setup(TEST_RUN):
         description = 'new description'
-        main.main(['chdesc', TEST_RUN, '--description=' + description])
+        main.main([CHDESCRIPTION, TEST_RUN, '--description=' + description])
         eq_(Run(TEST_RUN).lookup('description'), description)
 
 
