@@ -153,6 +153,10 @@ def main(argv=sys.argv[1:]):
 
     Route.cfg = Cfg(**kwargs)
 
+    if hasattr(args, PATTERN):
+        if not Pattern(args.pattern).runs():
+            no_match(args.pattern, db_path=Route.cfg.db_path)
+
     if args.dest == NEW:
         Run(args.path).new(
             command=args.command,
@@ -160,8 +164,6 @@ def main(argv=sys.argv[1:]):
             assume_yes=args.assume_yes)
 
     elif args.dest == REMOVE:
-        if not Pattern(args.pattern).runs():
-            no_match(args.pattern, db_path=Route.cfg.db_path)
         Pattern(args.pattern).remove(args.assume_yes)
 
     elif args.dest == MOVE:
