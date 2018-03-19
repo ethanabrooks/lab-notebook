@@ -49,7 +49,7 @@ class Pattern(Route):
             for run in self.runs():
                 run.remove()
 
-    def move(self, dest, keep_tmux, assume_yes):
+    def move(self, dest, kill_tmux, assume_yes):
         assert isinstance(dest, Route)
 
         # move INTO as opposed to move TO
@@ -86,7 +86,7 @@ class Pattern(Route):
                   '\n\nContinue?')
         if moves and (assume_yes or get_permission(prompt)):
             for src, dest in moves:
-                src.move(dest, keep_tmux)
+                src.move(dest, kill_tmux)
 
     def lookup(self, key):
         return [run.lookup(key) for run in self.runs()]

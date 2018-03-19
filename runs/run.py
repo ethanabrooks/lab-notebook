@@ -86,13 +86,13 @@ class Run(runs.route.Route):
             if node:
                 prune_leaves(node)
 
-    def move(self, dest, keep_tmux):
+    def move(self, dest, kill_tmux):
         assert isinstance(dest, Run)
         self.mvdirs(dest)
-        if keep_tmux:
-            self.rename_tmux(dest.head)
-        else:
+        if kill_tmux:
             self.kill_tmux()
+        else:
+            self.rename_tmux(dest.head)
         with self.open_root() as root:
             node = self.node(root)
             node.name = dest.head

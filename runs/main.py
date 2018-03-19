@@ -98,8 +98,8 @@ def main(argv=sys.argv[1:]):
                                                    'moves and ask permission before changing anything')
     move_parser.add_argument('old', help='Name of run to rename.' + path_clarification, type=nonempty_string)
     move_parser.add_argument('new', help='New name for run.' + path_clarification, type=nonempty_string)
-    move_parser.add_argument('--keep-tmux', action='store_true',
-                             help='Rename tmux session instead of killing it.')
+    move_parser.add_argument('--kill-tmux', action='store_true',
+                             help='Kill tmux session instead of renaming it.')
     move_parser.add_argument('--assume-yes', '-y', action='store_true',
                              help='Don\'t request permission from user before moving.')
     set_defaults(move_parser, MOVE)
@@ -154,8 +154,9 @@ def main(argv=sys.argv[1:]):
     Route.cfg = Cfg(**kwargs)
 
     if hasattr(args, PATTERN):
-        if not Pattern(args.pattern).runs():
-            no_match(args.pattern, db_path=Route.cfg.db_path)
+        if args.pattern is not None:
+            if not Pattern(args.pattern).runs():
+                no_match(args.pattern, db_path=Route.cfg.db_path)
 
     if args.dest == NEW:
         Run(args.path).new(
@@ -169,7 +170,7 @@ def main(argv=sys.argv[1:]):
     elif args.dest == MOVE:
         if not Pattern(args.old).runs():
             no_match(args.pattern, db_path=Route.cfg.db_path)
-        Pattern(args.old).move(Run(args.new), args.keep_tmux, args.assume_yes)
+        Pattern(args.old).move(Run(args.new), args.kill_tmux, args.assume_yes)
 
     elif args.dest == LIST:
         if args.pattern:
