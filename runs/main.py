@@ -40,15 +40,6 @@ def main(argv=sys.argv[1:]):
     if config_path:
         config.read(str(config_path))
     else:
-        if KILLALL not in argv:
-            print('Config file not found. Using default settings:\n')
-            for k, v in default_config.items():
-                print('{:20}{}'.format(k + ':', v))
-            print()
-            msg = 'Writing default settings to ' + config_filename
-            print(msg)
-            print('-' * len(msg))
-
         config[MULTI] = default_config
         with open(config_filename, 'w') as f:
             config.write(f)
@@ -154,9 +145,21 @@ def main(argv=sys.argv[1:]):
     Route.cfg = Cfg(**kwargs)
 
     if hasattr(args, PATTERN):
-        if args.pattern is not None:
-            if not Pattern(args.pattern).runs():
-                no_match(args.pattern, db_path=Route.cfg.db_path)
+        if args.pattern and not Pattern(args.pattern).runs():
+            no_match(args.pattern, db_path=Route.cfg.db_path)
+
+    if args.dest == KILLALL:
+        killall(Route.cfg.db_path, Route.cfg.root)
+        exit()
+
+    elif config_path is None:
+        print('Config file not found. Using default settings:\n')
+        for k, v in default_config.items():
+            print('{:20}{}'.format(k + ':', v))
+        print()
+        msg = 'Writing default settings to ' + config_filename
+        print(msg)
+        print('-' * len(msg))
 
     if args.dest == NEW:
         Run(args.path).new(
@@ -169,8 +172,8 @@ def main(argv=sys.argv[1:]):
 
     elif args.dest == MOVE:
         if not Pattern(args.old).runs():
-            no_match(args.pattern, db_path=Route.cfg.db_path)
-        Pattern(args.old).move(Run(args.new), args.kill_tmux, args.assume_yes)
+            no_match(args.old, db_path=Route.cfg.db_path)
+        Pattern(args.old).move(Run(args.new), args.keep_tmux, args.assume_yes)
 
     elif args.dest == LIST:
         if args.pattern:
@@ -196,8 +199,6 @@ def main(argv=sys.argv[1:]):
     elif args.dest == REPRODUCE:
         print(Run(args.path).reproduce(args.no_overwrite))
 
-    elif args.dest == KILLALL:
-        killall(Route.cfg.db_path, Route.cfg.root)
     else:
         raise RuntimeError("'{}' is not a supported dest.".format(args.dest))
 

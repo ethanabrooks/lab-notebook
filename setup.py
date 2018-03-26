@@ -35,4 +35,5 @@ setup(name='lab-notebook',
           'PyYAML==3.12',
           'tabulate==0.8.1',
           'nose==1.3.7',
+          'nose-progressive==1.5.1',
       ])
