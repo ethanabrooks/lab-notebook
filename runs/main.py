@@ -141,7 +141,8 @@ def main(argv=sys.argv[1:]):
     kwargs = {k: v for k, v in vars(args).items()
               if k in inspect.signature(Cfg).parameters}
     if 'flags' in config:
-        kwargs['flags'] = config['flags'].keys()
+        kwargs['flags'] = {k + '=' + v if v else k
+                           for k, v in config['flags'].items()}
 
     Route.cfg = Cfg(**kwargs)
 
