@@ -61,7 +61,7 @@ class Run(runs.route.Route):
         self.print(highlight('List active:'))
         self.print('tmux list-session')
         self.print(highlight('Attach:'))
-        self.print('tmux attach -t', self.path)
+        self.print('tmux attach -t', self.head)
 
     def build_command(self, command):
         keywords = dict(
