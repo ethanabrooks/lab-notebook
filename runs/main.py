@@ -89,8 +89,8 @@ def main(argv=sys.argv[1:]):
                                                    'moves and ask permission before changing anything')
     move_parser.add_argument('old', help='Name of run to rename.' + path_clarification, type=nonempty_string)
     move_parser.add_argument('new', help='New name for run.' + path_clarification, type=nonempty_string)
-    move_parser.add_argument('--keep-tmux', action='store_true',
-                             help='Rename tmux session instead of killing it.')
+    move_parser.add_argument('--kill-tmux', action='store_true',
+                             help='Kill tmux session instead of renaming it.')
     move_parser.add_argument('--assume-yes', '-y', action='store_true',
                              help='Don\'t request permission from user before moving.')
     set_defaults(move_parser, MOVE)
