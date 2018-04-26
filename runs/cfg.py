@@ -6,8 +6,6 @@ from runs.util import _exit
 class Cfg:
     def __init__(self, root, db_path, hidden_columns=None, dir_names=None,
                  virtualenv_path=None, flags=None, quiet=False):
-        if flags is None:
-            flags = {}
         self.root = Path(root).expanduser()
         self.db_path = Path(db_path).expanduser()
         should_be_absolute = '`{}` ({}) should be absolute.'
@@ -20,6 +18,5 @@ class Cfg:
             _exit("virtualenv path {} does not exist.".format(virtualenv_path))
         self.dir_names = dir_names.split() if dir_names else []
         self.hidden_columns = hidden_columns.split() if hidden_columns else []
-        self.flags = [k if v is None else k + '=' + v
-                      for k, v in flags.items()]
+        self.flags = flags
         self.quiet = quiet

@@ -12,7 +12,7 @@ from runs.pattern import Pattern
 from runs.route import Route
 from runs.run import Run
 from runs.util import search_ancestors, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MULTI, KILLALL, PATH, DEFAULT
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MAIN, KILLALL, PATH, DEFAULT
 
 
 def nonempty_string(value):
@@ -25,7 +25,7 @@ def main(argv=sys.argv[1:]):
     config = ConfigParser(allow_no_value=True, interpolation=ExtendedInterpolation())
     config_filename = '.runsrc'
     config_path = search_ancestors(config_filename)
-    config[DEFAULT] = {
+    config[MAIN] = {
         # Custom path to directory containing runs database (default, `runs.yml`). Should not need to be
         # specified for local runs but probably required for accessing databses remotely.
         'root': os.getcwd() + '/.runs',
@@ -60,7 +60,7 @@ def main(argv=sys.argv[1:]):
                                                                         "used. If not `None`, the program will source"
                                                                         " `<virtualenv-path>/bin/activate`. ")
     parser.add_argument('--quiet', '-q', action='store_true', help='Suppress print output')
-    set_defaults(parser, MULTI)
+    set_defaults(parser, MAIN)
 
     subparsers = parser.add_subparsers(dest='dest')
     path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
@@ -141,7 +141,7 @@ def main(argv=sys.argv[1:]):
     kwargs = {k: v for k, v in vars(args).items()
               if k in inspect.signature(Cfg).parameters}
     if 'flags' in config:
-        kwargs['flags'] = config['flags']
+        kwargs['flags'] = config['flags'].keys()
 
     Route.cfg = Cfg(**kwargs)
 
