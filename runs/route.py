@@ -110,8 +110,12 @@ class Route:
         assert isinstance(new, Route)
         for old_path, new_path in zip(self.paths, new.paths):
             new_path.parent.mkdir(exist_ok=True, parents=True)
-            old_path.rename(new_path)
-            prune_empty(old_path.parent)
+
+            # TODO: what to do if old_path has a different name to
+            # to changes in the .runsrc
+            if old_path.exists():
+                old_path.rename(new_path)
+                prune_empty(old_path.parent)
 
     def print(self, *msg):
         _print(*msg, quiet=self.cfg.quiet)
