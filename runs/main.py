@@ -4,6 +4,7 @@ import inspect
 import os
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
+from pprint import pprint
 
 from runs.cfg import Cfg
 from runs.db import tree_string, killall, no_match
@@ -11,7 +12,7 @@ from runs.pattern import Pattern
 from runs.route import Route
 from runs.run import Run
 from runs.util import search_ancestors, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MULTI, KILLALL, PATH
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MULTI, KILLALL, PATH, DEFAULT
 
 
 def nonempty_string(value):
@@ -24,7 +25,7 @@ def main(argv=sys.argv[1:]):
     config = ConfigParser(allow_no_value=True, interpolation=ExtendedInterpolation())
     config_filename = '.runsrc'
     config_path = search_ancestors(config_filename)
-    default_config = {
+    config[DEFAULT] = {
         # Custom path to directory containing runs database (default, `runs.yml`). Should not need to be
         # specified for local runs but probably required for accessing databses remotely.
         'root': os.getcwd() + '/.runs',
@@ -40,7 +41,6 @@ def main(argv=sys.argv[1:]):
     if config_path:
         config.read(str(config_path))
     else:
-        config[MULTI] = default_config
         with open(config_filename, 'w') as f:
             config.write(f)
 
@@ -48,6 +48,7 @@ def main(argv=sys.argv[1:]):
         assert isinstance(parser, argparse.ArgumentParser)
         assert isinstance(name, str)
 
+        parser.set_defaults(**config[DEFAULT])
         if name in config:
             parser.set_defaults(**config[name])
 
@@ -154,7 +155,7 @@ def main(argv=sys.argv[1:]):
 
     elif config_path is None:
         print('Config file not found. Using default settings:\n')
-        for k, v in default_config.items():
+        for k, v in config[DEFAULT].items():
             print('{:20}{}'.format(k + ':', v))
         print()
         msg = 'Writing default settings to ' + config_filename
@@ -173,7 +174,9 @@ def main(argv=sys.argv[1:]):
     elif args.dest == MOVE:
         if not Pattern(args.old).runs():
             no_match(args.old, db_path=Route.cfg.db_path)
-        Pattern(args.old).move(Run(args.new), args.keep_tmux, args.assume_yes)
+        Pattern(args.old).move(dest=Run(args.new),
+                               kill_tmux=args.kill_tmux,
+                               assume_yes=args.assume_yes)
 
     elif args.dest == LIST:
         # TODO: This should have *nix behavior
