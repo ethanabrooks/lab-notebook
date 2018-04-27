@@ -12,7 +12,7 @@ from runs.pattern import Pattern
 from runs.route import Route
 from runs.run import Run
 from runs.util import search_ancestors, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MAIN, KILLALL, PATH, DEFAULT
+    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MAIN, KILLALL, PATH, DEFAULT, FLAGS
 
 
 def nonempty_string(value):
@@ -140,9 +140,9 @@ def main(argv=sys.argv[1:]):
 
     kwargs = {k: v for k, v in vars(args).items()
               if k in inspect.signature(Cfg).parameters}
-    if 'flags' in config:
-        kwargs['flags'] = {k + '=' + v if v else k
-                           for k, v in config['flags'].items()}
+    kwargs[FLAGS] = {k + '=' + v if v else k
+                     for k, v in
+                     (config[FLAGS].items() if FLAGS in config else {})}
 
     Route.cfg = Cfg(**kwargs)
 
