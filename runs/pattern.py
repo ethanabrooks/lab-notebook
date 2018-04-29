@@ -105,7 +105,7 @@ class Pattern(Route):
 
         def not_part_of_tree(node):
             return not any(node is n for n in nodes) and \
-                   not any(node is a for n in nodes for a in n.ancestors)
+                   not any(node is d for n in nodes for d in n.descendants)
 
         for node in findall(tree, not_part_of_tree):
             node.parent = None

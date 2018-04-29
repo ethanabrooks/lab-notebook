@@ -180,7 +180,6 @@ def main(argv=sys.argv[1:]):
                                assume_yes=args.assume_yes)
 
     elif args.dest == LIST:
-        # TODO: This should have *nix behavior
         if args.pattern:
             print(Pattern(args.pattern).tree_string(args.show_attrs))
         else:
