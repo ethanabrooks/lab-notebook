@@ -137,7 +137,7 @@ def _setup(path, dir_names=None, flags=None):
         with Path(WORK_DIR, '.runsrc').open('w') as f:
             f.write(
                 """\
-[multi]
+[main]
 root = {}
 db_path = {}
 dir_names = {}
@@ -294,7 +294,7 @@ def test_move():
     for path, dir_names, flags in generator:
         for new_path in generator.paths:
             with _setup(path, dir_names, flags):
-                args = ['mv', '-y', '--keep-tmux', path, new_path]
+                args = ['mv', '-y', path, new_path]
                 if path != new_path:
                     main.main(args)
                     yield check_move, path, new_path, dir_names, flags
