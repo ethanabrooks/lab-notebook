@@ -175,7 +175,7 @@ def main(argv=sys.argv[1:]):
     elif args.dest == MOVE:
         if not Pattern(args.old).runs():
             no_match(args.old, db_path=Route.cfg.db_path)
-        Pattern(args.old).move(dest=Run(args.new),
+        Pattern(args.old).move(dest=Pattern(args.new),
                                kill_tmux=args.kill_tmux,
                                assume_yes=args.assume_yes)
 
