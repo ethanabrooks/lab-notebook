@@ -77,14 +77,17 @@ def is_run_node(node):
 
 
 def cmd(args, fail_ok=False, cwd=None, quiet=False):
-    process = subprocess.Popen(args,
-                               stderr=subprocess.PIPE,
-                               stdout=subprocess.PIPE,
-                               cwd=cwd,
-                               universal_newlines=True)
+    process = subprocess.Popen(
+        args,
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        cwd=cwd,
+        universal_newlines=True)
     stdout, stderr = process.communicate(timeout=1)
     if stderr and not fail_ok:
-        _exit("Command `{}` failed: {}".format(' '.join(args), stderr), quiet=quiet)
+        _exit(
+            "Command `{}` failed: {}".format(' '.join(args), stderr),
+            quiet=quiet)
     else:
         return stdout.strip()
 
@@ -108,7 +111,9 @@ def last_commit(quiet=False):
         return cmd('git rev-parse HEAD'.split())
     except OSError:
         if not quiet:
-            print('Could not detect last commit. Perhaps you have not committed yet?')
+            print(
+                'Could not detect last commit. Perhaps you have not committed yet?'
+            )
         exit()
 
 

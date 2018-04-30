@@ -43,10 +43,14 @@ def tree_string(tree=None, db_path=None, print_attrs=False):
     assert isinstance(tree, NodeMixin)
     string = ''
     for pre, fill, node in RenderTree(tree):
-        public_attrs = {k: v for k, v in vars(node).items()
-                        if not k.startswith('_') and not k == 'name'}
+        public_attrs = {
+            k: v
+            for k, v in vars(node).items()
+            if not k.startswith('_') and not k == 'name'
+        }
         if public_attrs:
-            pnode = yaml.dump(public_attrs, default_flow_style=False).split('\n')
+            pnode = yaml.dump(
+                public_attrs, default_flow_style=False).split('\n')
         else:
             pnode = ''
         string += "{}{}\n".format(pre, node.name)
@@ -68,7 +72,10 @@ def table(runs, hidden_columns, column_width):
         except AttributeError:
             return '_'
 
-    keys = set([key for run in runs for key in vars(run.node()) if not key.startswith('_')])
+    keys = set([
+        key for run in runs for key in vars(run.node())
+        if not key.startswith('_')
+    ])
     headers = sorted(set(keys) - set(hidden_columns))
     table = [[run.path] + [get_values(run, key) for key in headers]
              for run in sorted(runs, key=lambda r: r.path)]

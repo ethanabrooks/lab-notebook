@@ -18,7 +18,9 @@ class Route:
     def __init__(self, parts, cfg=None):
         if cfg is None:
             if Route is None:
-                raise RuntimeError('Either `cfg` has to be specified or `DBPath.cfg` has to be set')
+                raise RuntimeError(
+                    'Either `cfg` has to be specified or `DBPath.cfg` has to be set'
+                )
             cfg = Route.cfg
         self.cfg = cfg
         self.sep = SEP
@@ -45,7 +47,8 @@ class Route:
         *self.ancestors, self.head = self.parts
 
     def is_run(self):
-        return hasattr(self.node(), '_input_command')  # TODO: this is not great
+        # TODO: this is not great
+        return hasattr(self.node(), '_input_command')
 
     @property
     def exists(self):
@@ -104,8 +107,10 @@ class Route:
 
     @property
     def paths(self):
-        return [Path(self.cfg.root, dir_name, self.path)
-                for dir_name in self.cfg.dir_names]
+        return [
+            Path(self.cfg.root, dir_name, self.path)
+            for dir_name in self.cfg.dir_names
+        ]
 
     # file I/O
     def mkdirs(self, exist_ok=True):
