@@ -25,9 +25,10 @@ class Pattern(Route):
         self.write(tree)
 
     def runs(self, root=None):
-        return [Run(run)
-                for base in self.nodes(root)
-                for run in findall(base, is_run_node)]
+        return [
+            Run(run) for base in self.nodes(root)
+            for run in findall(base, is_run_node)
+        ]
 
     def nodes(self, root=None):
         if root is None:
@@ -44,14 +45,18 @@ class Pattern(Route):
 
     @property
     def paths(self):
-        return [self.sep.join([n.name for n in node.path]) for node in self.nodes()]
+        return [
+            self.sep.join([n.name for n in node.path])
+            for node in self.nodes()
+        ]
 
     @property
     def keys(self):
         return set([key for run in self.runs() for key in run.keys])
 
     def remove(self, assume_yes):
-        prompt = 'Runs to be removed:\n{}\nContinue?'.format('\n'.join(self.paths))
+        prompt = 'Runs to be removed:\n{}\nContinue?'.format(
+            '\n'.join(self.paths))
         if assume_yes or get_permission(prompt):
             for run in self.runs():
                 run.remove()
@@ -62,17 +67,19 @@ class Pattern(Route):
         multi_move = len(self.nodes()) > 1
 
         if dest.is_run() and multi_move:
-            self.exit("'{}' already exists and '{}' matches the following runs:\n"
-                      "{}\n"
-                      "Cannot move multiple runs into an existing run.".format(
-                dest, self.path, '\n'.join(self.paths)))
+            self.exit(
+                "'{}' already exists and '{}' matches the following runs:\n"
+                "{}\n"
+                "Cannot move multiple runs into an existing run.".format(
+                    dest, self.path, '\n'.join(self.paths)))
 
         def marshall_moves(src_node, dest_route):
             """ Collect moves corresponding to a src node and a dest route """
             assert isinstance(src_node, NodeMixin)
 
             existing_dir = dest.exists and not dest.is_run()
-            non_existing_dir = not dest.exists and (dest.dir_path or multi_move)
+            non_existing_dir = not dest.exists and (dest.dir_path
+                                                    or multi_move)
             if existing_dir or non_existing_dir:
                 # put the current node into dest
                 dest_route = Route(dest_route.parts + [src_node.path[-1]])
@@ -89,8 +96,8 @@ class Pattern(Route):
                  for s, d in marshall_moves(node, dest)]
 
         # check before moving
-        prompt = ("Planned moves:\n\n" +
-                  '\n'.join(s.path + ' -> ' + d.path for s, d in moves) +
+        prompt = ("Planned moves:\n\n" + '\n'.join(s.path + ' -> ' + d.path
+                                                   for s, d in moves) +
                   '\n\nContinue?')
 
         if moves and (assume_yes or get_permission(prompt)):
@@ -109,8 +116,10 @@ class Pattern(Route):
         return [n for n in PreOrderIter(self.tree()) if n.is_leaf]
 
     def descendant_strings(self):
-        return '\n'.join([self.sep.join([n.name for n in d.path])
-                          for d in self.descendants()])
+        return '\n'.join([
+            self.sep.join([n.name for n in d.path])
+            for d in self.descendants()
+        ])
 
     def tree(self):
         tree = deepcopy(self.read())
@@ -120,7 +129,7 @@ class Pattern(Route):
 
         def not_part_of_tree(node):
             return not any(node is n for n in nodes) and \
-                   not any(node is d for n in nodes for d in n.descendants)
+                not any(node is d for n in nodes for d in n.descendants)
 
         for node in findall(tree, not_part_of_tree):
             node.parent = None

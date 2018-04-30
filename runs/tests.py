@@ -48,7 +48,8 @@ DEFAULT_CFG = Cfg(root=ROOT, db_path=DB_PATH, quiet=True)
 
 def sessions():
     try:
-        output = cmd('tmux list-session -F "#{session_name}"'.split(), fail_ok=True)
+        output = cmd(
+            'tmux list-session -F "#{session_name}"'.split(), fail_ok=True)
         assert isinstance(output, str)
         return output.split('\n')
     except subprocess.CalledProcessError:
@@ -98,7 +99,9 @@ class SimpleParamGenerator(ParamGenerator):
 
 class ParamGeneratorWithSubdir(ParamGenerator):
     def __init__(self):
-        super().__init__(paths=[SUBDIR + SEP + TEST_RUN, SUBDIR + SEP + SUBDIR + SEP + TEST_RUN])
+        super().__init__(paths=[
+            SUBDIR + SEP + TEST_RUN, SUBDIR + SEP + SUBDIR + SEP + TEST_RUN
+        ])
 
 
 class ParamGeneratorWithPatterns(ParamGenerator):
@@ -122,6 +125,7 @@ def db_entry(path):
 
 # TODO what if config doesn't have required fields?
 
+
 @contextmanager
 def _setup(path, dir_names=None, flags=None):
     if dir_names is None:
@@ -135,8 +139,7 @@ def _setup(path, dir_names=None, flags=None):
     os.chdir(WORK_DIR)
     if any([dir_names, flags]):
         with Path(WORK_DIR, '.runsrc').open('w') as f:
-            f.write(
-                """\
+            f.write("""\
 [main]
 root = {}
 db_path = {}
@@ -171,9 +174,7 @@ def check_db(path, flags):
 
     # check known values
     name = path.split(SEP)[-1]
-    attrs = dict(description=DESCRIPTION,
-                 _input_command=COMMAND,
-                 name=name)
+    attrs = dict(description=DESCRIPTION, _input_command=COMMAND, name=name)
     for key, attr in attrs.items():
         assert_in(key, entry)
         eq_(entry[key], attr)
@@ -211,7 +212,8 @@ def test_new():
 
 
 def test_rm():
-    for path, dir_names, flags in ParamGenerator() + ParamGeneratorWithSubdir():
+    for path, dir_names, flags in ParamGenerator() + ParamGeneratorWithSubdir(
+    ):
         with _setup(path, dir_names, flags):
             main.main(['-q', 'rm', '-y', path])
             yield check_tmux_killed, path
@@ -263,9 +265,9 @@ def test_table():
 def test_lookup():
     with _setup(TEST_RUN):
         pattern = Pattern('*', cfg=DEFAULT_CFG)
-        for key, value in dict(name=TEST_RUN,
-                               description=DESCRIPTION,
-                               _input_command=COMMAND).items():
+        for key, value in dict(
+                name=TEST_RUN, description=DESCRIPTION,
+                _input_command=COMMAND).items():
             eq_(pattern.lookup(key), [value])
         with assert_raises(SystemExit):
             pattern.lookup('x')
@@ -344,7 +346,9 @@ def test_move_dirs():
         # dest is dir and src is dir -> move node into dest
         yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
 
-    with _setup('test_run1', flags=['--run1']), _setup('test_run2', flags=['run2']):
+    with _setup(
+            'test_run1', flags=['--run1']), _setup(
+                'test_run2', flags=['run2']):
         main.main(['mv', '-y', 'test_run1', 'test_run2'])
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'
