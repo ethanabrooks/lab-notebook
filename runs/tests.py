@@ -59,7 +59,7 @@ def quote(string):
     return '"' + string + '"'
 
 
-def get_name(nodes, name):
+def get_next_with_name(nodes, name):
     return next(n for n in nodes if n[NAME] == name)
 
 
@@ -117,7 +117,7 @@ def db_entry(path):
 
     # find name in current level
     assert_in(CHILDREN, entry)
-    return get_name(entry[CHILDREN], name)
+    return next(n for n in entry[CHILDREN] if n[NAME] == name)
 
 
 # TODO what if config doesn't have required fields?
@@ -137,7 +137,7 @@ def _setup(path, dir_names=None, flags=None):
         with Path(WORK_DIR, '.runsrc').open('w') as f:
             f.write(
                 """\
-[multi]
+[main]
 root = {}
 db_path = {}
 dir_names = {}
@@ -294,7 +294,7 @@ def test_move():
     for path, dir_names, flags in generator:
         for new_path in generator.paths:
             with _setup(path, dir_names, flags):
-                args = ['mv', '-y', '--keep-tmux', path, new_path]
+                args = ['mv', '-y', path, new_path]
                 if path != new_path:
                     main.main(args)
                     yield check_move, path, new_path, dir_names, flags
@@ -302,13 +302,6 @@ def test_move():
 
 
 def test_move_dirs():
-    with _setup('sub/sub/test_run'):
-        main.main(['mv', '-y', 'sub/sub/test_run', 'new_dir/'])
-        # dest is dir -> move src into dest
-        yield check_move, 'sub/sub/test_run', 'new_dir/test_run'
-        yield check_del_entry, 'sub'
-        yield check_rm_files, 'sub'
-
     with _setup('sub/test_run'):
         main.main(['mv', '-y', 'sub', 'new_dir'])
         # src is dir -> change src to dest and bring children
@@ -350,3 +343,18 @@ def test_move_dirs():
         main.main(['mv', '-y', 'sub1/sub1', 'sub2'])
         # dest is dir and src is dir -> move node into dest
         yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
+
+    with _setup('test_run1', flags=['--run1']), _setup('test_run2', flags=['run2']):
+        main.main(['mv', '-y', 'test_run1', 'test_run2'])
+        # dest is run -> overwrite dest
+        yield check_move, 'test_run1', 'test_run2'
+        assert_in('--run1', db_entry('test_run2')['full_command'])
+
+    with _setup('test_run1'), _setup('test_run2'), _setup('not_a_dir'):
+        # src is multi, dest is run -> exits with no change
+        with assert_raises(SystemExit):
+            main.main(['mv', '-y', 'test_run*', 'not_a_dir'])
+        for path in ['test_run1', 'test_run2', 'not_a_dir']:
+            yield check_tmux, path
+            yield check_db, path, []
+            yield check_files, path, []

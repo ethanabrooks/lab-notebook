@@ -3,6 +3,7 @@ from copy import deepcopy
 
 from anytree import ChildResolverError
 from anytree import NodeMixin
+from anytree import PreOrderIter
 from anytree import Resolver, findall
 
 from runs import db
@@ -32,6 +33,8 @@ class Pattern(Route):
         if root is None:
             root = self.read()
         try:
+            if self.path is '.':
+                return list(PreOrderIter(root))
             return Resolver().glob(root, self.path.rstrip(self.sep))
         except ChildResolverError:
             return []
@@ -39,6 +42,7 @@ class Pattern(Route):
     def names(self):
         return [node.name for node in self.nodes()]
 
+    @property
     def paths(self):
         return [self.sep.join([n.name for n in node.path]) for node in self.nodes()]
 
@@ -47,7 +51,7 @@ class Pattern(Route):
         return set([key for run in self.runs() for key in run.keys])
 
     def remove(self, assume_yes):
-        prompt = 'Runs to be removed:\n{}\nContinue?'.format('\n'.join(self.paths()))
+        prompt = 'Runs to be removed:\n{}\nContinue?'.format('\n'.join(self.paths))
         if assume_yes or get_permission(prompt):
             for run in self.runs():
                 run.remove()
@@ -55,22 +59,23 @@ class Pattern(Route):
     def move(self, dest, kill_tmux, assume_yes):
         assert isinstance(dest, Route)
 
-        # move INTO as opposed to move TO
-        move_into_dest = any([dest.node() is not None,  # dest exists
-                             dest.is_dir,  # dest is a directory path
-                             len(self.nodes()) > 1])  # we have multiple src nodes
+        multi_move = len(self.nodes()) > 1
+
+        if dest.is_run() and multi_move:
+            self.exit("'{}' already exists and '{}' matches the following runs:\n"
+                      "{}\n"
+                      "Cannot move multiple runs into an existing run.".format(
+                dest, self.path, '\n'.join(self.paths)))
 
         def marshall_moves(src_node, dest_route):
             """ Collect moves corresponding to a src node and a dest route """
             assert isinstance(src_node, NodeMixin)
 
-            if move_into_dest:
-                # put the current node into base
+            existing_dir = dest.exists and not dest.is_run()
+            non_existing_dir = not dest.exists and (dest.dir_path or multi_move)
+            if existing_dir or non_existing_dir:
+                # put the current node into dest
                 dest_route = Route(dest_route.parts + [src_node.path[-1]])
-
-            # check for conflicts with existing runs
-            if dest_route.node() is not None:
-                dest_route.already_exists()
 
             def dest_run(src_base, src_run):
                 stem = src_run.path[len(src_base.path):]
@@ -87,20 +92,35 @@ class Pattern(Route):
         prompt = ("Planned moves:\n\n" +
                   '\n'.join(s.path + ' -> ' + d.path for s, d in moves) +
                   '\n\nContinue?')
+
         if moves and (assume_yes or get_permission(prompt)):
+
+            # check for conflicts with existing runs
+            if dest.is_run():
+                dest.remove(assume_yes=assume_yes)
+
             for src, dest in moves:
                 src.move(dest, kill_tmux)
 
     def lookup(self, key):
         return [run.lookup(key) for run in self.runs()]
 
+    def descendants(self):
+        return [n for n in PreOrderIter(self.tree()) if n.is_leaf]
+
+    def descendant_strings(self):
+        return '\n'.join([self.sep.join([n.name for n in d.path])
+                          for d in self.descendants()])
+
     def tree(self):
         tree = deepcopy(self.read())
+        if self.path == '.':
+            return tree
         nodes = self.nodes(tree)
 
         def not_part_of_tree(node):
             return not any(node is n for n in nodes) and \
-                   not any(node is a for n in nodes for a in n.ancestors)
+                   not any(node is d for n in nodes for d in n.descendants)
 
         for node in findall(tree, not_part_of_tree):
             node.parent = None

@@ -1,0 +1,7 @@
+#compdef runs
+
+local runs
+
+words=("${(@f)$(runs ls --porcelain)}")
+
+compadd -a words

@@ -101,6 +101,8 @@ def main(argv=sys.argv[1:]):
     list_parser = subparsers.add_parser(LIST, help='List all names in run database.')
     list_parser.add_argument(PATTERN, nargs='?', help=pattern_help, type=nonempty_string)
     list_parser.add_argument('--show-attrs', action='store_true', help='Print run attributes in addition to names.')
+    list_parser.add_argument('--porcelain', action='store_true', help='Print list of path names without tree '
+                                                                      'formatting.')
     set_defaults(list_parser, LIST)
 
     table_parser = subparsers.add_parser(TABLE, help='Display contents of run database as a table.')
@@ -175,16 +177,19 @@ def main(argv=sys.argv[1:]):
     elif args.dest == MOVE:
         if not Pattern(args.old).runs():
             no_match(args.old, db_path=Route.cfg.db_path)
-        Pattern(args.old).move(dest=Run(args.new),
+        Pattern(args.old).move(dest=Pattern(args.new),
                                kill_tmux=args.kill_tmux,
                                assume_yes=args.assume_yes)
 
     elif args.dest == LIST:
-        # TODO: This should have *nix behavior
         if args.pattern:
-            print(Pattern(args.pattern).tree_string(args.show_attrs))
+            pattern = Pattern(args.pattern)
         else:
-            print(tree_string(db_path=Route.cfg.db_path, print_attrs=args.show_attrs))
+            pattern = Pattern('.')
+        if args.porcelain:
+            print(pattern.descendant_strings())
+        else:
+            print(pattern.tree_string(args.show_attrs))
 
     elif args.dest == TABLE:
         print(Pattern(args.pattern).table(args.column_width))

@@ -37,12 +37,19 @@ class Route:
                           for s in string.split(self.sep)] + \
                          [n.name for n in nodes]
         assert isinstance(self.parts, list)
-        self.is_dir = not self.parts or self.parts[-1] == ''
+        self.dir_path = not self.parts or self.parts[-1] == ''
         self.parts = [p for p in self.parts if p]
         if not self.parts:
             self.parts = [self.root_path]
         self.path = self.sep.join(self.parts)
         *self.ancestors, self.head = self.parts
+
+    def is_run(self):
+        return hasattr(self.node(), '_input_command')  # TODO: this is not great
+
+    @property
+    def exists(self):
+        return self.node() is not None
 
     @property
     def parent(self):
@@ -127,7 +134,7 @@ class Route:
     def exit(self, *msg):
         _exit(*msg, quiet=self.cfg.quiet)
 
-    def already_exists(self):
+    def exit_already_exists(self):
         self.exit('{} already exists.'.format(self))
 
     def __str__(self):

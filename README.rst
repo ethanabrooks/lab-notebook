@@ -1,3 +1,6 @@
+.. image:: https://travis-ci.org/lobachevzky/lab-notebook.svg?branch=master
+    :target: https://travis-ci.org/lobachevzky/lab-notebook
+    
 Lab Notebook
 ============
 Researchers in computer science often need to compare difference versions of a process and compare the results.
