@@ -39,14 +39,14 @@ Here is an example ``.runsrc`` file:
 
 .. code-block:: ini
 
-    [multi]
+    [main]
     root = /Users/ethan/demo-lab-notebook/.runs
     db_path = /Users/ethan/demo-lab-notebook/runs.yml
     dir_names = tensorboard
     virtualenv_path = /Users/ethan/virtualenvs/demo-lab-notebook/
 
     [flags]
-    --log-dir=${multi:root}/tensorboard/<path>
+    --log-dir=${main:root}/tensorboard/<path>
 
     [new]
     description = demo lab-notebook
