@@ -95,6 +95,9 @@ def main(argv=sys.argv[1:]):
         '--description',
         help='Description of this run. Explain what this run was all about or '
         'just write whatever your heart desires.')
+    new_parser.add_argument(
+        '--summary-path',
+        help='Path where Tensorflow summary of run is to be written.')
     set_defaults(new_parser, NEW)
 
     remove_parser = subparsers.add_parser(
@@ -258,6 +261,7 @@ def main(argv=sys.argv[1:]):
         if args.summary_path:
             from runs.tensorflow_util import summarize_run
             summarize_run(args.path, args.summary_path)
+            print('\nWrote summary to', args.summary_path)
 
 
     elif args.dest == REMOVE:

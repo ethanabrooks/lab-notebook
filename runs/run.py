@@ -71,17 +71,20 @@ class Run(runs.route.Route):
         self.print('tmux attach -t', self.path)
 
     def build_command(self, command):
-        keywords = dict(path=self.path, name=self.head)
         for flag in self.cfg.flags:
-            for match in re.findall('.*<(.*)>', flag):
-                assert match in keywords
-            for word, replacement in keywords.items():
-                flag = flag.replace('<' + word + '>', replacement)
+            flag = self.interpolate_keywords(flag)
             command += ' ' + flag
-
         if self.cfg.virtualenv_path:
             return 'source ' + self.cfg.virtualenv_path + '/bin/activate; ' + command
         return command
+
+    def interpolate_keywords(self, string):
+        keywords = dict(path=self.path, name=self.head)
+        for match in re.findall('.*<(.*)>', string):
+            assert match in keywords
+        for word, replacement in keywords.items():
+            string = string.replace('<' + word + '>', replacement)
+        return string
 
     def remove(self):
         self.kill_tmux()
