@@ -1,12 +1,13 @@
 language: python
 python:
-  - "3.5"
-  - "3.5-dev"  # 3.5 development branch
-  - "3.6"
-  - "3.6-dev"  # 3.6 development branch
-# command to install dependencies
+- '3.5'
+- 3.5-dev
+- '3.6'
+- 3.6-dev
 install:
-  - pip install .
-# command to run tests
+- pip install .
 script:
-  - nosetests -v
+- nosetests -v
+notifications:
+  slack:
+    secure: pgjgBmssZmmJYBzem2jOJ6wPGWF+InwrIKTm3k0yuDN9rLMALY10U2INuR3BNMQNFsM99I5BhUL4KzXmCBSeOjnNUyAlKkgiZIexToT2IXVawSWbF/ZHqS5V1xgoSdkjTh7J39dNQHcv17J5U31kv35lh/npunMHlQWRzMEn9hhdyUYJAc+8QT9TlfvKqL3EKcC8t6HfJC8+DucwHz5yp1hslaog1SkamDYrttmi9qbvpO9kLTfmAES/zGIKKP9nn0M2+/j2u9u3+D1tDU2BPvWWDcooAQh0NCCjyyABwO/gp9aQXROGWy2jyJ5D+p43tOGVsPcGTvrr/0QFjxj0IcXCQCx89IcSe0YUR6a9ytARiPP3V9mO7SeKysVVrTb6gEYmim0xkGVhfsoYUxTuHpK4n1dQxmhZaTUCYwlXXJ8K6rxx3zSy6K/Ls8Gtynrsj9dGRmmKjVl747WI9GYTlzUy+Z03WLHm7BcVY3DTrVFHsdK/v76iHIJn1wGkR9RFLcusF1n5hnod1I4Y/sp9RarocFY4ly8p/ei2wW+A5R9Q1Aon5TxvhruNNlHnoA/yP2yuoioiaet7yUAkS/VdpPxkhQiU5VOWMECZUMmnGO7cFBGfIkgXIDKO+kAmUa5JeE3Kg+Ql0o1j67Xt72a06tSjlbYnfP9HDpT1/1CYBjA=
