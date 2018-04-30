@@ -3,6 +3,7 @@ from copy import deepcopy
 
 from anytree import ChildResolverError
 from anytree import NodeMixin
+from anytree import PreOrderIter
 from anytree import Resolver, findall
 
 from runs import db
@@ -29,6 +30,8 @@ class Pattern(Route):
         if root is None:
             root = self.read()
         try:
+            if self.path is '.':
+                return list(PreOrderIter(root))
             return Resolver().glob(root, self.path.rstrip(self.sep))
         except ChildResolverError:
             return []
@@ -99,8 +102,17 @@ class Pattern(Route):
     def lookup(self, key):
         return [run.lookup(key) for run in self.runs()]
 
+    def descendants(self):
+        return [n for n in PreOrderIter(self.tree()) if n.is_leaf]
+
+    def descendant_strings(self):
+        return '\n'.join([self.sep.join([n.name for n in d.path])
+                          for d in self.descendants()])
+
     def tree(self):
         tree = deepcopy(self.read())
+        if self.path == '.':
+            return tree
         nodes = self.nodes(tree)
 
         def not_part_of_tree(node):
