@@ -12,6 +12,9 @@ from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, 
 
 
 class Run(runs.route.Route):
+    """
+    A Run aggregates the tmux process, the directories, and the db entry relating to a run.
+    """
     @property
     def keys(self):
         return list(DictExporter().export(self.node()).keys())

@@ -13,6 +13,9 @@ from runs.util import get_permission, is_run_node
 
 
 class Pattern(Route):
+    """
+    A Pattern is a Route that may pattern match to multiple objects.
+    """
     # DB I/O
     @contextmanager
     def open(self):

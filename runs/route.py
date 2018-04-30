@@ -9,6 +9,10 @@ from runs.util import prune_empty, _print, _exit, SEP, ROOT_PATH
 
 
 class Route:
+    """
+    A Route is to a Run as a path is to a file in *nix.
+    A Route makes no assumptions about whether it actually points to anything.
+    """
     cfg = None
 
     def __init__(self, parts, cfg=None):
