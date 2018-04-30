@@ -13,7 +13,6 @@ Specifically, ``Lab Notebook`` provides the following functionality:
 * Automatically set up runs, building flags and directories with unique name corresponding to each run and launching runs in tmux.
 * Organize runs into hierarchical categories.
 * Synchronize runs with directories, so that directories are moved and deleted when runs are moved and deleted.
-* Ensure that directories are synced with each run, so that if a run is removed from the database or moved into a
 
 Installation
 ------------
@@ -161,6 +160,12 @@ For detailed descriptions of each subcommand and its arguments, run
 .. code-block:: console
 
   runs <subcommand> -h
+
+Tab autocompletion
+------------------
+If you are using Zsh, simpy copy the ``_runs`` to some place on your ``fpath``.
+Then pressing tab will prompt you with the names of runs currently in your
+database
 
 Why not just use git?
 ---------------------
