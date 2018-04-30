@@ -41,6 +41,7 @@ class Run(runs.route.Route):
 
         # process info
         full_command = self.build_command(command)
+
         prompt = 'Edit the description of this run: (Do not edit the line or above.)'
         if description is None:
             description = string_from_vim(prompt, description)
@@ -140,4 +141,21 @@ class Run(runs.route.Route):
                highlight('git checkout {}\n'.format(self.lookup(COMMIT))) + \
                highlight("runs new {} '{}' --description='Reproduce {}. "
                          "Original description: {}'".format(
-                             path, self.lookup('_input_command'), self.path, self.lookup(DESCRIPTION)))
+                   path, self.lookup('_input_command'), self.path, self.lookup(DESCRIPTION)))
+
+    def pretty_print(self):
+        return self.path + '\n' + \
+               '=' * len(self.path) + """
+Command
+-------
+{}
+Commit
+------
+{}
+Date/Time
+---------
+{}
+Description
+-----------
+{}
+""".format(*map(self.lookup, ['full_command', 'commit','datetime', 'description']))

@@ -255,6 +255,10 @@ def main(argv=sys.argv[1:]):
             command=args.command,
             description=args.description,
             assume_yes=args.assume_yes)
+        if args.summary_path:
+            from runs.tensorflow_util import summarize_run
+            summarize_run(args.path, args.summary_path)
+
 
     elif args.dest == REMOVE:
         Pattern(args.pattern).remove(args.assume_yes)
