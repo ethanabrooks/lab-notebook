@@ -103,11 +103,18 @@ class Pattern(Route):
         if moves and (assume_yes or get_permission(prompt)):
 
             # check for conflicts with existing runs
-            if dest.is_run():
-                dest.remove(assume_yes=assume_yes)
+            already_exists = [d for s, d in moves
+                              if d.is_run() and s.path != d.path]
+            if already_exists:
+                prompt = 'Runs to be removed:\n{}\nContinue?'.format(
+                    '\n'.join(map(str, already_exists)))
+                if assume_yes or get_permission(prompt):
+                    for run in already_exists:
+                        run.remove()
 
             for src, dest in moves:
-                src.move(dest, kill_tmux)
+                if src.path != dest.path:
+                    src.move(dest, kill_tmux)
 
     def lookup(self, key):
         return [run.lookup(key) for run in self.runs()]
