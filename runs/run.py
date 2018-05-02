@@ -18,7 +18,8 @@ class Run(runs.route.Route):
 
     @property
     def keys(self):
-        return list(DictExporter().export(self.node()).keys())
+        return ['command' if k is '_input_command' else k for k in
+                DictExporter().export(self.node()).keys()]
 
     # Commands
     def new(self, command, description, assume_yes):
@@ -108,6 +109,8 @@ class Run(runs.route.Route):
             prune_leaves(old_parent)
 
     def lookup(self, key):
+        if key == 'command':
+            key = '_input_command'
         try:
             return getattr(self.node(), key)
         except AttributeError:
