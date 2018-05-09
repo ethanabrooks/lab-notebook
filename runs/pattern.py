@@ -108,11 +108,12 @@ class Pattern(Route):
             if already_exists:
                 prompt = 'Runs to be removed:\n{}\nContinue?'.format(
                     '\n'.join(map(str, already_exists)))
-                if assume_yes or get_permission(prompt):
-                    for run in already_exists:
-                        run.remove()
+                if not (assume_yes or get_permission(prompt)):
+                    self.exit()
 
             for src, dest in moves:
+                if dest.is_run() and src.path != dest.path:
+                    dest.remove()
                 if src.path != dest.path:
                     src.move(dest, kill_tmux)
 
