@@ -37,7 +37,7 @@ print(vars(parser.parse_args()))\
 """
 COMMAND = 'python test.py'
 WORK_DIR = '/tmp/test-run-manager'
-DB_PATH = Path(WORK_DIR, 'runs.yml')
+DB_PATH = Path(WORK_DIR, 'runs.pkl')
 ROOT = WORK_DIR + '/.runs'
 DESCRIPTION = 'test new command'
 SEP = '/'
