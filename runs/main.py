@@ -27,12 +27,12 @@ def main(argv=sys.argv[1:]):
     config_filename = '.runsrc'
     config_path = search_ancestors(config_filename)
     config[MAIN] = {
-        # Custom path to directory containing runs database (default, `runs.yml`). Should not need to be
+        # Custom path to directory containing runs database (default, `runs.pkl`). Should not need to be
         # specified for local runs but probably required for accessing databses remotely.
         'root': os.getcwd() + '/.runs',
 
         # path to YAML file storing run database information.
-        'db_path': os.getcwd() + '/runs.yml',
+        'db_path': os.getcwd() + '/runs.pkl',
 
         # directories that runs should create
         'dir_names': None,

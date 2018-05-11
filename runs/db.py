@@ -15,16 +15,10 @@ from runs.util import NAME, get_permission, ROOT_PATH, _exit
 
 def read(db_path: Path):
     db_path = Path(db_path)
-    yml_path = db_path.with_suffix('.yml')
     if db_path.exists():
         print('opening', db_path)
         with db_path.open('rb') as f:
             data = pickle.load(f)
-        return DictImporter().import_(data)
-    elif yml_path.exists():
-        print('opening', yml_path)
-        with yml_path.open() as f:
-            data = yaml.load(f)
         return DictImporter().import_(data)
     return None
 
@@ -39,7 +33,6 @@ def write(tree, db_path):
     data = DictExporter().export(tree)
     with Path(db_path).open('wb') as f:
         pickle.dump(data, f)
-        # yaml.dump(data, f, default_flow_style=False)
 
 
 def tree_string(tree=None, db_path=None, print_attrs=False):

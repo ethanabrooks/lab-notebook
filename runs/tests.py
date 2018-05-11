@@ -4,20 +4,16 @@ import subprocess
 from contextlib import contextmanager
 from fnmatch import fnmatch
 from pathlib import Path
-from pprint import pprint
+import pickle
 
-import yaml
 from anytree import ChildResolverError
-from anytree import PreOrderIter
 from anytree import Resolver
 from nose.tools import assert_false
 from nose.tools import assert_in, eq_, ok_
 from nose.tools import assert_is_instance
 from nose.tools import assert_not_in
 from nose.tools import assert_raises
-import nose.tools
 
-from runs import db
 from runs import main
 from runs.cfg import Cfg
 from runs.db import read
@@ -111,8 +107,8 @@ class ParamGeneratorWithPatterns(ParamGenerator):
 
 def db_entry(path):
     if not path:
-        with DB_PATH.open() as f:
-            return yaml.load(f)
+        with DB_PATH.open('rb') as f:
+            return pickle.load(f)
 
     # recursively get entry from one level up
     *path, name = path.split(SEP)

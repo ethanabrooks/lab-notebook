@@ -40,7 +40,7 @@ Here is an example ``.runsrc`` file:
 
     [main]
     root = /Users/ethan/demo-lab-notebook/.runs
-    db_path = /Users/ethan/demo-lab-notebook/runs.yml
+    db_path = /Users/ethan/demo-lab-notebook/runs.pkl
     dir_names = tensorboard
     virtualenv_path = /Users/ethan/virtualenvs/demo-lab-notebook/
 
@@ -75,7 +75,7 @@ Setup environment:
   wget https://raw.githubusercontent.com/tensorflow/tensorflow/master/tensorflow/examples/tutorials/mnist/mnist_with_summaries.py
   pip install tensorflow lab-notebook
   git init
-  echo 'runs.yml .runs .runsrc' > .gitignore
+  echo 'runs.pkl .runs .runsrc' > .gitignore
   git add -A
   git commit -am init
 
