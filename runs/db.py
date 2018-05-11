@@ -16,7 +16,6 @@ from runs.util import NAME, get_permission, ROOT_PATH, _exit
 def read(db_path: Path):
     db_path = Path(db_path)
     if db_path.exists():
-        print('opening', db_path)
         with db_path.open('rb') as f:
             data = pickle.load(f)
         return DictImporter().import_(data)

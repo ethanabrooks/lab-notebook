@@ -1,6 +1,5 @@
 #compdef runs
 
-local runs
 local run_path
 local run_paths=("${(@f)$(runs ls --porcelain)}")
 local formatted_paths=()
