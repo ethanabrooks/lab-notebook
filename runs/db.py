@@ -8,14 +8,22 @@ from anytree import RenderTree
 from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
 from tabulate import tabulate
+import pickle
 
 from runs.util import NAME, get_permission, ROOT_PATH, _exit
 
 
-def read(db_path):
+def read(db_path: Path):
     db_path = Path(db_path)
+    yml_path = db_path.with_suffix('.yml')
     if db_path.exists():
-        with db_path.open() as f:
+        print('opening', db_path)
+        with db_path.open('rb') as f:
+            data = pickle.load(f)
+        return DictImporter().import_(data)
+    elif yml_path.exists():
+        print('opening', yml_path)
+        with yml_path.open() as f:
             data = yaml.load(f)
         return DictImporter().import_(data)
     return None
@@ -29,8 +37,9 @@ def name_first(attrs):
 def write(tree, db_path):
     assert isinstance(tree, NodeMixin)
     data = DictExporter().export(tree)
-    with Path(db_path).open('w') as f:
-        yaml.dump(data, f, default_flow_style=False)
+    with Path(db_path).open('wb') as f:
+        pickle.dump(data, f)
+        # yaml.dump(data, f, default_flow_style=False)
 
 
 def tree_string(tree=None, db_path=None, print_attrs=False):
