@@ -17,12 +17,10 @@ def read(db_path: Path):
     db_path = Path(db_path)
     yml_path = db_path.with_suffix('.yml')
     if db_path.exists():
-        print('opening', db_path)
         with db_path.open('rb') as f:
             data = pickle.load(f)
         return DictImporter().import_(data)
     elif yml_path.exists():
-        print('opening', yml_path)
         with yml_path.open() as f:
             data = yaml.load(f)
         return DictImporter().import_(data)
