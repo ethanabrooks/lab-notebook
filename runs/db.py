@@ -1,16 +1,15 @@
+import pickle
 import shutil
 from contextlib import contextmanager
 from pathlib import Path
 
 import yaml
-from anytree import NodeMixin
-from anytree import RenderTree
+from anytree import NodeMixin, RenderTree
 from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
 from tabulate import tabulate
-import pickle
 
-from runs.util import NAME, get_permission, ROOT_PATH, _exit
+from runs.util import NAME, ROOT_PATH, _exit, get_permission
 
 
 def read(db_path: Path):

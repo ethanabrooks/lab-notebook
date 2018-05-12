@@ -1,25 +1,21 @@
 import os
+import pickle
 import shutil
 import subprocess
 from contextlib import contextmanager
 from fnmatch import fnmatch
 from pathlib import Path
-import pickle
 
-from anytree import ChildResolverError
-from anytree import Resolver
-from nose.tools import assert_false
-from nose.tools import assert_in, eq_, ok_
-from nose.tools import assert_is_instance
-from nose.tools import assert_not_in
-from nose.tools import assert_raises
+from anytree import ChildResolverError, Resolver
+from nose.tools import (assert_false, assert_in, assert_is_instance,
+                        assert_not_in, assert_raises, eq_, ok_)
 
 from runs import main
 from runs.cfg import Cfg
 from runs.db import read
 from runs.pattern import Pattern
 from runs.run import Run
-from runs.util import NAME, cmd, CHDESCRIPTION
+from runs.util import CHDESCRIPTION, NAME, cmd
 
 # TODO: sad path
 

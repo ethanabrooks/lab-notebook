@@ -7,11 +7,13 @@ from configparser import ConfigParser, ExtendedInterpolation
 from pprint import pprint
 
 from runs.cfg import Cfg
-from runs.db import tree_string, killall, no_match
+from runs.db import killall, no_match, tree_string
 from runs.pattern import Pattern
 from runs.route import Route
 from runs.run import Run
-from runs.util import search_ancestors, PATTERN, NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MAIN, KILLALL, PATH, DEFAULT, FLAGS, cmd
+from runs.util import (CHDESCRIPTION, DEFAULT, FLAGS, KILLALL, LIST, LOOKUP,
+                       MAIN, MOVE, NEW, PATH, PATTERN, REMOVE, REPRODUCE,
+                       TABLE, cmd, search_ancestors)
 
 
 def nonempty_string(value):
@@ -54,7 +56,8 @@ def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--root',
-        help='Custom path to directory where config directories (if any) are automatically '
+        help=
+        'Custom path to directory where config directories (if any) are automatically '
         'created',
         type=nonempty_string)
     parser.add_argument(
@@ -106,7 +109,8 @@ def main(argv=sys.argv[1:]):
         "confirmation before deleting anything.")
     remove_parser.add_argument(
         PATTERN,
-        help='This script will only delete entries in the database whose names are a complete '
+        help=
+        'This script will only delete entries in the database whose names are a complete '
         '(not partial) match of this glob pattern.',
         type=nonempty_string)
     remove_parser.add_argument(
@@ -207,7 +211,8 @@ def main(argv=sys.argv[1:]):
         '--description',
         type=nonempty_string,
         default=None,
-        help="Description to be assigned to new run. If None, use the same description as "
+        help=
+        "Description to be assigned to new run. If None, use the same description as "
         "the run being reproduced.")
     reproduce_parser.add_argument(
         '--no-overwrite',
