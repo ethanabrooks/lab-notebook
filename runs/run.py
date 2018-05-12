@@ -7,8 +7,9 @@ from anytree import AnyNode
 from anytree.exporter import DictExporter
 
 import runs.route
-from runs.util import dirty_repo, get_permission, string_from_vim, last_commit, highlight, cmd, COMMIT, DESCRIPTION, \
-    NAME, prune_leaves
+from runs.util import (COMMIT, DESCRIPTION, NAME, cmd, dirty_repo,
+                       get_permission, highlight, last_commit, prune_leaves,
+                       string_from_vim)
 
 
 class Run(runs.route.Route):
@@ -18,8 +19,10 @@ class Run(runs.route.Route):
 
     @property
     def keys(self):
-        return ['command' if k is '_input_command' else k for k in
-                DictExporter().export(self.node()).keys()]
+        return [
+            'command' if k is '_input_command' else k
+            for k in DictExporter().export(self.node()).keys()
+        ]
 
     # Commands
     def new(self, command, description, assume_yes):
@@ -147,11 +150,11 @@ class Run(runs.route.Route):
                highlight('git checkout {}\n'.format(self.lookup(COMMIT))) + \
                highlight("runs new {} '{}' --description='Reproduce {}. "
                          "Original description: {}'".format(
-                   path, self.lookup('_input_command'), self.path, self.lookup(DESCRIPTION)))
+                             path, self.lookup('_input_command'), self.path, self.lookup(DESCRIPTION)))
 
     def pretty_print(self):
         return self.path + '\n' + \
-               '=' * len(self.path) + """
+            '=' * len(self.path) + """
 Command
 -------
 {}
@@ -164,4 +167,4 @@ Date/Time
 Description
 -----------
 {}
-""".format(*map(self.lookup, ['full_command', 'commit','datetime', 'description']))
+""".format(*map(self.lookup, ['full_command', 'commit', 'datetime', 'description']))

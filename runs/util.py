@@ -1,14 +1,13 @@
 import os
 import pprint
+import shutil
 import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 
-import shutil
 import yaml
-from anytree import NodeMixin
-from anytree import RenderTree
+from anytree import NodeMixin, RenderTree
 from termcolor import colored
 
 if sys.version_info.major == 2:

@@ -2,10 +2,10 @@ import shutil
 from contextlib import contextmanager
 from pathlib import Path
 
-from anytree import NodeMixin, Node, Resolver, ChildResolverError
+from anytree import ChildResolverError, Node, NodeMixin, Resolver
 
-from runs.db import read, write, open_db
-from runs.util import prune_empty, _print, _exit, SEP, ROOT_PATH
+from runs.db import open_db, read, write
+from runs.util import ROOT_PATH, SEP, _exit, _print, prune_empty
 
 
 class Route:

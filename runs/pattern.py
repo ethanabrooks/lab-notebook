@@ -1,10 +1,8 @@
 from contextlib import contextmanager
 from copy import deepcopy
 
-from anytree import ChildResolverError
-from anytree import NodeMixin
-from anytree import PreOrderIter
-from anytree import Resolver, findall
+from anytree import (ChildResolverError, NodeMixin, PreOrderIter, Resolver,
+                     findall)
 
 from runs import db
 from runs.db import tree_string
@@ -103,8 +101,9 @@ class Pattern(Route):
         if moves and (assume_yes or get_permission(prompt)):
 
             # check for conflicts with existing runs
-            already_exists = [d for s, d in moves
-                              if d.is_run() and s.path != d.path]
+            already_exists = [
+                d for s, d in moves if d.is_run() and s.path != d.path
+            ]
             if already_exists:
                 prompt = 'Runs to be removed:\n{}\nContinue?'.format(
                     '\n'.join(map(str, already_exists)))
