@@ -11,8 +11,7 @@ from runs.db import tree_string, killall, no_match
 from runs.pattern import Pattern
 from runs.route import Route
 from runs.run import Run
-from runs.util import search_ancestors, PATTERN, \
-    NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MAIN, KILLALL, PATH, DEFAULT, FLAGS
+from runs.util import search_ancestors, PATTERN, NEW, REMOVE, MOVE, LOOKUP, LIST, TABLE, REPRODUCE, CHDESCRIPTION, MAIN, KILLALL, PATH, DEFAULT, FLAGS, cmd
 
 
 def nonempty_string(value):
@@ -55,8 +54,7 @@ def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--root',
-        help=
-        'Custom path to directory where config directories (if any) are automatically '
+        help='Custom path to directory where config directories (if any) are automatically '
         'created',
         type=nonempty_string)
     parser.add_argument(
@@ -94,7 +92,8 @@ def main(argv=sys.argv[1:]):
     new_parser.add_argument(
         '--description',
         help='Description of this run. Explain what this run was all about or '
-        'just write whatever your heart desires.')
+        'just write whatever your heart desires. If this argument is `commit-message`,'
+        'it will simply use the last commit message.')
     new_parser.add_argument(
         '--summary-path',
         help='Path where Tensorflow summary of run is to be written.')
@@ -107,8 +106,7 @@ def main(argv=sys.argv[1:]):
         "confirmation before deleting anything.")
     remove_parser.add_argument(
         PATTERN,
-        help=
-        'This script will only delete entries in the database whose names are a complete '
+        help='This script will only delete entries in the database whose names are a complete '
         '(not partial) match of this glob pattern.',
         type=nonempty_string)
     remove_parser.add_argument(
@@ -209,8 +207,7 @@ def main(argv=sys.argv[1:]):
         '--description',
         type=nonempty_string,
         default=None,
-        help=
-        "Description to be assigned to new run. If None, use the same description as "
+        help="Description to be assigned to new run. If None, use the same description as "
         "the run being reproduced.")
     reproduce_parser.add_argument(
         '--no-overwrite',
@@ -254,15 +251,17 @@ def main(argv=sys.argv[1:]):
         print('-' * len(msg))
 
     if args.dest == NEW:
+        description = args.description
+        if description == 'commit-message':
+            description = cmd('git log -1 --pretty=%B')
         Run(args.path).new(
             command=args.command,
-            description=args.description,
+            description=description,
             assume_yes=args.assume_yes)
         if args.summary_path:
             from runs.tensorflow_util import summarize_run
             path = summarize_run(args.path, args.summary_path)
             print('\nWrote summary to', path)
-
 
     elif args.dest == REMOVE:
         Pattern(args.pattern).remove(args.assume_yes)
