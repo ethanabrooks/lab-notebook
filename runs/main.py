@@ -258,7 +258,7 @@ def main(argv=sys.argv[1:]):
     if args.dest == NEW:
         description = args.description
         if description == 'commit-message':
-            description = cmd('git log -1 --pretty=%B')
+            description = cmd('git log -1 --pretty=%B'.split())
         Run(args.path).new(
             command=args.command,
             description=description,

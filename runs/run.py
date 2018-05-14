@@ -7,9 +7,8 @@ from anytree import AnyNode
 from anytree.exporter import DictExporter
 
 import runs.route
-from runs.util import (COMMIT, DESCRIPTION, NAME, cmd, dirty_repo,
-                       get_permission, highlight, last_commit, prune_leaves,
-                       string_from_vim)
+from runs.util import COMMIT, DESCRIPTION, cmd, dirty_repo, get_permission, highlight, last_commit, prune_leaves, string_from_vim
+from runs.db import no_match
 
 
 class Run(runs.route.Route):
@@ -115,7 +114,10 @@ class Run(runs.route.Route):
         if key == 'command':
             key = '_input_command'
         try:
-            return getattr(self.node(), key)
+            node = self.node()
+            if node is None:
+                no_match(self.path, db_path=self.cfg.db_path)
+            return getattr(node, key)
         except AttributeError:
             self.exit("`{}` not a valid key. Valid keys are {}.".format(
                 key, self.keys))
