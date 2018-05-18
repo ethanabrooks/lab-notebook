@@ -21,7 +21,7 @@ class Cfg:
             _exit(should_be_absolute.format('db_path', self.db_path))
         if not prefix:
             prefix = ''
-        self.prefix = prefix.replace('~', str(Path('~').expanduser()))
+        self.prefix = prefix.replace('~', str(Path('~').expanduser())) + ' '
         self.dir_names = dir_names.split() if dir_names else []
         self.hidden_columns = hidden_columns.split() if hidden_columns else []
         self.flags = flags
