@@ -37,7 +37,7 @@ def main(argv=sys.argv[1:]):
 
         # directories that runs should create
         'dir_names': None,
-        'virtualenv_path': None,
+        'prefix': None,
     }
     if config_path:
         config.read(str(config_path))
@@ -65,11 +65,9 @@ def main(argv=sys.argv[1:]):
         help='path to YAML file storing run database information.',
         type=nonempty_string)
     parser.add_argument(
-        '--virtualenv-path',
+        '--prefix',
         type=nonempty_string,
-        help="Path to virtual environment, if one is being "
-        "used. If not `None`, the program will source"
-        " `<virtualenv-path>/bin/activate`. ")
+        help="String to preprend to all main commands, for example, sourcing a virtualenv")
     parser.add_argument(
         '--quiet', '-q', action='store_true', help='Suppress print output')
     set_defaults(parser, MAIN)

@@ -77,9 +77,7 @@ class Run(runs.route.Route):
         for flag in self.cfg.flags:
             flag = self.interpolate_keywords(flag)
             command += ' ' + flag
-        if self.cfg.virtualenv_path:
-            return 'source ' + self.cfg.virtualenv_path + '/bin/activate; ' + command
-        return command
+        return self.cfg.prefix + command
 
     def interpolate_keywords(self, string):
         keywords = dict(path=self.path, name=self.head)

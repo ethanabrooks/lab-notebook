@@ -42,7 +42,8 @@ Here is an example ``.runsrc`` file:
     root = /Users/ethan/demo-lab-notebook/.runs
     db_path = /Users/ethan/demo-lab-notebook/runs.pkl
     dir_names = tensorboard
-    virtualenv_path = /Users/ethan/virtualenvs/demo-lab-notebook/
+    prefix = Source ~/virtualenvs/demo-lab-notebook/bin/activate;
+    nice
 
     [flags]
     --log-dir=${main:root}/tensorboard/<path>
