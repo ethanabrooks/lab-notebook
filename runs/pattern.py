@@ -6,12 +6,12 @@ from anytree import (ChildResolverError, NodeMixin, PreOrderIter, Resolver,
 
 from runs import db
 from runs.db import tree_string
-from runs.route import Route
+from runs.db_path import DBPath
 from runs.run import Run
 from runs.util import get_permission, is_run_node
 
 
-class Pattern(Route):
+class Pattern(DBPath):
     """
     A Pattern is a Route that may pattern match to multiple objects.
     """
@@ -60,7 +60,7 @@ class Pattern(Route):
                 run.remove()
 
     def move(self, dest, kill_tmux, assume_yes):
-        assert isinstance(dest, Route)
+        assert isinstance(dest, DBPath)
 
         multi_move = len(self.nodes()) > 1
 
@@ -80,7 +80,7 @@ class Pattern(Route):
                                                     or multi_move)
             if existing_dir or non_existing_dir:
                 # put the current node into dest
-                dest_route = Route(dest_route.parts + [src_node.path[-1]])
+                dest_route = DBPath(dest_route.parts + [src_node.path[-1]])
 
             def dest_run(src_base, src_run):
                 stem = src_run.path[len(src_base.path):]

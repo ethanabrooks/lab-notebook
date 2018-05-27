@@ -3,21 +3,25 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
-import itertools
-from anytree import AnyNode
 from anytree.exporter import DictExporter
 
-import runs.route
-from runs.util import COMMIT, DESCRIPTION, cmd, dirty_repo, get_permission, highlight, last_commit, prune_leaves, string_from_vim
 from runs.db import no_match
+from runs.db_path import DBPath
+from runs.run_node import RunNode
+from runs.util import COMMIT, DESCRIPTION, cmd, dirty_repo, get_permission, highlight, last_commit, prune_leaves, string_from_vim
 
 
-class Run(runs.route.Route):
+class Run:
     """
     A Run aggregates the tmux process, the directories, and the db entry relating to a run.
     """
+    def __init__(self, path: Path, root):
+        self.path = DBPath(path)
+        self.root = root
 
-    @property
+    def node(self):
+        return self.path.node(self.root)
+
     def keys(self):
         return [
             'command' if k is '_input_command' else k
@@ -49,19 +53,21 @@ class Run(runs.route.Route):
         prompt = 'Edit the description of this run: (Do not edit the line or above.)'
         if description is None:
             description = string_from_vim(prompt, description)
+        if description == 'commit-message':
+            description = cmd('git log -1 --pretty=%B'.split())
 
         # tmux
         self.new_tmux(description, full_command)
 
         # new db entry
         with self.open_root() as root:
-            AnyNode(
+            RunNode(
                 name=self.head,
                 full_command=full_command,
                 commit=last_commit(),
                 datetime=datetime.now().isoformat(),
                 description=description,
-                _input_command=command,
+                input_command=command,
                 parent=self.parent.add_to_tree(root))
 
         # print result

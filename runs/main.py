@@ -9,7 +9,7 @@ from configparser import ConfigParser, ExtendedInterpolation
 from runs.cfg import Cfg
 from runs.db import killall, no_match
 from runs.pattern import Pattern
-from runs.route import Route
+from runs.db_path import DBPath
 from runs.run import Run
 from runs.util import (CHDESCRIPTION, DEFAULT, FLAGS, KILLALL, LIST, LOOKUP,
                        MAIN, MOVE, NEW, PATH, PATTERN, REMOVE, REPRODUCE,
@@ -234,14 +234,14 @@ def main(argv=sys.argv[1:]):
         for k, v in (config[FLAGS].items() if FLAGS in config else {})
     }
 
-    Route.cfg = Cfg(**kwargs)
+    DBPath.cfg = Cfg(**kwargs)
 
     if hasattr(args, PATTERN):
         if args.pattern and not Pattern(args.pattern).runs():
-            no_match(args.pattern, db_path=Route.cfg.db_path)
+            no_match(args.pattern, db_path=DBPath.cfg.db_path)
 
     if args.dest == KILLALL:
-        killall(Route.cfg.db_path, Route.cfg.root)
+        killall(DBPath.cfg.db_path, DBPath.cfg.root)
         exit()
 
     elif config_path is None:
@@ -254,17 +254,10 @@ def main(argv=sys.argv[1:]):
         print('-' * len(msg))
 
     if args.dest == NEW:
-        description = args.description
-        if description == 'commit-message':
-            description = cmd('git log -1 --pretty=%B'.split())
-        flag_combinations = list(itertools.product(*Route.cfg.flags))
-        for flags in flag_combinations:
-            path = args.path
-            if len(flag_combinations) > 1:
-                path += '_' + '_'.join(f.lstrip('-') for f in flags)
+        for path, flags in DBPath.cfg.generate_runs(args.path):
             Run(path).new(
                 command=args.command,
-                description=description,
+                description=args.description,
                 assume_yes=args.assume_yes,
                 flags=flags)
 
@@ -277,18 +270,17 @@ def main(argv=sys.argv[1:]):
         Pattern(args.pattern).remove(args.assume_yes)
 
     elif args.dest == MOVE:
+        # TODO: this kind of validation should occur within the classes
         if not Pattern(args.old).runs():
-            no_match(args.old, db_path=Route.cfg.db_path)
+            no_match(args.old, db_path=DBPath.cfg.db_path)
         Pattern(args.old).move(
             dest=Pattern(args.new),
             kill_tmux=args.kill_tmux,
             assume_yes=args.assume_yes)
 
     elif args.dest == LIST:
-        if args.pattern:
-            pattern = Pattern(args.pattern)
-        else:
-            pattern = Pattern('.')
+        # TODO: again, None patterns should be converted to '.' inside the class
+        pattern = args.pattern if args.pattern else Pattern('.')
         if args.porcelain:
             print(pattern.descendant_strings())
         else:
@@ -300,6 +292,7 @@ def main(argv=sys.argv[1:]):
     elif args.dest == LOOKUP:
         pattern = Pattern(args.pattern)
         runs = pattern.runs()
+        # TODO: Pattern should handle this kind of logic
         if len(runs) == 1:
             print(pattern.lookup(args.key)[0])
         else:
@@ -307,6 +300,7 @@ def main(argv=sys.argv[1:]):
                 print("{}: {}".format(run.path, value))
 
     elif args.dest == CHDESCRIPTION:
+        # TODO: Run should check whether things exist
         Run(args.path).chdescription(args.description)
 
     elif args.dest == REPRODUCE:

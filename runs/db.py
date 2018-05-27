@@ -2,9 +2,10 @@ import pickle
 import shutil
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Optional
 
 import yaml
-from anytree import NodeMixin, RenderTree
+from anytree import NodeMixin, RenderTree, Node
 from anytree.exporter import DictExporter
 from anytree.importer import DictImporter
 from tabulate import tabulate
@@ -12,35 +13,23 @@ from tabulate import tabulate
 from runs.util import NAME, ROOT_PATH, _exit, get_permission
 
 
-def read(db_path: Path):
-    db_path = Path(db_path)
-    if db_path.exists():
-        with db_path.open('rb') as f:
-            data = pickle.load(f)
-        return DictImporter().import_(data)
-    return None
+class DataBase:
+    def __init__(self, path: Path):
+        assert isinstance(path, Path)
+        self.path = path
+
+    def read(self) -> Optional[NodeMixin]:
+        with self.path.open('rb') as f:
+            return DictImporter().import_(pickle.load(f))
+
+    def write(self, tree) -> None:
+        assert isinstance(tree, NodeMixin)
+        data = DictExporter().export(tree)
+        with self.path.open('wb') as f:
+            pickle.dump(data, f)
 
 
-def name_first(attrs):
-    return [t for t in attrs if t[0] == NAME] + \
-           [t for t in attrs if t[0] != NAME]
-
-
-def write(tree, db_path):
-    assert isinstance(tree, NodeMixin)
-    data = DictExporter().export(tree)
-    with Path(db_path).open('wb') as f:
-        pickle.dump(data, f)
-
-
-def tree_string(tree=None, db_path=None, print_attrs=False):
-    if not tree and not db_path:
-        raise ValueError('Either tree or db_path must be specified.')
-    if db_path:
-        tree = read(db_path)
-    if tree is None:
-        return ROOT_PATH
-    assert isinstance(tree, NodeMixin)
+def tree_string(tree: NodeMixin, print_attrs=True):
     string = ''
     for pre, fill, node in RenderTree(tree):
         public_attrs = {
