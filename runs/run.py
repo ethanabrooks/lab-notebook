@@ -3,6 +3,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+import itertools
 from anytree import AnyNode
 from anytree.exporter import DictExporter
 
@@ -24,7 +25,7 @@ class Run(runs.route.Route):
         ]
 
     # Commands
-    def new(self, command, description, assume_yes):
+    def new(self, command, description, assume_yes, flags):
         # Check if repo is dirty
         if dirty_repo():
             prompt = "Repo is dirty. You should commit before run. Run anyway?"
@@ -43,7 +44,7 @@ class Run(runs.route.Route):
         self.mkdirs()
 
         # process info
-        full_command = self.build_command(command)
+        full_command = self.build_command(command, flags)
 
         prompt = 'Edit the description of this run: (Do not edit the line or above.)'
         if description is None:
@@ -71,10 +72,10 @@ class Run(runs.route.Route):
         self.print(highlight('List active:'))
         self.print('tmux list-session')
         self.print(highlight('Attach:'))
-        self.print('tmux attach -t', self.path)
+        self.print('tmux attach -t', self.tmux_name(self.path))
 
-    def build_command(self, command):
-        for flag in self.cfg.flags:
+    def build_command(self, command, flags):
+        for flag in flags:
             flag = self.interpolate_keywords(flag)
             command += ' ' + flag
         return self.cfg.prefix + command
@@ -121,19 +122,25 @@ class Run(runs.route.Route):
                 key, self.keys))
 
     # tmux
+    @staticmethod
+    def tmux_name(name):
+        return name.replace('.', ',').replace(':', ';')
+
     def kill_tmux(self):
-        cmd('tmux kill-session -t'.split() + [self.path], fail_ok=True)
+        cmd('tmux kill-session -t'.split() + [self.tmux_name(self.path)], fail_ok=True)
 
     def new_tmux(self, window_name, main_cmd):
         self.kill_tmux()
+        tmux_sess_name = self.tmux_name(self.path)
         subprocess.check_call(
-            'tmux new -d -s'.split() + [self.path, '-n', window_name])
+            'tmux new -d -s'.split() + [tmux_sess_name, '-n', window_name])
         cd_cmd = 'cd ' + str(Path.cwd())
         for command in [cd_cmd, main_cmd]:
-            cmd('tmux send-keys -t'.split() + [self.path, command, 'Enter'])
+            cmd('tmux send-keys -t'.split() + [tmux_sess_name, command, 'Enter'])
 
     def rename_tmux(self, new):
-        cmd('tmux rename-session -t '.split() + [self.path, new], fail_ok=True)
+        names = [self.tmux_name(n) for n in [self.path, new]]
+        cmd('tmux rename-session -t '.split() + names, fail_ok=True)
 
     def chdescription(self, new_description):
         with self.open() as node:

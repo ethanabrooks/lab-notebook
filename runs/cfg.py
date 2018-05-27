@@ -24,5 +24,12 @@ class Cfg:
         self.prefix = prefix.replace('~', str(Path('~').expanduser())) + ' '
         self.dir_names = dir_names.split() if dir_names else []
         self.hidden_columns = hidden_columns.split() if hidden_columns else []
-        self.flags = flags
         self.quiet = quiet
+
+        self.flags = []
+        for flag in flags:
+            try:
+                f, values = flag.split('=')
+                self.flags.append(['{}={}'.format(f, v) for v in values.split('|')])
+            except ValueError:
+                self.flags.append([f.split('|') for f in flags])

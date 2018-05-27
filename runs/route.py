@@ -11,7 +11,7 @@ from runs.util import ROOT_PATH, SEP, _exit, _print, prune_empty
 class Route:
     """
     A Route is to a Run as a path is to a file in *nix.
-    A Route makes no assumptions about whether it actually points to anything.
+    A Route makes no assumptions about whether what it points to exists.
     """
     cfg = None
 

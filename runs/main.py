@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 import inspect
+import itertools
 import os
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
-from pprint import pprint
 
 from runs.cfg import Cfg
-from runs.db import killall, no_match, tree_string
+from runs.db import killall, no_match
 from runs.pattern import Pattern
 from runs.route import Route
 from runs.run import Run
@@ -257,14 +257,21 @@ def main(argv=sys.argv[1:]):
         description = args.description
         if description == 'commit-message':
             description = cmd('git log -1 --pretty=%B'.split())
-        Run(args.path).new(
-            command=args.command,
-            description=description,
-            assume_yes=args.assume_yes)
-        if args.summary_path:
-            from runs.tensorflow_util import summarize_run
-            path = summarize_run(args.path, args.summary_path)
-            print('\nWrote summary to', path)
+        flag_combinations = list(itertools.product(*Route.cfg.flags))
+        for flags in flag_combinations:
+            path = args.path
+            if len(flag_combinations) > 1:
+                path += '_' + '_'.join(f.lstrip('-') for f in flags)
+            Run(path).new(
+                command=args.command,
+                description=description,
+                assume_yes=args.assume_yes,
+                flags=flags)
+
+            # if args.summary_path:
+            #     from runs.tensorflow_util import summarize_run
+            #     path = summarize_run(args.path, args.summary_path)
+            #     print('\nWrote summary to', path)
 
     elif args.dest == REMOVE:
         Pattern(args.pattern).remove(args.assume_yes)
