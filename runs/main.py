@@ -257,11 +257,7 @@ def main(argv=sys.argv[1:]):
         description = args.description
         if description == 'commit-message':
             description = cmd('git log -1 --pretty=%B'.split())
-        flag_combinations = list(itertools.product(*Route.cfg.flags))
-        for flags in flag_combinations:
-            path = args.path
-            if len(flag_combinations) > 1:
-                path += '_' + '_'.join(f.lstrip('-') for f in flags)
+        for path, flags in Route.cfg.generate_runs(args.path):
             Run(path).new(
                 command=args.command,
                 description=description,
