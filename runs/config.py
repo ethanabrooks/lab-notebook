@@ -5,7 +5,7 @@ import itertools
 from runs.util import _exit
 
 
-class Cfg:
+class Config:
     def __init__(self,
                  root,
                  db_path,
@@ -14,11 +14,11 @@ class Cfg:
                  prefix=None,
                  flags=None,
                  quiet=False):
-        self.root = Path(root).expanduser()
+        self.root_path = Path(root).expanduser()
         self.db_path = Path(db_path).expanduser()
         should_be_absolute = '`{}` ({}) should be absolute.'
-        if not self.root.is_absolute():
-            _exit(should_be_absolute.format('root', self.root))
+        if not self.root_path.is_absolute():
+            _exit(should_be_absolute.format('root', self.root_path))
         if not self.db_path.is_absolute():
             _exit(should_be_absolute.format('db_path', self.db_path))
         if not prefix:

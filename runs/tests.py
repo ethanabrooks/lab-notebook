@@ -11,7 +11,7 @@ from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, eq_, ok_)
 
 from runs import main
-from runs.cfg import Cfg
+from runs.config import Config
 from runs.db import read
 from runs.pattern import Pattern
 from runs.run import Run
@@ -35,7 +35,7 @@ DESCRIPTION = 'test new command'
 SEP = '/'
 SUBDIR = 'subdir'
 TEST_RUN = 'test_run'
-DEFAULT_CFG = Cfg(root=ROOT, db_path=DB_PATH, quiet=True)
+DEFAULT_CFG = Config(root=ROOT, db_path=DB_PATH, quiet=True)
 
 
 def sessions():

@@ -6,7 +6,7 @@ from anytree import (ChildResolverError, NodeMixin, PreOrderIter, Resolver,
 
 from runs import db
 from runs.db import tree_string
-from runs.db_path import DBPath
+from runs.runs_path import DBPath
 from runs.run import Run
 from runs.util import get_permission, is_run_node
 

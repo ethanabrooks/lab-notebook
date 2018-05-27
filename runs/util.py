@@ -5,6 +5,7 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import yaml
 from anytree import NodeMixin, RenderTree
@@ -43,9 +44,7 @@ def prune_empty(path):
         prune_empty(path.parent)
 
 
-def prune_leaves(node):
-    assert isinstance(node, (NodeMixin, type(None)))
-
+def prune_leaves(node: Optional[NodeMixin]):
     # if the node has children or is a run node, terminate
     if node is None or node.children:
         return node

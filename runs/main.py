@@ -6,14 +6,14 @@ import os
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
 
-from runs.cfg import Cfg
+from runs.config import Config
 from runs.db import killall, no_match
 from runs.pattern import Pattern
-from runs.db_path import DBPath
+from runs.runs_path import RunsPath
 from runs.run import Run
 from runs.util import (CHDESCRIPTION, DEFAULT, FLAGS, KILLALL, LIST, LOOKUP,
                        MAIN, MOVE, NEW, PATH, PATTERN, REMOVE, REPRODUCE,
-                       TABLE, cmd, search_ancestors)
+                       TABLE, cmd, search_ancestors, ROOT_PATH)
 
 
 def nonempty_string(value):
@@ -227,24 +227,18 @@ def main(argv=sys.argv[1:]):
     kwargs = {
         k: v
         for k, v in vars(args).items()
-        if k in inspect.signature(Cfg).parameters
+        if k in inspect.signature(Config).parameters
     }
-    kwargs[FLAGS] = {
-        k + '=' + v if v else k
-        for k, v in (config[FLAGS].items() if FLAGS in config else {})
-    }
+    # kwargs[FLAGS] = {
+    #     k + '=' + v if v else k
+    #     for k, v in (config[FLAGS].items() if FLAGS in config else {})
+    # }
 
-    DBPath.cfg = Cfg(**kwargs)
+    # if hasattr(args, PATTERN):
+    #     if args.pattern and not Pattern(args.pattern).runs():
+    #         no_match(args.pattern, db_path=DBPath.cfg.db_path)
 
-    if hasattr(args, PATTERN):
-        if args.pattern and not Pattern(args.pattern).runs():
-            no_match(args.pattern, db_path=DBPath.cfg.db_path)
-
-    if args.dest == KILLALL:
-        killall(DBPath.cfg.db_path, DBPath.cfg.root)
-        exit()
-
-    elif config_path is None:
+    if config_path is None:
         print('Config file not found. Using default settings:\n')
         for k, v in config[DEFAULT].items():
             print('{:20}{}'.format(k + ':', v))
@@ -253,13 +247,22 @@ def main(argv=sys.argv[1:]):
         print(msg)
         print('-' * len(msg))
 
-    if args.dest == NEW:
-        for path, flags in DBPath.cfg.generate_runs(args.path):
-            Run(path).new(
-                command=args.command,
-                description=args.description,
-                assume_yes=args.assume_yes,
-                flags=flags)
+    cfg = Config(**kwargs)
+    root = RootNode(cfg.root_path)
+
+    if args.dest == KILLALL:
+        print('Remove current runs?')
+        with root.open('w') as r:
+            RunsPath('.', root=r, cfg=cfg).rmdirs()
+
+    elif args.dest == NEW:
+        with root.open('w') as r:
+            for path, flags in cfg.generate_runs(args.path):
+                Run(path, root, cfg).new(
+                    command=args.command,
+                    description=args.description,
+                    assume_yes=args.assume_yes,
+                    flags=flags)
 
             # if args.summary_path:
             #     from runs.tensorflow_util import summarize_run
@@ -267,27 +270,29 @@ def main(argv=sys.argv[1:]):
             #     print('\nWrote summary to', path)
 
     elif args.dest == REMOVE:
-        Pattern(args.pattern).remove(args.assume_yes)
+        with root.open('w') as r:
+            RunsPath(args.pattern, r, cfg).rmdirs(args.assume_yes)
 
     elif args.dest == MOVE:
-        # TODO: this kind of validation should occur within the classes
-        if not Pattern(args.old).runs():
-            no_match(args.old, db_path=DBPath.cfg.db_path)
-        Pattern(args.old).move(
-            dest=Pattern(args.new),
-            kill_tmux=args.kill_tmux,
-            assume_yes=args.assume_yes)
+        with root.open('w') as r:
+            # TODO: this kind of validation should occur within the classes
+            # if not RunsPath(args.old).runs():
+            #     no_match(args.old, db_path=DBPath.cfg.db_path)
+            RunsPath(args.old, r, cfg).move(
+                dest=RunsPath(args.new),
+                kill_tmux=args.kill_tmux,
+                assume_yes=args.assume_yes)
 
     elif args.dest == LIST:
         # TODO: again, None patterns should be converted to '.' inside the class
-        pattern = args.pattern if args.pattern else Pattern('.')
-        if args.porcelain:
-            print(pattern.descendant_strings())
-        else:
-            print(pattern.tree_string(args.show_attrs))
+        # pattern = args.pattern if args.pattern else Pattern('.')
+        with root.open('r') as r:
+            RunsPath(args.pattern, r, cfg).pretty_print(args.porcelain, args.show_attrs)
 
     elif args.dest == TABLE:
-        print(Pattern(args.pattern).table(args.column_width))
+        with root.open('r') as r:
+            RunsPath(args.pattern, r, cfg).pretty_print(args.porcelain, args.show_attrs)
+            print(Pattern(args.pattern).table(args.column_width))
 
     elif args.dest == LOOKUP:
         pattern = Pattern(args.pattern)
@@ -304,7 +309,7 @@ def main(argv=sys.argv[1:]):
         Run(args.path).chdescription(args.description)
 
     elif args.dest == REPRODUCE:
-        print(Run(args.path).reproduce(args.no_overwrite))
+        print(Run(args.path).reproduce())
 
     else:
         raise RuntimeError("'{}' is not a supported dest.".format(args.dest))
