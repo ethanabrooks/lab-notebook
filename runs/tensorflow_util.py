@@ -1,5 +1,4 @@
 import tensorflow as tf
-
 from runs.run import Run
 
 

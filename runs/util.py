@@ -4,9 +4,8 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
-from anytree import NodeMixin
 from termcolor import colored
 
 if sys.version_info.major == 2:
@@ -42,14 +41,14 @@ def prune_empty(path):
         prune_empty(path.parent)
 
 
-def prune_leaves(node: Optional[NodeMixin]):
-    # if the node has children or is a run node, terminate
-    if node is None or node.children:
-        return node
-
-    parent = node.parent
-    node.parent = None
-    prune_leaves(parent)
+# def prune_leaves(node: Optional[NodeMixin]):
+#     # if the node has children or is a run node, terminate
+#     if node is None or node.children:
+#         return node
+#
+#     parent = node.parent
+#     node.parent = None
+#     prune_leaves(parent)
 
 
 def get_permission(*question):
@@ -68,7 +67,6 @@ def get_permission(*question):
 
 
 def is_run_node(node):
-    assert isinstance(node, NodeMixin)
     return hasattr(node, COMMIT)
 
 
@@ -139,7 +137,6 @@ def generate_runs(path: str, flags: List[str]):
         yield path, flags
     if not flag_combinations:
         yield path, []
-
 
 
 PATH = 'path'

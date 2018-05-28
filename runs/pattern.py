@@ -1,17 +1,13 @@
 from contextlib import contextmanager
 from copy import deepcopy
 
-from anytree import (ChildResolverError, NodeMixin, PreOrderIter, Resolver,
-                     findall)
-
 from runs import db
 from runs.db import tree_string
-from runs.runs_path import DBPath
 from runs.run import Run
 from runs.util import get_permission, is_run_node
 
 
-class Pattern(DBPath):
+class Pattern:
     """
     A Pattern is a Route that may pattern match to multiple objects.
     """

@@ -1,6 +1,5 @@
-from pathlib import Path
-
 import itertools
+from pathlib import Path
 
 from runs.util import _exit
 
@@ -32,7 +31,7 @@ class Config:
         for flag in flags:
             try:
                 f, values = flag.split('=')
-                self.flags.append(['{}={}'.format(f, v) for v in values.split('|')])
+                self.flags.append(
+                    ['{}={}'.format(f, v) for v in values.split('|')])
             except ValueError:
                 self.flags.append([f.split('|') for f in flags])
-

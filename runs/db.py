@@ -3,15 +3,11 @@ import shutil
 import sqlite3
 from collections import namedtuple
 from contextlib import contextmanager
-from pathlib import PurePath
+from pathlib import Path, PurePath
 from typing import List, Tuple, Union
 
-import yaml
-from anytree import NodeMixin, RenderTree
-from pathlib import Path
-from tabulate import tabulate
-
 from runs.util import _exit, get_permission
+from tabulate import tabulate
 
 
 @contextmanager
@@ -22,8 +18,11 @@ def open_table(path):
     conn.close()
 
 
-class RunEntry(namedtuple('RunEntry', ['path', 'full_command', 'commit', 'datetime',
-                                       'description', 'input_command'])):
+class RunEntry(
+    namedtuple('RunEntry', [
+        'path', 'full_command', 'commit', 'datetime', 'description',
+        'input_command'
+    ])):
     __slots__ = ()
 
     def __str__(self):
@@ -41,6 +40,21 @@ class RunEntry(namedtuple('RunEntry', ['path', 'full_command', 'commit', 'dateti
 
 
 PathLike = Union[str, PurePath, Path]
+
+
+class Conn:
+    def  __init__(self, conn):
+        self.conn = conn
+
+    def execute(self, x):
+        print(x)
+        return self.conn.execute(x)
+
+    def commit(self):
+        return self.conn.commit()
+
+    def close(self):
+        return self.conn.close()
 
 
 class Table:
@@ -66,10 +80,12 @@ class Table:
         self.conn.close()
 
     def condition(self, pattern) -> str:
-        return "FROM {} WHERE {} LIKE '{}'".format(self.table_name, self.key, pattern)
+        return "FROM {} WHERE {} LIKE '{}'".format(self.table_name, self.key,
+                                                   pattern)
 
     def __contains__(self, pattern: PathLike) -> bool:
-        return bool(self.conn.execute(f"""
+        return bool(
+            self.conn.execute(f"""
         SELECT COUNT(*) {self.condition(pattern)}
         """).fetchone()[0])
 
@@ -85,9 +101,11 @@ class Table:
         """)
 
     def __getitem__(self, pattern: PathLike) -> List[RunEntry]:
-        return [RunEntry(*e) for e in self.conn.execute(f"""
+        return [
+            RunEntry(*e) for e in self.conn.execute(f"""
         SELECT * {self.condition(pattern)}
-        """).fetchall()]
+        """).fetchall()
+            ]
 
     def __delitem__(self, pattern: PathLike):
         self.conn.execute(f"""
@@ -100,7 +118,8 @@ class Table:
         """)
 
 
-def tree_string(tree: NodeMixin, print_attrs=True):
+def tree_string(tree, print_attrs=True):
+    raise NotImplemented
     string = ''
     for pre, fill, node in RenderTree(tree):
         public_attrs = {
@@ -109,8 +128,9 @@ def tree_string(tree: NodeMixin, print_attrs=True):
             if not k.startswith('_') and not k == 'name'
             }
         if public_attrs:
-            pnode = yaml.dump(
-                public_attrs, default_flow_style=False).split('\n')
+            pass
+            # pnode = yaml.dump(
+            #     public_attrs, default_flow_style=False).split('\n')
         else:
             pnode = ''
         string += "{}{}\n".format(pre, node.name)
