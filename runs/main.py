@@ -82,9 +82,7 @@ def main(argv=sys.argv[1:]):
     parser.add_argument(
         '--dir-names',
         type=str,
-        help=
-        "directories to create and sync automatically with each run"
-    )
+        help="directories to create and sync automatically with each run")
     parser.add_argument(
         '--quiet', '-q', action='store_true', help='Suppress print output')
     parser.add_argument(
@@ -133,8 +131,8 @@ def main(argv=sys.argv[1:]):
         MOVE,
         help='Move a run from OLD to NEW. '
         'Functionality is identical to `mkdir -p` except that non-existent dirs'
-             'are created and empty dirs are removed automatically'
-             'The program will show you planned '
+        'are created and empty dirs are removed automatically'
+        'The program will show you planned '
         'moves and ask permission before changing anything.')
     move_parser.add_argument(
         'source',

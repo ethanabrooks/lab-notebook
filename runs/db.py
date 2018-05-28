@@ -19,10 +19,10 @@ def open_table(path):
 
 
 class RunEntry(
-    namedtuple('RunEntry', [
-        'path', 'full_command', 'commit', 'datetime', 'description',
-        'input_command'
-    ])):
+        namedtuple('RunEntry', [
+            'path', 'full_command', 'commit', 'datetime', 'description',
+            'input_command'
+        ])):
     __slots__ = ()
 
     def __str__(self):
@@ -43,7 +43,7 @@ PathLike = Union[str, PurePath, Path]
 
 
 class Conn:
-    def  __init__(self, conn):
+    def __init__(self, conn):
         self.conn = conn
 
     def execute(self, x):
@@ -105,7 +105,7 @@ class Table:
             RunEntry(*e) for e in self.conn.execute(f"""
         SELECT * {self.condition(pattern)}
         """).fetchall()
-            ]
+        ]
 
     def __delitem__(self, pattern: PathLike):
         self.conn.execute(f"""
@@ -126,7 +126,7 @@ def tree_string(tree, print_attrs=True):
             k: v
             for k, v in vars(node).items()
             if not k.startswith('_') and not k == 'name'
-            }
+        }
         if public_attrs:
             pass
             # pnode = yaml.dump(
@@ -153,9 +153,9 @@ def table(runs, hidden_columns, column_width):
             return '_'
 
     keys = set([
-                   key for run in runs for key in vars(run.node())
-                   if not key.startswith('_')
-                   ])
+        key for run in runs for key in vars(run.node())
+        if not key.startswith('_')
+    ])
     headers = sorted(set(keys) - set(hidden_columns))
     table = [[run.path] + [get_values(run, key) for key in headers]
              for run in sorted(runs, key=lambda r: r.path)]

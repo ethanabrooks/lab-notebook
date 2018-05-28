@@ -6,9 +6,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 
 from nose.tools import (assert_false, assert_in, assert_is_instance,
-                        assert_not_in, assert_raises, eq_, ok_)
-from nose.tools import assert_true
-
+                        assert_not_in, assert_raises, assert_true, eq_, ok_)
 from runs import main
 from runs.db import Table
 from runs.util import CHDESCRIPTION, NAME, cmd
@@ -95,7 +93,7 @@ class ParamGeneratorWithPatterns(ParamGenerator):
         super().__init__(paths=['%', 'subdir/%', 'test%'])
 
 
-#TODO I don't like this.
+# TODO I don't like this.
 def db_entry(path):
     with Table(DB_PATH) as table:
         return table[path][0]
@@ -202,13 +200,15 @@ def test_rm():
 
 
 def check_list_happy(pattern, print_attrs):
-    #TODO
+    # TODO
     string = cmd(f'runs ls --show-attrs {pattern}'.split())
     # if print_attrs:
     #     assert_in('test_run', string)
     #     assert_in('commit', string)
     # else:
     #     pass
+
+
 #         eq_(string, """\
 # .
 # └── test_run
@@ -216,7 +216,7 @@ def check_list_happy(pattern, print_attrs):
 
 
 def check_list_sad(pattern):
-    #TODO
+    # TODO
     string = cmd(f'runs ls --show-attrs {pattern}'.split())
     # eq_(string, '.\n')
 
@@ -240,7 +240,7 @@ def check_table(table):
 
 def test_table():
     pass
-    #TODO
+    # TODO
     # with _setup(TEST_RUN):
     #     yield check_table, cmd(['runs', 'table'])
 
@@ -248,8 +248,7 @@ def test_table():
 def test_lookup():
     with _setup(TEST_RUN):
         for key, value in dict(
-                path=TEST_RUN,
-                description=DESCRIPTION,
+                path=TEST_RUN, description=DESCRIPTION,
                 input_command=COMMAND).items():
             eq_(cmd(f'runs lookup {key} {TEST_RUN}'.split()), value)
         with assert_raises(SystemExit):
@@ -316,7 +315,7 @@ def test_move_dirs():
         # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/sub1/test_run', 'sub1/test_run'
 
-    #here
+    # here
     with _setup('sub/test_run1'), _setup('sub/test_run2'):
         move('sub/%', 'new')
         # src is multi -> for each node match, move head into dest
@@ -341,7 +340,7 @@ def test_move_dirs():
 
     with _setup(
             'test_run1', flags=['--run1']), _setup(
-        'test_run2', flags=['run2']):
+                'test_run2', flags=['run2']):
         move('test_run1', 'test_run2')
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'
