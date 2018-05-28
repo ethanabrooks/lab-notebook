@@ -1,18 +1,13 @@
+import os
 import re
 import shutil
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import List
 
-from anytree import NodeMixin
-from anytree.exporter import DictExporter
-
-from runs.config import Config
-from runs.db import no_match
-from runs.run_node import RunNode
-from runs.runs_path import RunsPath
+from runs.db import no_match, Table, RunEntry
 from runs.tmux_session import TMUXSession
-from runs.util import COMMIT, DESCRIPTION, cmd, dirty_repo, get_permission, highlight, last_commit, prune_leaves, string_from_vim, \
+from runs.util import cmd, dirty_repo, get_permission, highlight, last_commit, string_from_vim, \
     prune_empty, _print, _exit
 
 
@@ -20,26 +15,23 @@ class Run:
     """
     A Run aggregates the tmux process, the directories, and the db entry relating to a run.
     """
-    def __init__(self, path: str, root_node: NodeMixin, cfg: Config):
-        self.path = RunsPath(path)
-        self.root_node = root_node
-        self.cfg = cfg
-        self.tmux = None
 
-    def node(self):
-        return self.path.node(self.root_node)
+    def __init__(self, table: Table, root: os.PathLike, path: os.PathLike,
+                 dir_names: List[str], quiet: bool):
+        self.tmux = TMUXSession(str(path))
+        self.root = PurePath(root)
+        self.path = PurePath(path)
+        self.table = table
+        self.dir_names = dir_names
+        self.quiet = quiet
+
+    def entry(self):
+        return self.table[self.path]
 
     def exists(self):
-        return self.node() is not None
+        return self.path in self.table
 
-    def keys(self):
-        return [
-            'command' if k is '_input_command' else k
-            for k in DictExporter().export(self.node()).keys()
-        ]
-
-    # Commands
-    def new(self, command, description, assume_yes, flags):
+    def new(self, prefix, command, flags, description, assume_yes):
         # Check if repo is dirty
         if dirty_repo():
             prompt = "Repo is dirty. You should commit before run. Run anyway?"
@@ -59,7 +51,7 @@ class Run:
         for flag in flags:
             flag = self.interpolate_keywords(flag)
             command += ' ' + flag
-        full_command = self.cfg.prefix + command
+        full_command = prefix + command
 
         # prompt = 'Edit the description of this run: (Do not edit the line or above.)'
         # if description is None:
@@ -70,18 +62,17 @@ class Run:
             description = cmd('git log -1 --pretty=%B'.split())
 
         # tmux
-        self.tmux = TMUXSession(str(self.path))
         self.tmux.new(description, full_command)
 
         # new db entry
-        RunNode(
-            name=self.path.stem,
+        self.table += RunEntry(
+            path=self.path,
             full_command=full_command,
             commit=last_commit(),
             datetime=datetime.now().isoformat(),
             description=description,
-            _input_command=command,
-            parent=self.root_node.add(self.path.parent))
+            input_command=command
+        )
 
         # print result
         self.print(highlight('Description:'))
@@ -102,16 +93,13 @@ class Run:
         return string
 
     def remove(self):
-        if self.exists():
-            self.tmux.kill()
-            self.rmdirs()
-            prune_leaves(self.node())
-        else:
-            self.exit_no_match()
+        self.tmux.kill()
+        self.rmdirs()
+        del self.table[self.path]
 
     def dir_paths(self) -> List[Path]:
-        return [Path(self.cfg.root, dir_name, self.path)
-                for dir_name in self.cfg.dir_names]
+        return [Path(self.root, dir_name, self.path)
+                for dir_name in self.dir_names]
 
     # file I/O
     def mkdirs(self, exist_ok: bool = True) -> None:
@@ -140,62 +128,41 @@ class Run:
             self.tmux.kill()
         else:
             self.tmux.rename(dest.path.stem)
-        node = self.node()
-        node.name = dest.head
-        old_parent = node.parent
-        node.parent = self.root_node.add(dest.parent)
-        prune_leaves(old_parent)
-
-    def lookup(self, key):
-        if key == 'command':
-            key = '_input_command'
-        if key not in self.keys():
-            self.exit("`{}` not a valid key. Valid keys are {}.".format(key, self.keys))
-        if not self.exists():
-            no_match(self.path, db_path=self.cfg.db_path)
-        return getattr(self.node(), key)
+        # noinspection PyProtectedMember
+        self.table[self.path] = self.entry()._replace(path=dest)
 
     def chdescription(self, new_description):
-        node = self.node()
         if new_description is None:
             new_description = string_from_vim('Edit description',
-                                              node.description)
-        node.description = new_description
+                                              self.table[self.path].description)
+        # noinspection PyProtectedMember
+        self.table |= self.entry()._replace(description=new_description)
 
     def reproduce(self):
+        entry = self.entry()
         return 'To reproduce:\n' + \
-               highlight('git checkout {}\n'.format(self.lookup(COMMIT))) + \
+               highlight(f'git checkout {entry.commit}\n') + \
                highlight("runs new {} '{}' --description='Reproduce {}. "
                          "Original description: {}'".format(
-                             self.path, self.lookup('_input_command'), self.path, self.lookup(DESCRIPTION)))
+                   self.path, entry.input_command, self.path, entry.description))
 
     def print(self, *msg):
-        _print(*msg, quiet=self.cfg.quiet)
+        _print(*msg, quiet=self.quiet)
 
     def exit(self, *msg):
-        _exit(*msg, quiet=self.cfg.quiet)
+        _exit(*msg, quiet=self.quiet)
 
     def exit_already_exists(self):
         self.exit('{} already exists.'.format(self))
 
     def exit_no_match(self):
-        no_match(self.path, self.root_node)
+        no_match(self.path, self.root)
 
     def pretty_print(self):
-        return """
-{}
-{}
-Command
--------
-{}
-Commit
-------
-{}
-Date/Time
----------
-{}
-Description
------------
-{}
-""".format(self.path, '=' * len(self.path.parts),
-           *map(self.lookup, ['full_command', 'commit', 'datetime', 'description']))
+        header = f'{self.path}\n{"=" * len(str(self.path))}'
+        # noinspection PyProtectedMember
+        entry_items = self.entry()._asdict().items()
+        attributes = '\n'.join([f'{k}\n{"-" * len(k)}\n{v}' for
+                      k, v in entry_items])
+        return header + attributes
+

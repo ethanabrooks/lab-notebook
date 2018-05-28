@@ -36,9 +36,3 @@ class Config:
             except ValueError:
                 self.flags.append([f.split('|') for f in flags])
 
-    def generate_runs(self, path: str):
-        flag_combinations = list(itertools.product(*self.flags))
-        for flags in flag_combinations:
-            if len(flag_combinations) > 1:
-                path += '_' + '_'.join(f.lstrip('-') for f in flags)
-            yield path, flags

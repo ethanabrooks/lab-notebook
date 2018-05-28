@@ -5,8 +5,9 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
+import itertools
 import yaml
 from anytree import NodeMixin, RenderTree
 from termcolor import colored
@@ -131,6 +132,16 @@ def string_from_vim(prompt, string=None):
         prompt, string = file_contents.split(delimiter)
     path.unlink()
     return string
+
+
+def generate_runs(path: str, flags: List[str]):
+    flag_combinations = list(itertools.product(*flags))
+    for flags in flag_combinations:
+        if len(flag_combinations) > 1:
+            path += '_' + '_'.join(f.lstrip('-') for f in flags)
+        yield path, flags
+    if not flag_combinations:
+        yield path, []
 
 
 PATH = 'path'

@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 import argparse
-import inspect
-import itertools
 import os
+import shutil
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
 
-from runs.config import Config
-from runs.db import killall, no_match
-from runs.pattern import Pattern
-from runs.runs_path import RunsPath
+from pathlib import Path
+
+from runs.db import open_table
 from runs.run import Run
-from runs.util import (CHDESCRIPTION, DEFAULT, FLAGS, KILLALL, LIST, LOOKUP,
+from runs.runs_path import RunsPath
+from runs.util import (CHDESCRIPTION, DEFAULT, KILLALL, LIST, LOOKUP,
                        MAIN, MOVE, NEW, PATH, PATTERN, REMOVE, REPRODUCE,
-                       TABLE, cmd, search_ancestors, ROOT_PATH)
+                       TABLE, search_ancestors, generate_runs)
 
 
 def nonempty_string(value):
@@ -28,16 +27,16 @@ def main(argv=sys.argv[1:]):
     config_filename = '.runsrc'
     config_path = search_ancestors(config_filename)
     config[MAIN] = {
-        # Custom path to directory containing runs database (default, `runs.pkl`). Should not need to be
+        # Custom path to directory containing runs database (default, `runs.db`). Should not need to be
         # specified for local runs but probably required for accessing databses remotely.
-        'root': os.getcwd() + '/.runs',
+        'root': Path('.runs').absolute(),
 
         # path to YAML file storing run database information.
-        'db_path': os.getcwd() + '/runs.pkl',
+        'db_path': Path('runs.db').absolute(),
 
         # directories that runs should create
-        'dir_names': None,
-        'prefix': None,
+        'dir_names': [],
+        'prefix': '',
     }
     if config_path:
         config.read(str(config_path))
@@ -66,7 +65,7 @@ def main(argv=sys.argv[1:]):
         type=nonempty_string)
     parser.add_argument(
         '--prefix',
-        type=nonempty_string,
+        type=str,
         help="String to preprend to all main commands, for example, sourcing a virtualenv")
     parser.add_argument(
         '--quiet', '-q', action='store_true', help='Suppress print output')
@@ -89,12 +88,12 @@ def main(argv=sys.argv[1:]):
         '-y',
         action='store_true',
         help='Don\'t ask permission before overwriting '
-        'existing entries.')
+             'existing entries.')
     new_parser.add_argument(
         '--description',
         help='Description of this run. Explain what this run was all about or '
-        'just write whatever your heart desires. If this argument is `commit-message`,'
-        'it will simply use the last commit message.')
+             'just write whatever your heart desires. If this argument is `commit-message`,'
+             'it will simply use the last commit message.')
     new_parser.add_argument(
         '--summary-path',
         help='Path where Tensorflow summary of run is to be written.')
@@ -103,8 +102,8 @@ def main(argv=sys.argv[1:]):
     remove_parser = subparsers.add_parser(
         REMOVE,
         help="Delete runs from the database (and all associated tensorboard "
-        "and checkpoint files). Don't worry, the script will ask for "
-        "confirmation before deleting anything.")
+             "and checkpoint files). Don't worry, the script will ask for "
+             "confirmation before deleting anything.")
     remove_parser.add_argument(
         PATTERN,
         help=
@@ -121,7 +120,7 @@ def main(argv=sys.argv[1:]):
     move_parser = subparsers.add_parser(
         MOVE,
         help='Move a run from OLD to NEW. The program will show you planned '
-        'moves and ask permission before changing anything')
+             'moves and ask permission before changing anything')
     move_parser.add_argument(
         'old',
         help='Name of run to rename.' + path_clarification,
@@ -155,7 +154,7 @@ def main(argv=sys.argv[1:]):
         '--porcelain',
         action='store_true',
         help='Print list of path names without tree '
-        'formatting.')
+             'formatting.')
     set_defaults(list_parser, LIST)
 
     table_parser = subparsers.add_parser(
@@ -174,7 +173,7 @@ def main(argv=sys.argv[1:]):
         type=int,
         default=100,
         help='Maximum width of table columns. Longer values will '
-        'be truncated and appended with "...".')
+             'be truncated and appended with "...".')
     set_defaults(table_parser, TABLE)
 
     lookup_parser = subparsers.add_parser(
@@ -197,13 +196,13 @@ def main(argv=sys.argv[1:]):
         '--description',
         default=None,
         help='New description. If None, script will prompt for '
-        'a description in Vim')
+             'a description in Vim')
     set_defaults(chdesc_parser, CHDESCRIPTION)
 
     reproduce_parser = subparsers.add_parser(
         REPRODUCE,
         help='Print commands to reproduce a run. This command '
-        'does not have side-effects (besides printing).')
+             'does not have side-effects (besides printing).')
     reproduce_parser.add_argument(PATH)
     reproduce_parser.add_argument(
         '--description',
@@ -216,103 +215,93 @@ def main(argv=sys.argv[1:]):
         '--no-overwrite',
         action='store_true',
         help='If this flag is given, a timestamp will be '
-        'appended to any new name that is already in '
-        'the database.  Otherwise this entry will '
-        'overwrite any entry with the same name. ')
+             'appended to any new name that is already in '
+             'the database.  Otherwise this entry will '
+             'overwrite any entry with the same name. ')
     set_defaults(reproduce_parser, REPRODUCE)
 
     subparsers.add_parser(KILLALL, help='Destroy all runs.')
     args = parser.parse_args(args=argv)
 
-    kwargs = {
-        k: v
-        for k, v in vars(args).items()
-        if k in inspect.signature(Config).parameters
-    }
-    # kwargs[FLAGS] = {
-    #     k + '=' + v if v else k
-    #     for k, v in (config[FLAGS].items() if FLAGS in config else {})
-    # }
-
-    # if hasattr(args, PATTERN):
-    #     if args.pattern and not Pattern(args.pattern).runs():
-    #         no_match(args.pattern, db_path=DBPath.cfg.db_path)
-
     if config_path is None:
         print('Config file not found. Using default settings:\n')
-        for k, v in config[DEFAULT].items():
+        for k, v in config[MAIN].items():
             print('{:20}{}'.format(k + ':', v))
         print()
         msg = 'Writing default settings to ' + config_filename
         print(msg)
         print('-' * len(msg))
 
-    cfg = Config(**kwargs)
-    root = RootNode(cfg.root_path)
-
-    if args.dest == KILLALL:
-        print('Remove current runs?')
-        with root.open('w') as r:
-            RunsPath('.', root=r, cfg=cfg).rmdirs()
-
-    elif args.dest == NEW:
-        with root.open('w') as r:
-            for path, flags in cfg.generate_runs(args.path):
-                Run(path, root, cfg).new(
+    with open_table(args.db_path) as table:
+        run = Run(path=args.path, table=table,
+                  root=args.root,
+                  dir_names=args.dir_names,
+                  quiet=args.quiet
+                  )
+        if args.dest == NEW:
+            if 'flags' in config:
+                flag_values = config['flags'].values()
+            else:
+                flag_values = []
+            for path, flags in generate_runs(args.path, flag_values):
+                run.new(
+                    prefix=args.prefix,
                     command=args.command,
                     description=args.description,
                     assume_yes=args.assume_yes,
                     flags=flags)
 
-            # if args.summary_path:
-            #     from runs.tensorflow_util import summarize_run
-            #     path = summarize_run(args.path, args.summary_path)
-            #     print('\nWrote summary to', path)
+                # if args.summary_path:
+                #     from runs.tensorflow_util import summarize_run
+                #     path = summarize_run(args.path, args.summary_path)
+                #     print('\nWrote summary to', path)
 
-    elif args.dest == REMOVE:
-        with root.open('w') as r:
-            RunsPath(args.pattern, r, cfg).rmdirs(args.assume_yes)
+        elif args.dest == KILLALL:
+            print('Remove current runs?')
+            raise NotImplemented
+            shutil.rmtree(args.db_path)
+            del table
 
-    elif args.dest == MOVE:
-        with root.open('w') as r:
+        elif args.dest == REMOVE:
+            Run(path=args.patttern, **(dict(
+                table=table,
+                root=args.root,
+                dir_names=args.dir_names,
+                quiet=args.quiet
+            ))).remove()
+
+        elif args.dest == MOVE:
             # TODO: this kind of validation should occur within the classes
             # if not RunsPath(args.old).runs():
             #     no_match(args.old, db_path=DBPath.cfg.db_path)
-            RunsPath(args.old, r, cfg).move(
+            run.move(
                 dest=RunsPath(args.new),
-                kill_tmux=args.kill_tmux,
-                assume_yes=args.assume_yes)
+                kill_tmux=args.kill_tmux)
 
-    elif args.dest == LIST:
-        # TODO: again, None patterns should be converted to '.' inside the class
-        # pattern = args.pattern if args.pattern else Pattern('.')
-        with root.open('r') as r:
-            RunsPath(args.pattern, r, cfg).pretty_print(args.porcelain, args.show_attrs)
+        elif args.dest == LIST:
+            # TODO: again, None patterns should be converted to '.' inside the class
+            # pattern = args.pattern if args.pattern else Pattern('.')
+            if args.porcelain:
+                table.print_list(args.show_attrs)
+            else:
+                table.print_tree(args.show_attrs)
 
-    elif args.dest == TABLE:
-        with root.open('r') as r:
-            RunsPath(args.pattern, r, cfg).pretty_print(args.porcelain, args.show_attrs)
-            print(Pattern(args.pattern).table(args.column_width))
+        elif args.dest == TABLE:
+            table.pretty_table()
 
-    elif args.dest == LOOKUP:
-        pattern = Pattern(args.pattern)
-        runs = pattern.runs()
-        # TODO: Pattern should handle this kind of logic
-        if len(runs) == 1:
-            print(pattern.lookup(args.key)[0])
+        elif args.dest == LOOKUP:
+            for run in table[args.patttern]:
+                print(getattr(run, args.key))
+
+        elif args.dest == CHDESCRIPTION:
+            # TODO: Run should check whether things exist
+            run.chdescription(args.description)
+
+        elif args.dest == REPRODUCE:
+            print(run.reproduce())
+
         else:
-            for run, value in zip(runs, pattern.lookup(args.key)):
-                print("{}: {}".format(run.path, value))
-
-    elif args.dest == CHDESCRIPTION:
-        # TODO: Run should check whether things exist
-        Run(args.path).chdescription(args.description)
-
-    elif args.dest == REPRODUCE:
-        print(Run(args.path).reproduce())
-
-    else:
-        raise RuntimeError("'{}' is not a supported dest.".format(args.dest))
+            raise RuntimeError("'{}' is not a supported dest.".format(args.dest))
 
 
 if __name__ == '__main__':
