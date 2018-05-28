@@ -131,8 +131,11 @@ def main(argv=sys.argv[1:]):
 
     move_parser = subparsers.add_parser(
         MOVE,
-        help='Move a run from OLD to NEW. The program will show you planned '
-        'moves and ask permission before changing anything')
+        help='Move a run from OLD to NEW. '
+        'Functionality is identical to `mkdir -p` except that non-existent dirs'
+             'are created and empty dirs are removed automatically'
+             'The program will show you planned '
+        'moves and ask permission before changing anything.')
     move_parser.add_argument(
         'source',
         help='Name of run to rename.' + path_clarification,

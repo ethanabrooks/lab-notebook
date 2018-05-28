@@ -92,14 +92,12 @@ class ParamGeneratorWithSubdir(ParamGenerator):
 
 class ParamGeneratorWithPatterns(ParamGenerator):
     def __init__(self):
-        super().__init__(paths=['*', 'subdir/*', 'test*'])
+        super().__init__(paths=['%', 'subdir/%', 'test%'])
 
 
+#TODO I don't like this.
 def db_entry(path):
     with Table(DB_PATH) as table:
-        print(cmd('runs ls'.split()))
-        print(path)
-        print(table[path])
         return table[path][0]
 
 
@@ -112,9 +110,9 @@ def _setup(path, dir_names=None, flags=None):
         dir_names = []
     if flags is None:
         flags = []
-    assert isinstance(path, str)
-    assert isinstance(dir_names, list)
-    assert isinstance(flags, list)
+    assert_is_instance(path, str)
+    assert_is_instance(dir_names, list)
+    assert_is_instance(flags, list)
     Path(WORK_DIR).mkdir(exist_ok=True)
     os.chdir(WORK_DIR)
     if any([dir_names, flags]):
@@ -183,86 +181,86 @@ def check_rm_files(path):
             assert_false(fnmatch(filename, path))
 
 
-# def test_new():
-#     for path, dir_names, flags in ParamGenerator():
-#         with _setup(path, dir_names, flags):
-#             yield check_tmux, path
-#             yield check_db, path, flags
-#             yield check_files, path, dir_names
-#
-#
-# def test_rm():
-#     for path, dir_names, flags in ParamGenerator() + ParamGeneratorWithSubdir(
-#     ):
-#         with _setup(path, dir_names, flags):
-#             main.main(['-q', '-y', 'rm', path])
-#             yield check_tmux_killed, path
-#             yield check_del_entry, path
-#             yield check_rm_files, path
-#
-#             # TODO: patterns
-#
-#
-# def check_list_happy(pattern, print_attrs):
-#     #TODO
-#     string = cmd(f'runs ls --show-attrs {pattern}'.split())
-#     # if print_attrs:
-#     #     assert_in('test_run', string)
-#     #     assert_in('commit', string)
-#     # else:
-#     #     pass
-# #         eq_(string, """\
-# # .
-# # └── test_run
-# # """)
-#
-#
-# def check_list_sad(pattern):
-#     #TODO
-#     string = cmd(f'runs ls --show-attrs {pattern}'.split())
-#     # eq_(string, '.\n')
-#
-#
-# def test_list():
-#     path = TEST_RUN
-#     for _, dir_names, flags in ParamGenerator():
-#         with _setup(path, dir_names, flags):
-#             for pattern in ['*', 'test*']:
-#                 for print_attrs in range(2):
-#                     yield check_list_happy, pattern, print_attrs
-#             for pattern in ['x*', 'test']:
-#                 yield check_list_sad, pattern
-#
-#
-# def check_table(table):
-#     assert_is_instance(table, str)
-#     for member in [COMMAND, DESCRIPTION, TEST_RUN]:
-#         assert_in(member, table)
-#
-#
-# def test_table():
-#     pass
-#     #TODO
-#     # with _setup(TEST_RUN):
-#     #     yield check_table, cmd(['runs', 'table'])
-#
-#
-# def test_lookup():
-#     with _setup(TEST_RUN):
-#         for key, value in dict(
-#                 path=TEST_RUN,
-#                 description=DESCRIPTION,
-#                 input_command=COMMAND).items():
-#             eq_(cmd(f'runs lookup {key} {TEST_RUN}'.split()), value)
-#         with assert_raises(SystemExit):
-#             cmd('runs lookup x'.split())
-#
-#
-# def test_chdesc():
-#     with _setup(TEST_RUN):
-#         description = 'new description'
-#         main.main([CHDESCRIPTION, TEST_RUN, '--description=' + description])
-#         eq_(cmd(f'runs lookup description {TEST_RUN}'.split()), description)
+def test_new():
+    for path, dir_names, flags in ParamGenerator():
+        with _setup(path, dir_names, flags):
+            yield check_tmux, path
+            yield check_db, path, flags
+            yield check_files, path, dir_names
+
+
+def test_rm():
+    for path, dir_names, flags in ParamGenerator() + ParamGeneratorWithSubdir(
+    ):
+        with _setup(path, dir_names, flags):
+            main.main(['-q', '-y', 'rm', path])
+            yield check_tmux_killed, path
+            yield check_del_entry, path
+            yield check_rm_files, path
+
+            # TODO: patterns
+
+
+def check_list_happy(pattern, print_attrs):
+    #TODO
+    string = cmd(f'runs ls --show-attrs {pattern}'.split())
+    # if print_attrs:
+    #     assert_in('test_run', string)
+    #     assert_in('commit', string)
+    # else:
+    #     pass
+#         eq_(string, """\
+# .
+# └── test_run
+# """)
+
+
+def check_list_sad(pattern):
+    #TODO
+    string = cmd(f'runs ls --show-attrs {pattern}'.split())
+    # eq_(string, '.\n')
+
+
+def test_list():
+    path = TEST_RUN
+    for _, dir_names, flags in ParamGenerator():
+        with _setup(path, dir_names, flags):
+            for pattern in ['%', 'test%']:
+                for print_attrs in range(2):
+                    yield check_list_happy, pattern, print_attrs
+            for pattern in ['x%', 'test']:
+                yield check_list_sad, pattern
+
+
+def check_table(table):
+    assert_is_instance(table, str)
+    for member in [COMMAND, DESCRIPTION, TEST_RUN]:
+        assert_in(member, table)
+
+
+def test_table():
+    pass
+    #TODO
+    # with _setup(TEST_RUN):
+    #     yield check_table, cmd(['runs', 'table'])
+
+
+def test_lookup():
+    with _setup(TEST_RUN):
+        for key, value in dict(
+                path=TEST_RUN,
+                description=DESCRIPTION,
+                input_command=COMMAND).items():
+            eq_(cmd(f'runs lookup {key} {TEST_RUN}'.split()), value)
+        with assert_raises(SystemExit):
+            cmd('runs lookup x'.split())
+
+
+def test_chdesc():
+    with _setup(TEST_RUN):
+        description = 'new description'
+        main.main([CHDESCRIPTION, TEST_RUN, '--description=' + description])
+        eq_(cmd(f'runs lookup description {TEST_RUN}'.split()), description)
 
 
 def check_move(path, new_path, dir_names=None, flags=None):
@@ -276,16 +274,16 @@ def check_move(path, new_path, dir_names=None, flags=None):
     check_files(new_path, dir_names)
 
 
-# def test_move():
-#     generator = ParamGenerator() + ParamGeneratorWithSubdir()
-#     for path, dir_names, flags in generator:
-#         for new_path in generator.paths:
-#             with _setup(path, dir_names, flags):
-#                 args = ['-y', 'mv', path, new_path]
-#                 if path != new_path:
-#                     main.main(args)
-#                     yield check_move, path, new_path, dir_names, flags
-#                     yield check_tmux, new_path.split('/')[-1]
+def test_move():
+    generator = ParamGenerator() + ParamGeneratorWithSubdir()
+    for path, dir_names, flags in generator:
+        for new_path in generator.paths:
+            with _setup(path, dir_names, flags):
+                args = ['-y', 'mv', path, new_path]
+                if path != new_path:
+                    main.main(args)
+                    yield check_move, path, new_path, dir_names, flags
+                    yield check_tmux, new_path.split('/')[-1]
 
 
 def move(src, dest):
@@ -304,7 +302,12 @@ def test_move_dirs():
         yield check_move, 'sub/sub/test_run', 'sub/new_dir/test_run'
 
     with _setup('sub/test_run'):
-        move('sub', 'new_dir/')
+        move('sub', 'new_dir')
+        # src is dir and dest is dir -> move src into dest and bring children
+        yield check_move, 'sub/test_run', 'new_dir/test_run'
+
+    with _setup('sub/test_run'), _setup('new_dir/test_run2'):
+        move('sub', 'new_dir')
         # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/test_run', 'new_dir/sub/test_run'
 
@@ -313,14 +316,15 @@ def test_move_dirs():
         # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/sub1/test_run', 'sub1/test_run'
 
+    #here
     with _setup('sub/test_run1'), _setup('sub/test_run2'):
-        move('sub/*', 'new')
+        move('sub/%', 'new')
         # src is multi -> for each node match, move head into dest
         yield check_move, 'sub/test_run1', 'new/test_run1'
         yield check_move, 'sub/test_run2', 'new/test_run2'
 
     with _setup('sub/sub1/test_run1'), _setup('sub/sub2/test_run2'):
-        move('sub/*', 'new')
+        move('sub/%', 'new')
         # src is multi -> for each node match, move head into dest
         yield check_move, 'sub/sub1/test_run1', 'new/sub1/test_run1'
         yield check_move, 'sub/sub2/test_run2', 'new/sub2/test_run2'
@@ -341,12 +345,12 @@ def test_move_dirs():
         move('test_run1', 'test_run2')
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'
-        assert_in('--run1', db_entry('test_run2')['full_command'])
+        assert_in('--run1', db_entry('test_run2').full_command)
 
     with _setup('test_run1'), _setup('test_run2'), _setup('not_a_dir'):
         # src is multi, dest is run -> exits with no change
         with assert_raises(SystemExit):
-            move('test_run*', 'not_a_dir')
+            move('test_run%', 'not_a_dir')
         for path in ['test_run1', 'test_run2', 'not_a_dir']:
             yield check_tmux, path
             yield check_db, path, []

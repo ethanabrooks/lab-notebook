@@ -2,13 +2,14 @@ import os
 import re
 import shutil
 from datetime import datetime
+from itertools import zip_longest
 from pathlib import Path, PurePath
 from typing import List
 
 from runs.db import RunEntry, Table, no_match
 from runs.tmux_session import TMUXSession
 from runs.util import (SEP, _exit, _print, cmd, dirty_repo, get_permission,
-                       highlight, last_commit, prune_empty, string_from_vim)
+                       highlight, last_commit, prune_empty, string_from_vim, ROOT_PATH)
 
 
 class Run:
@@ -104,7 +105,7 @@ class Run:
     def dir_paths(self) -> List[Path]:
         return [
             Path(self.root, dir_name, self.path) for dir_name in self.dir_names
-        ]
+            ]
 
     # file I/O
     def mkdirs(self, exist_ok: bool = True) -> None:
@@ -151,7 +152,7 @@ class Run:
                highlight(f'git checkout {entry.commit}\n') + \
                highlight("runs new {} '{}' --description='Reproduce {}. "
                          "Original description: {}'".format(
-                             self.path, entry.input_command, self.path, entry.description))
+                   self.path, entry.input_command, self.path, entry.description))
 
     def print(self, *msg):
         _print(*msg, quiet=self.quiet)
@@ -181,25 +182,30 @@ def move(src_pattern: str, dest_path: str, table: Table, kill_tmux: bool,
     if dest_path in table and len(src_entries) > 1:
         _exit(
             "'{}' already exists and '{}' matches the following runs:\n{}\nCannot move multiple runs into an existing "
-            "run.".format(dest_path, src_pattern, '\n'.join(src_entries)))
+            "run.".format(dest_path, src_pattern, '\n'.join(map(str, src_entries))))
 
     def is_dir(pattern):
-        return f'{pattern.rstrip(SEP)}{SEP}%' in table
+        return pattern == ROOT_PATH or f'{pattern.rstrip(SEP)}{SEP}%' in table
 
     def make_src_run(src_path) -> Run:
         return Run(path=src_path, table=table, **kwargs)
 
     def make_dest_run(src_path) -> Run:
-        dir_exists = f'{src_path}{SEP}%' in table
         if is_dir(src_pattern):
-            if is_dir(dest_path):
-                path = PurePath(dest_path, src_path)
+            if is_dir(dest_path) or len(src_entries) > 1:
+                old_parts = PurePath(src_pattern).parent.parts
+                src_parts = PurePath(src_path).parts
+                path = PurePath(dest_path,
+                                *[p for p, from_old in
+                                  zip_longest(src_parts, old_parts)
+                                  if not from_old])
             else:
-                path = PurePath(src_path.replace(src_pattern, dest_path))
-        elif dir_exists or dest_path.endswith(SEP) or len(src_entries) > 1:
-            path = PurePath(dest_path, PurePath(src_path).stem)
+                path = PurePath(dest_path, PurePath(src_path).stem)
         else:
-            path = PurePath(dest_path)
+            if is_dir(dest_path) or len(src_entries) > 1:
+                path = PurePath(dest_path, PurePath(src_path).stem)
+            else:
+                path = PurePath(dest_path)
         return Run(path=path, table=table, **kwargs)
 
     moves = {make_src_run(s.path): make_dest_run(s.path) for s in src_entries}

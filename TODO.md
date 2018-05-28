@@ -3,3 +3,4 @@
 * make tests totally external to implementation
 * implement list methods
 * lookup all values for a single run
+* implement mv with multiple arguments

@@ -86,8 +86,8 @@ class Table:
     def __contains__(self, pattern: PathLike) -> bool:
         return bool(
             self.conn.execute(f"""
-        SELECT COUNT(*) {self.condition(pattern)}
-        """).fetchone()[0])
+            SELECT COUNT(*) {self.condition(pattern)}
+            """).fetchone()[0])
 
     def __iadd__(self, run: RunEntry) -> None:
         self.conn.execute(f"""
