@@ -3,10 +3,12 @@ import shutil
 import sqlite3
 from collections import namedtuple
 from contextlib import contextmanager
-from typing import List, Tuple
+from pathlib import PurePath
+from typing import List, Tuple, Union
 
 import yaml
 from anytree import NodeMixin, RenderTree
+from pathlib import Path
 from tabulate import tabulate
 
 from runs.util import _exit, get_permission
@@ -34,6 +36,12 @@ class RunEntry(namedtuple('RunEntry', ['path', 'full_command', 'commit', 'dateti
     def fields() -> Tuple[str]:
         return RunEntry(*RunEntry._fields)
 
+    def asdict(self) -> dict:
+        return self._asdict()
+
+
+PathLike = Union[str, PurePath, Path]
+
 
 class Table:
     def __init__(self, path):
@@ -60,30 +68,28 @@ class Table:
     def condition(self, pattern) -> str:
         return "FROM {} WHERE {} LIKE '{}'".format(self.table_name, self.key, pattern)
 
-    def __contains__(self, pattern: os.PathLike) -> bool:
+    def __contains__(self, pattern: PathLike) -> bool:
         return bool(self.conn.execute(f"""
         SELECT COUNT(*) {self.condition(pattern)}
-        """).fetchone())
+        """).fetchone()[0])
 
     def __iadd__(self, run: RunEntry) -> None:
         self.conn.execute(f"""
         INSERT INTO {self.table_name} ({self.fields}) VALUES ({run})
         """)
 
-    def update(self, run: RunEntry) -> None:
+    def update(self, pattern: PathLike, **kwargs):
+        updates = ','.join(f"'{k}' = '{v}'" for k, v in kwargs.items())
         self.conn.execute(f"""
-        INSERT OR REPLACE INTO {self.table_name} ({self.fields}) VALUES ({run})
+        UPDATE {self.table_name} SET {updates} WHERE {self.key} LIKE '{pattern}'
         """)
 
-    def __getitem__(self, pattern: os.PathLike) -> List[RunEntry]:
+    def __getitem__(self, pattern: PathLike) -> List[RunEntry]:
         return [RunEntry(*e) for e in self.conn.execute(f"""
         SELECT * {self.condition(pattern)}
         """).fetchall()]
 
-    def __setitem__(self, path: os.PathLike, value: RunEntry) -> None:
-        self.update(value.replace(path=path))
-
-    def __delitem__(self, pattern: os.PathLike):
+    def __delitem__(self, pattern: PathLike):
         self.conn.execute(f"""
         DELETE {self.condition(pattern)}
         """)

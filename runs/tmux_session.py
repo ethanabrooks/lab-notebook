@@ -14,9 +14,8 @@ class TMUXSession:
         cmd('tmux kill-session -t'.split() + [self.name], fail_ok=True)
 
     def rename(self, new):
-        if isinstance(new, str):
-            new = TMUXSession(new)
-        assert isinstance(new, TMUXSession)
+        if isinstance(new, TMUXSession):
+            new = str(new)
         cmd('tmux rename-session -t '.split() + [self.name, new], fail_ok=True)
 
     def __str__(self):

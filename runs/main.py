@@ -9,7 +9,7 @@ from pathlib import Path
 
 from runs.db import RunEntry
 from runs.db import open_table, Table
-from runs.run import Run
+from runs.run import Run, move
 from runs.runs_path import RunsPath
 from runs.util import (CHDESCRIPTION, DEFAULT, KILLALL, LIST, LOOKUP,
                        MAIN, MOVE, NEW, PATH, PATTERN, REMOVE, REPRODUCE,
@@ -123,11 +123,11 @@ def main(argv=sys.argv[1:]):
         help='Move a run from OLD to NEW. The program will show you planned '
              'moves and ask permission before changing anything')
     move_parser.add_argument(
-        'old',
+        'source',
         help='Name of run to rename.' + path_clarification,
         type=nonempty_string)
     move_parser.add_argument(
-        'new',
+        'destination',
         help='New name for run.' + path_clarification,
         type=nonempty_string)
     move_parser.add_argument(
@@ -307,9 +307,11 @@ def main(argv=sys.argv[1:]):
                 # TODO: this kind of validation should occur within the classes
                 # if not RunsPath(args.old).runs():
                 #     no_match(args.old, db_path=DBPath.cfg.db_path)
-                run.move(
-                    dest=RunsPath(args.new),
-                    kill_tmux=args.kill_tmux)
+                move(src_pattern=args.source, dest_path=args.destination,
+                     table=table, kill_tmux=args.kill_tmux, assume_yes=args.assume_yes,
+                     root=args.root,
+                     dir_names=args.dir_names,
+                     quiet=args.quiet)
 
                 # if args.summary_path:
                 #     from runs.tensorflow_util import summarize_run

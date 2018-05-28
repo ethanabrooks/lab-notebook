@@ -7,6 +7,7 @@ from typing import List
 
 from runs.db import no_match, Table, RunEntry
 from runs.tmux_session import TMUXSession
+from runs.util import SEP
 from runs.util import cmd, dirty_repo, get_permission, highlight, last_commit, string_from_vim, \
     prune_empty, _print, _exit
 
@@ -131,14 +132,14 @@ class Run:
         else:
             self.tmux.rename(dest.path.stem)
         # noinspection PyProtectedMember
-        self.table[self.path] = self.entry().replace(path=dest)
+        self.table.update(self.path, **self.entry().replace(path=dest.path).asdict())
 
     def chdescription(self, new_description):
         if new_description is None:
             new_description = string_from_vim('Edit description',
                                               self.entry().description)
         # noinspection PyProtectedMember
-        self.table.update(self.entry().replace(description=new_description))
+        self.table.update(self.path, **self.entry().replace(description=new_description))
 
     def reproduce(self):
         entry = self.entry()
@@ -165,6 +166,51 @@ class Run:
         # noinspection PyProtectedMember
         entry_items = self.entry()._asdict().items()
         attributes = '\n'.join([f'{k}\n{"-" * len(k)}\n{v}' for
-                      k, v in entry_items])
+                                k, v in entry_items])
         return header + attributes
 
+
+def move(src_pattern: str, dest_path: str, table: Table, kill_tmux: bool, assume_yes: bool,
+         **kwargs):
+    src_entries = table[f'{src_pattern}%']
+
+    if dest_path in table and len(src_entries) > 1:
+        _exit(
+            "'{}' already exists and '{}' matches the following runs:\n{}\nCannot move multiple runs into an existing "
+            "run.".format(dest_path, src_pattern, '\n'.join(src_entries)))
+
+    def make_src_run(src_path) -> Run:
+        return Run(path=src_path, table=table, **kwargs)
+
+    def make_dest_run(src_path) -> Run:
+        dir_exists = f'{src_path}{SEP}%' in table
+        print('dir_exists', dir_exists)
+        print('endswith sep', dest_path.endswith(SEP))
+        print('multi move', len(src_entries) > 1)
+        if dir_exists or dest_path.endswith(SEP) or len(src_entries) > 1:
+            path = PurePath(dest_path, PurePath(src_path).stem)
+        else:
+            path = PurePath(dest_path)
+        return Run(path=path, table=table, **kwargs)
+
+    moves = {make_src_run(s.path): make_dest_run(s.path) for s in src_entries}
+
+    # check before moving
+    prompt = ("Planned moves:\n\n" + '\n'.join(f"{s.path} -> {d.path}"
+                                               for s, d in moves.items()) +
+              '\n\nContinue?')
+
+    if moves and (assume_yes or get_permission(prompt)):
+        # check for conflicts with existing runs
+        already_exists = [str(d.path) for d in moves.values() if d.exists()]
+        if already_exists:
+            prompt = 'Runs to be removed:\n{}\nContinue?'.format(
+                '\n'.join(already_exists))
+            if not (assume_yes or get_permission(prompt)):
+                _exit()
+
+        for src_run, dest_run in moves.items():
+            if src_run.path != dest_run.path:
+                if dest_run.exists():
+                    dest_run.remove()
+                src_run.move(dest_run, kill_tmux)
