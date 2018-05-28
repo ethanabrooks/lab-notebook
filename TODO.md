@@ -3,3 +3,4 @@
 * run as service so that you don't have to repeatedly access disk
 * add hyperparameter search stuff
 * This fails: x -> x/y
+* moves do not properly rename tmux session
