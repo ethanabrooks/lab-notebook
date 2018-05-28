@@ -26,7 +26,9 @@ class Run:
         self.quiet = quiet
 
     def entry(self):
-        return self.table[self.path]
+        entries = self.table[self.path]
+        assert len(entries) == 1, f"{self.path} matches multiple runs: {entries}"
+        return entries[0]
 
     def exists(self):
         return self.path in self.table
@@ -129,14 +131,14 @@ class Run:
         else:
             self.tmux.rename(dest.path.stem)
         # noinspection PyProtectedMember
-        self.table[self.path] = self.entry()._replace(path=dest)
+        self.table[self.path] = self.entry().replace(path=dest)
 
     def chdescription(self, new_description):
         if new_description is None:
             new_description = string_from_vim('Edit description',
-                                              self.table[self.path].description)
+                                              self.entry().description)
         # noinspection PyProtectedMember
-        self.table |= self.entry()._replace(description=new_description)
+        self.table.update(self.entry().replace(description=new_description))
 
     def reproduce(self):
         entry = self.entry()

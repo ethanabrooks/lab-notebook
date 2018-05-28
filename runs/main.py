@@ -7,12 +7,13 @@ from configparser import ConfigParser, ExtendedInterpolation
 
 from pathlib import Path
 
-from runs.db import open_table
+from runs.db import RunEntry
+from runs.db import open_table, Table
 from runs.run import Run
 from runs.runs_path import RunsPath
 from runs.util import (CHDESCRIPTION, DEFAULT, KILLALL, LIST, LOOKUP,
                        MAIN, MOVE, NEW, PATH, PATTERN, REMOVE, REPRODUCE,
-                       TABLE, search_ancestors, generate_runs)
+                       TABLE, search_ancestors, generate_runs, get_permission, _exit)
 
 
 def nonempty_string(value):
@@ -62,7 +63,7 @@ def main(argv=sys.argv[1:]):
     parser.add_argument(
         '--db-path',
         help='path to YAML file storing run database information.',
-        type=nonempty_string)
+        type=Path)
     parser.add_argument(
         '--prefix',
         type=str,
@@ -232,76 +233,100 @@ def main(argv=sys.argv[1:]):
         print(msg)
         print('-' * len(msg))
 
-    with open_table(args.db_path) as table:
-        run = Run(path=args.path, table=table,
-                  root=args.root,
-                  dir_names=args.dir_names,
-                  quiet=args.quiet
-                  )
-        if args.dest == NEW:
-            if 'flags' in config:
-                flag_values = config['flags'].values()
-            else:
-                flag_values = []
-            for path, flags in generate_runs(args.path, flag_values):
-                run.new(
-                    prefix=args.prefix,
-                    command=args.command,
-                    description=args.description,
-                    assume_yes=args.assume_yes,
-                    flags=flags)
+    with Table(args.db_path) as table:
+
+        try:
+            run = Run(path=args.path, table=table,
+                      root=args.root,
+                      dir_names=args.dir_names,
+                      quiet=args.quiet
+                      )
+
+            if args.dest == NEW:
+                if 'flags' in config:
+                    flag_values = config['flags'].values()
+                else:
+                    flag_values = []
+                for path, flags in generate_runs(args.path, flag_values):
+                    run.new(
+                        prefix=args.prefix,
+                        command=args.command,
+                        description=args.description,
+                        assume_yes=args.assume_yes,
+                        flags=flags)
+
+            elif args.dest == CHDESCRIPTION:
+                run.chdescription(args.description)
+
+            elif args.dest == REPRODUCE:
+                print(run.reproduce())
+        except AttributeError:
+            try:
+                pattern = args.pattern
+                assert pattern is not None
+            except (AttributeError, AssertionError):
+                pattern = '%'
+
+            runs = [Run(path=run.path, table=table,
+                        root=args.root,
+                        dir_names=args.dir_names,
+                        quiet=args.quiet
+                        ) for run in table[pattern]]
+            run_paths = [str(run.path) for run in runs]
+
+            if args.dest == REMOVE:
+                prompt = 'Runs to be removed:\n{}\nContinue?'.format(
+                    '\n'.join(run_paths))
+                if args.assume_yes or get_permission(prompt):
+                    for run in runs:
+                        run.remove()
+
+            elif args.dest == LIST:
+                # TODO: again, None patterns should be converted to '.' inside the class
+                # pattern = args.pattern if args.pattern else Pattern('.')
+                if args.porcelain:
+                    for run in runs:
+                        print(run.path)
+                else:
+                    for run in runs:
+                        print(run.path)
+
+            elif args.dest == TABLE:
+                table.print_table()
+
+            elif args.dest == LOOKUP:
+                for run in table[pattern]:
+                    try:
+                        print(getattr(run, args.key))
+                    except AttributeError:
+                        # noinspection PyProtectedMember
+                        _exit(f"{args.key} is not a valid key. Valid keys are: "
+                              f"{RunEntry.fields()}.")
+
+            elif args.dest == MOVE:
+                # TODO: this kind of validation should occur within the classes
+                # if not RunsPath(args.old).runs():
+                #     no_match(args.old, db_path=DBPath.cfg.db_path)
+                run.move(
+                    dest=RunsPath(args.new),
+                    kill_tmux=args.kill_tmux)
 
                 # if args.summary_path:
                 #     from runs.tensorflow_util import summarize_run
                 #     path = summarize_run(args.path, args.summary_path)
                 #     print('\nWrote summary to', path)
 
-        elif args.dest == KILLALL:
-            print('Remove current runs?')
-            raise NotImplemented
-            shutil.rmtree(args.db_path)
-            del table
+            elif args.dest == KILLALL:
+                run_paths = '\n'.join(run_paths)
+                if get_permission(f"Runs to be removed:\n{run_paths}\nContinue?"):
+                    for run in runs:
+                        print(run.path)
+                    table.delete()
+                    args.db_path.unlink()
+                    shutil.rmtree(str(args.root), ignore_errors=True)
 
-        elif args.dest == REMOVE:
-            Run(path=args.patttern, **(dict(
-                table=table,
-                root=args.root,
-                dir_names=args.dir_names,
-                quiet=args.quiet
-            ))).remove()
-
-        elif args.dest == MOVE:
-            # TODO: this kind of validation should occur within the classes
-            # if not RunsPath(args.old).runs():
-            #     no_match(args.old, db_path=DBPath.cfg.db_path)
-            run.move(
-                dest=RunsPath(args.new),
-                kill_tmux=args.kill_tmux)
-
-        elif args.dest == LIST:
-            # TODO: again, None patterns should be converted to '.' inside the class
-            # pattern = args.pattern if args.pattern else Pattern('.')
-            if args.porcelain:
-                table.print_list(args.show_attrs)
             else:
-                table.print_tree(args.show_attrs)
-
-        elif args.dest == TABLE:
-            table.pretty_table()
-
-        elif args.dest == LOOKUP:
-            for run in table[args.patttern]:
-                print(getattr(run, args.key))
-
-        elif args.dest == CHDESCRIPTION:
-            # TODO: Run should check whether things exist
-            run.chdescription(args.description)
-
-        elif args.dest == REPRODUCE:
-            print(run.reproduce())
-
-        else:
-            raise RuntimeError("'{}' is not a supported dest.".format(args.dest))
+                raise RuntimeError("'{}' is not a supported dest.".format(args.dest))
 
 
 if __name__ == '__main__':

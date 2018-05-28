@@ -144,6 +144,62 @@ def generate_runs(path: str, flags: List[str]):
         yield path, []
 
 
+def move(dest, kill_tmux, assume_yes):
+    multi_move = len(self.nodes()) > 1
+
+    if dest.is_run() and multi_move:
+        _exit(
+            "'{}' already exists and '{}' matches the following runs:\n"
+            "{}\n"
+            "Cannot move multiple runs into an existing run.".format(
+                dest, self.path, '\n'.join(self.paths)))
+
+    def marshall_moves(src_node, dest_route):
+        """ Collect moves corresponding to a src node and a dest route """
+        assert isinstance(src_node, NodeMixin)
+
+        existing_dir = dest.exists and not dest.is_run()
+        non_existing_dir = not dest.exists and (dest.dir_path
+                                                or multi_move)
+        if existing_dir or non_existing_dir:
+            # put the current node into dest
+            dest_route = DBPath(dest_route.parts + [src_node.path[-1]])
+
+        def dest_run(src_base, src_run):
+            stem = src_run.path[len(src_base.path):]
+            return Run(dest_route.parts + list(stem))
+
+        # add child runs to moves list
+        return [(Run(src_run_node), dest_run(src_node, src_run_node))
+                for src_run_node in findall(src_node, is_run_node)]
+
+    moves = [(s, d) for node in self.nodes()
+             for s, d in marshall_moves(node, dest)]
+
+    # check before moving
+    prompt = ("Planned moves:\n\n" + '\n'.join(s.path + ' -> ' + d.path
+                                               for s, d in moves) +
+              '\n\nContinue?')
+
+    if moves and (assume_yes or get_permission(prompt)):
+
+        # check for conflicts with existing runs
+        already_exists = [
+            d for s, d in moves if d.is_run() and s.path != d.path
+            ]
+        if already_exists:
+            prompt = 'Runs to be removed:\n{}\nContinue?'.format(
+                '\n'.join(map(str, already_exists)))
+            if not (assume_yes or get_permission(prompt)):
+                self.exit()
+
+        for src, dest in moves:
+            if dest.is_run() and src.path != dest.path:
+                dest.remove()
+            if src.path != dest.path:
+                src.move(dest, kill_tmux)
+
+
 PATH = 'path'
 ROOT_PATH = '.'
 SEP = '/'
