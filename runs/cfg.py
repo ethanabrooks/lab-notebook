@@ -29,6 +29,7 @@ class Cfg:
         self.quiet = quiet
 
         self.flags = []
+        self.path_name_flags = []
         for flag in flags:
             try:
                 f, values = flag.split('=')
@@ -38,7 +39,10 @@ class Cfg:
 
     def generate_runs(self, path: str):
         flag_combinations = list(itertools.product(*self.flags))
-        for flags in flag_combinations:
+        if len(flag_combinations) > 1:
+            print('Generating', len(flag_combinations), 'runs.')
+        for i, flags in enumerate(flag_combinations):
+            p = path
             if len(flag_combinations) > 1:
-                path += '_' + '_'.join(f.lstrip('-') for f in flags)
-            yield path, flags
+                p += str(i)
+            yield p, flags
