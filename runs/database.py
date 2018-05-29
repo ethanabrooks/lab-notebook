@@ -1,20 +1,19 @@
-import shutil
 import sqlite3
 from collections import namedtuple
 from functools import partial, wraps
 from pathlib import Path, PurePath
 from typing import List, Tuple, Union
 
-# noinspection PyClassHasNoInit
-from runs.logger import Logger
 from tabulate import tabulate
+
+from runs.logger import Logger
 
 
 class RunEntry(
-        namedtuple('RunEntry', [
-            'path', 'full_command', 'commit', 'datetime', 'description',
-            'input_command'
-        ])):
+    namedtuple('RunEntry', [
+        'path', 'full_command', 'commit', 'datetime', 'description',
+        'input_command'
+    ])):
     __slots__ = ()
 
     def __str__(self):
@@ -39,11 +38,11 @@ class Table:
     @staticmethod
     def wrapper(func):
         @wraps(func)
-        def _wrapper(db_path, logger):
+        def table_wrapper(db_path, logger, *args, **kwargs):
             with Table(db_path, logger) as table:
-                return partial(func, table=table)
+                return func(*args, **kwargs, table=table)
 
-        return _wrapper
+        return table_wrapper
 
     def __init__(self, path, logger: Logger):
         self.logger = logger
@@ -79,32 +78,33 @@ class Table:
             SELECT COUNT(*) {self.condition(pattern)}
             """).fetchone()[0])
 
-    def all(self):
-        return self.conn.execute(f"""
-            SELECT * FROM {self.table_name}
-            """).fetchall()
-
-    def __iadd__(self, run: RunEntry) -> None:
+    def __iadd__(self, run: RunEntry):
         self.conn.execute(f"""
         INSERT INTO {self.table_name} ({self.fields}) VALUES ({run})
         """)
-
-    def update(self, pattern: PathLike, **kwargs):
-        updates = ','.join(f"'{k}' = '{v}'" for k, v in kwargs.items())
-        self.conn.execute(f"""
-        UPDATE {self.table_name} SET {updates} WHERE {self.key} LIKE '{pattern}'
-        """)
+        return self
 
     def __getitem__(self, pattern: PathLike) -> List[RunEntry]:
         return [
             RunEntry(*e) for e in self.conn.execute(f"""
         SELECT * {self.condition(pattern)}
         """).fetchall()
-        ]
+            ]
 
     def __delitem__(self, pattern: PathLike):
         self.conn.execute(f"""
         DELETE {self.condition(pattern)}
+        """)
+
+    def all(self):
+        return [RunEntry(*e) for e in self.conn.execute(f"""
+            SELECT * FROM {self.table_name}
+            """).fetchall()]
+
+    def update(self, pattern: PathLike, **kwargs):
+        updates = ','.join(f"'{k}' = '{v}'" for k, v in kwargs.items())
+        self.conn.execute(f"""
+        UPDATE {self.table_name} SET {updates} WHERE {self.key} LIKE '{pattern}'
         """)
 
     def delete(self):
@@ -160,9 +160,9 @@ def table(runs, hidden_columns, column_width):
             return '_'
 
     keys = set([
-        key for run in runs for key in vars(run.node())
-        if not key.startswith('_')
-    ])
+                   key for run in runs for key in vars(run.node())
+                   if not key.startswith('_')
+                   ])
     headers = sorted(set(keys) - set(hidden_columns))
     table = [[run.path] + [get_values(run, key) for key in headers]
              for run in sorted(runs, key=lambda r: r.path)]

@@ -1,13 +1,12 @@
 from functools import partial, wraps
 
-from runs.logger import Logger, logs
+from runs.logger import Bash
 
 
-@uses_bash
 class TMUXSession:
-    def __init__(self, path: str, logger: Logger):
+    def __init__(self, path: str, bash: Bash):
         self.name = path.replace('.', ',').replace(':', ';')
-        self.cmd = logger.cmd
+        self.cmd = bash.cmd
 
     def new(self, window_name, command):
         self.kill()
@@ -25,11 +24,3 @@ class TMUXSession:
 
     def __str__(self):
         return self.name
-
-
-def uses_tmux(func):
-    @wraps(func)
-    def wrapper(path, quiet):
-        return partial(func, tmux=TMUXSession(path=path, quiet=quiet))
-
-    return wrapper

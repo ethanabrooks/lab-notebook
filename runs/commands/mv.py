@@ -4,20 +4,48 @@ from pathlib import PurePath
 from runs.commands import remove
 from runs.database import Table
 from runs.file_system import FileSystem
-from runs.logger import UI
+from runs.logger import UI, Bash
 from runs.tmux_session import TMUXSession
-from runs.util import ROOT_PATH
+from runs.util import ROOT_PATH, MOVE, SEP, nonempty_string
+
+
+def add_move_parser(path_clarification, subparsers):
+    parser = subparsers.add_parser(
+        MOVE,
+        help='Move a run from OLD to NEW. '
+             'Functionality is identical to `mkdir -p` except that non-existent dirs'
+             'are created and empty dirs are removed automatically'
+             'The program will show you planned '
+             'moves and ask permission before changing anything.')
+    parser.add_argument(
+        'source',
+        help='Name of run to rename.' + path_clarification,
+        type=nonempty_string)
+    parser.add_argument(
+        'destination',
+        help='New name for run.' + path_clarification,
+        type=nonempty_string)
+    parser.add_argument(
+        '--kill-tmux',
+        action='store_true',
+        help='Kill tmux session instead of renaming it.')
+    return parser
 
 
 @UI.wrapper
 @Table.wrapper
-def cli(src, dest, kill_tmux, table, ui):
+def cli(source, destination, kill_tmux, table, root, dir_names,
+        *args, **kwargs):
+    logger = table.logger
     move(
         table=table,
-        src_pattern=src,
-        dest_path=dest,
+        src_pattern=source,
+        dest_path=destination,
+        tmux=TMUXSession(source, bash=Bash(logger=logger)),
         kill_tmux=kill_tmux,
-        ui=ui)
+        ui=logger,
+        file_system=FileSystem(root=root, dir_names=dir_names)
+    )
 
 
 def move(table: Table, src_pattern: str, dest_path: str, tmux: TMUXSession,
@@ -43,7 +71,7 @@ def move(table: Table, src_pattern: str, dest_path: str, tmux: TMUXSession,
                 return PurePath(dest_path, *[
                     p for p, from_old in zip_longest(src_parts, old_parts)
                     if not from_old
-                ])
+                    ])
             else:
                 return PurePath(dest_path, PurePath(src_path).stem)
         else:
@@ -55,19 +83,19 @@ def move(table: Table, src_pattern: str, dest_path: str, tmux: TMUXSession,
     moves = {s.path: get_dest(s.path) for s in src_entries}
 
     # check before moving
-    # noinspection PyUnresolvedReferences
     ui.check_permission(
         "Planned moves:",
-        *[f"{s.path} -> {d.path}" for s, d in moves.items()],
-        'Continue?',
-        sep='\n')
+        *[f"{s} -> {d}" for s, d in moves.items()],
+        'Continue?')
 
     # check for conflicts with existing runs
-    ui.check_permission(
-        'Runs to be removed:',
-        *[d.path for d in moves.values() if d.exists()],
-        'Continue?',
-        sep='\n')
+
+    existing_runs = [d.path for d in moves.values() if d in table]
+    if existing_runs:
+        ui.check_permission(
+            'Runs to be removed:',
+            *existing_runs,
+            'Continue?')
     for src_path, dest_path in moves.items():
         if src_path != dest_path:
             if dest_path in table:

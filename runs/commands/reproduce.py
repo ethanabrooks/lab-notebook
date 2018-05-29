@@ -5,7 +5,7 @@ from runs.util import highlight
 
 @Logger.wrapper
 @Table.wrapper
-def main(path, table):
+def main(path, table, *args, **kwargs):
     print(string(path, table))
 
 

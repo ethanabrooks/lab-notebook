@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 import argparse
+import inspect
+import os
+import pprint
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
 from importlib import import_module
 from pathlib import Path
 
-from runs.database import Table
-from runs.util import (CHDESCRIPTION, DEFAULT, KILLALL, LIST, LOOKUP, MAIN,
-                       MOVE, NEW, PATH, PATTERN, REMOVE, REPRODUCE, TABLE,
-                       findup)
-
-
-def nonempty_string(value):
-    if value == '' or not isinstance(value, str):
-        raise argparse.ArgumentTypeError("Value must be a nonempty string.")
-    return value
+from runs.commands.change_description import add_chdesc_parser
+from runs.commands.killall import add_killall_parser
+from runs.commands.lookup import add_lookup_parser
+from runs.commands.ls import add_list_parser
+from runs.commands.mv import add_move_parser
+from runs.commands.new import add_new_parser
+from runs.commands.remove import add_remove_parser
+from runs.util import (DEFAULT, KILLALL, MAIN,
+                       PATH, PATTERN, REPRODUCE, TABLE,
+                       findup, nonempty_string)
 
 
 def main(argv=sys.argv[1:]):
@@ -36,116 +39,40 @@ def main(argv=sys.argv[1:]):
         config['flags'] = dict()
 
     # TODO can we improve this?
-    def set_defaults(parser, name):
+    def set_defaults(parser: argparse.ArgumentParser):
         assert isinstance(parser, argparse.ArgumentParser)
+        name = parser.prog.split()[-1]
         assert isinstance(name, str)
-
         parser.set_defaults(**config[DEFAULT])
+        parser.set_defaults(**config[MAIN])
         if name in config:
             parser.set_defaults(**config[name])
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--root',
-        help=
-        'Custom path to directory where config directories (if any) are automatically '
-        'created',
-        type=nonempty_string)
-    parser.add_argument(
         '--db-path',
         help='path to YAML file storing run database information.',
         type=Path)
     parser.add_argument(
-        '--prefix',
-        type=str,
-        help=
-        "String to preprend to all main commands, for example, sourcing a virtualenv"
-    )
-    parser.add_argument(
-        '--dir-names',
-        type=str,
-        help="directories to create and sync automatically with each run")
-    parser.add_argument(
         '--quiet', '-q', action='store_true', help='Suppress print output')
-    parser.add_argument(
-        '--assume-yes',
-        '-y',
-        action='store_true',
-        help='Don\'t ask permission before performing operations.')
-    set_defaults(parser, MAIN)
+    set_defaults(parser)
 
     subparsers = parser.add_subparsers(dest='dest')
     path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
 
-    new_parser = subparsers.add_parser(NEW, help='Start a new run.')
-    new_parser.add_argument(
-        PATH,
-        help='Unique path assigned to new run. "\\"-delimited.',
-        type=nonempty_string)
-    new_parser.add_argument(
-        'command',
-        help='Command that will be run in tmux.',
-        type=nonempty_string)
-    new_parser.add_argument(
-        '--description',
-        help='Description of this run. Explain what this run was all about or '
-        'just write whatever your heart desires. If this argument is `commit-message`,'
-        'it will simply use the last commit message.')
-    new_parser.add_argument(
-        '--summary-path',
-        help='Path where Tensorflow summary of run is to be written.')
-    set_defaults(new_parser, NEW)
+    new_parser = add_new_parser(subparsers)
+    set_defaults(new_parser)
 
-    remove_parser = subparsers.add_parser(
-        REMOVE,
-        help="Delete runs from the database (and all associated tensorboard "
-        "and checkpoint files). Don't worry, the script will ask for "
-        "confirmation before deleting anything.")
-    remove_parser.add_argument(
-        PATTERN,
-        help=
-        'This script will only delete entries in the database whose names are a complete '
-        '(not partial) match of this glob pattern.',
-        type=nonempty_string)
-    set_defaults(remove_parser, REMOVE)
+    remove_parser = add_remove_parser(subparsers)
+    set_defaults(remove_parser)
 
-    move_parser = subparsers.add_parser(
-        MOVE,
-        help='Move a run from OLD to NEW. '
-        'Functionality is identical to `mkdir -p` except that non-existent dirs'
-        'are created and empty dirs are removed automatically'
-        'The program will show you planned '
-        'moves and ask permission before changing anything.')
-    move_parser.add_argument(
-        'source',
-        help='Name of run to rename.' + path_clarification,
-        type=nonempty_string)
-    move_parser.add_argument(
-        'destination',
-        help='New name for run.' + path_clarification,
-        type=nonempty_string)
-    move_parser.add_argument(
-        '--kill-tmux',
-        action='store_true',
-        help='Kill tmux session instead of renaming it.')
-    set_defaults(move_parser, MOVE)
+    move_parser = add_move_parser(path_clarification, subparsers)
+    set_defaults(move_parser)
 
     pattern_help = 'Only display paths matching this pattern.'
 
-    list_parser = subparsers.add_parser(
-        LIST, help='List all names in run database.')
-    list_parser.add_argument(
-        PATTERN, nargs='?', help=pattern_help, type=nonempty_string)
-    list_parser.add_argument(
-        '--show-attrs',
-        action='store_true',
-        help='Print run attributes in addition to names.')
-    list_parser.add_argument(
-        '--porcelain',
-        action='store_true',
-        help='Print list of path names without tree '
-        'formatting.')
-    set_defaults(list_parser, LIST)
+    list_parser = add_list_parser(pattern_help, subparsers)
+    set_defaults(list_parser)
 
     table_parser = subparsers.add_parser(
         TABLE, help='Display contents of run database as a table.')
@@ -164,30 +91,13 @@ def main(argv=sys.argv[1:]):
         default=100,
         help='Maximum width of table columns. Longer values will '
         'be truncated and appended with "...".')
-    set_defaults(table_parser, TABLE)
+    set_defaults(table_parser)
 
-    lookup_parser = subparsers.add_parser(
-        LOOKUP, help='Lookup specific value associated with database entry')
-    lookup_parser.add_argument(
-        'key', help='Key that value is associated with.')
-    lookup_parser.add_argument(
-        PATTERN,
-        help='Pattern of runs for which to retrieve key.',
-        type=nonempty_string)
-    set_defaults(lookup_parser, LOOKUP)
+    lookup_parser = add_lookup_parser(subparsers)
+    set_defaults(lookup_parser)
 
-    chdesc_parser = subparsers.add_parser(
-        CHDESCRIPTION, help='Edit description of run.')
-    chdesc_parser.add_argument(
-        PATH,
-        help='Name of run whose description you want to edit.',
-        type=nonempty_string)
-    chdesc_parser.add_argument(
-        '--description',
-        default=None,
-        help='New description. If None, script will prompt for '
-        'a description in Vim')
-    set_defaults(chdesc_parser, CHDESCRIPTION)
+    chdesc_parser = add_chdesc_parser(subparsers)
+    set_defaults(chdesc_parser)
 
     reproduce_parser = subparsers.add_parser(
         REPRODUCE,
@@ -208,28 +118,34 @@ def main(argv=sys.argv[1:]):
         'appended to any new name that is already in '
         'the database.  Otherwise this entry will '
         'overwrite any entry with the same name. ')
-    set_defaults(reproduce_parser, REPRODUCE)
+    set_defaults(reproduce_parser)
+    killall_parser = add_killall_parser(subparsers)
+    set_defaults(killall_parser)
 
-    subparsers.add_parser(KILLALL, help='Destroy all runs.')
     args = parser.parse_args(args=argv)
 
+    # TODO: use Logger
     def _print(*s):
         if not args.quiet:
             print(*s)
 
-    _print('Config file not found. Using default settings:\n')
-    for section in config.sections():
-        for k, v in config[section].items():
-            _print('{:20}{}'.format(k + ':', v))
-    _print()
-    msg = 'Writing default settings to ' + config_filename
-    _print(msg)
-    _print('-' * len(msg))
+    if not config_path:
+        _print('Config file not found. Using default settings:\n')
+        for section in config.sections():
+            for k, v in config[section].items():
+                _print('{:20}{}'.format(k + ':', v))
+        _print()
+        msg = 'Writing default settings to ' + config_filename
+        _print(msg)
+        _print('-' * len(msg))
 
     with open(config_filename, 'w') as f:
         config.write(f)
 
-    import_module('runs.commands.' + args.dest).cli(**vars(args))
+    module = import_module('runs.commands.' + args.dest.replace('-', '_'))
+    kwargs = {k: v for k, v in vars(args).items()}
+    pprint.pprint(kwargs)
+    module.cli(**kwargs)
 
 
 if __name__ == '__main__':

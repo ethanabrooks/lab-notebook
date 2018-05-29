@@ -1,3 +1,4 @@
+import argparse
 import itertools
 import shutil
 import subprocess
@@ -100,3 +101,9 @@ COMMIT = 'commit'
 DESCRIPTION = 'description'
 CHDESCRIPTION = 'change-description'
 KILLALL = 'killall'
+
+
+def nonempty_string(value):
+    if value == '' or not isinstance(value, str):
+        raise argparse.ArgumentTypeError("Value must be a nonempty string.")
+    return value
