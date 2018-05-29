@@ -3,6 +3,7 @@ import shutil
 import sqlite3
 from collections import namedtuple
 from contextlib import contextmanager
+from functools import wraps
 from pathlib import Path, PurePath
 from typing import List, Tuple, Union
 
@@ -19,10 +20,10 @@ def open_table(path):
 
 
 class RunEntry(
-        namedtuple('RunEntry', [
-            'path', 'full_command', 'commit', 'datetime', 'description',
-            'input_command'
-        ])):
+    namedtuple('RunEntry', [
+        'path', 'full_command', 'commit', 'datetime', 'description',
+        'input_command'
+    ])):
     __slots__ = ()
 
     def __str__(self):
@@ -105,7 +106,7 @@ class Table:
             RunEntry(*e) for e in self.conn.execute(f"""
         SELECT * {self.condition(pattern)}
         """).fetchall()
-        ]
+            ]
 
     def __delitem__(self, pattern: PathLike):
         self.conn.execute(f"""
@@ -119,24 +120,24 @@ class Table:
 
 
 def tree_string(tree, print_attrs=True):
-    raise NotImplemented
     string = ''
-    for pre, fill, node in RenderTree(tree):
-        public_attrs = {
-            k: v
-            for k, v in vars(node).items()
-            if not k.startswith('_') and not k == 'name'
-        }
-        if public_attrs:
-            pass
-            # pnode = yaml.dump(
-            #     public_attrs, default_flow_style=False).split('\n')
-        else:
-            pnode = ''
-        string += "{}{}\n".format(pre, node.name)
-        if print_attrs:
-            for line in pnode:
-                string += "{}{}\n".format(fill, line)
+    # TODO
+    # for pre, fill, node in RenderTree(tree):
+    #     public_attrs = {
+    #         k: v
+    #         for k, v in vars(node).items()
+    #         if not k.startswith('_') and not k == 'name'
+    #     }
+    #     if public_attrs:
+    #         pass
+    #         # pnode = yaml.dump(
+    #         #     public_attrs, default_flow_style=False).split('\n')
+    #     else:
+    #         pnode = ''
+    #     string += "{}{}\n".format(pre, node.name)
+    #     if print_attrs:
+    #         for line in pnode:
+    #             string += "{}{}\n".format(fill, line)
     return string
 
 
@@ -153,9 +154,9 @@ def table(runs, hidden_columns, column_width):
             return '_'
 
     keys = set([
-        key for run in runs for key in vars(run.node())
-        if not key.startswith('_')
-    ])
+                   key for run in runs for key in vars(run.node())
+                   if not key.startswith('_')
+                   ])
     headers = sorted(set(keys) - set(hidden_columns))
     table = [[run.path] + [get_values(run, key) for key in headers]
              for run in sorted(runs, key=lambda r: r.path)]
@@ -170,6 +171,17 @@ def killall(db_path, root):
     shutil.rmtree(root, ignore_errors=True)
 
 
-def no_match(pattern, tree=None, db_path=None):
+def no_match(pattern, table):
     _exit(f'No runs match pattern "{pattern}". Recorded runs:\n'
-          f'{tree_string(tree, db_path)}')
+          f'{tree_string(table["%"])}')
+
+
+def with_table(db_path):
+    def with_table_decorator(func):
+        with Table(db_path) as table:
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(table, *args, **kwargs)
+        return wrapper
+
+    return with_table_decorator

@@ -29,6 +29,7 @@ class Run:
 
     def entry(self):
         entries = self.table[self.path]
+        # noinspection PyUnresolvedReferences
         assert len(
             entries) == 1, f"{self.path} matches multiple runs: {entries}"
         return entries[0]
@@ -135,7 +136,6 @@ class Run:
             self.tmux.kill()
         else:
             self.tmux.rename(dest.path.stem)
-        # noinspection PyProtectedMember
         self.table.update(
             self.path, **self.entry().replace(path=dest.path).asdict())
 
@@ -143,7 +143,6 @@ class Run:
         if new_description is None:
             new_description = string_from_vim('Edit description',
                                               self.entry().description)
-        # noinspection PyProtectedMember
         self.table.update(
             self.path,
             **self.entry().replace(description=new_description).asdict())
@@ -170,8 +169,8 @@ class Run:
 
     def pretty_print(self):
         header = f'{self.path}\n{"=" * len(str(self.path))}'
-        # noinspection PyProtectedMember
-        entry_items = self.entry()._asdict().items()
+        entry_items = self.entry().asdict().items()
+        # noinspection PyUnresolvedReferences,PyUnusedLocal
         attributes = '\n'.join(
             [f'{k}\n{"-" * len(k)}\n{v}' for k, v in entry_items])
         return header + attributes
@@ -214,6 +213,7 @@ def move(src_pattern: str, dest_path: str, table: Table, kill_tmux: bool,
     moves = {make_src_run(s.path): make_dest_run(s.path) for s in src_entries}
 
     # check before moving
+    # noinspection PyUnresolvedReferences
     prompt = ("Planned moves:\n\n" + '\n'.join(f"{s.path} -> {d.path}"
                                                for s, d in moves.items()) +
               '\n\nContinue?')

@@ -7,9 +7,10 @@ from pathlib import Path
 
 from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, assert_true, eq_, ok_)
+
 from runs import main
 from runs.db import Table
-from runs.util import CHDESCRIPTION, NAME, cmd
+from runs.util import CHDESCRIPTION, cmd
 
 # TODO: sad path
 
@@ -44,8 +45,17 @@ def quote(string):
     return '"' + string + '"'
 
 
-def get_next_with_name(nodes, name):
-    return next(n for n in nodes if n[NAME] == name)
+def ls(pattern=None, show_attrs=False):
+    command = ['runs', 'ls']
+    if show_attrs:
+        command += ['--show-attrs']
+    if pattern:
+        command += [pattern]
+    return cmd(command).split('\n')
+
+
+def lookup(path, key):
+    return cmd(f'runs lookup {key} {path}'.split())
 
 
 class ParamGenerator:
@@ -169,8 +179,7 @@ def check_tmux_killed(path):
 
 
 def check_del_entry(path):
-    run_paths = cmd(['runs', 'ls']).split()
-    assert_not_in(path, run_paths)
+    assert_not_in(path, ls())
 
 
 def check_rm_files(path):
@@ -179,6 +188,7 @@ def check_rm_files(path):
             assert_false(fnmatch(filename, path))
 
 
+#
 def test_new():
     for path, dir_names, flags in ParamGenerator():
         with _setup(path, dir_names, flags):
@@ -199,9 +209,9 @@ def test_rm():
             # TODO: patterns
 
 
-def check_list_happy(pattern, print_attrs):
+def check_list_happy(pattern, show_attrs):
     # TODO
-    string = cmd(f'runs ls --show-attrs {pattern}'.split())
+    string = ls(pattern, show_attrs)
     # if print_attrs:
     #     assert_in('test_run', string)
     #     assert_in('commit', string)
@@ -217,10 +227,12 @@ def check_list_happy(pattern, print_attrs):
 
 def check_list_sad(pattern):
     # TODO
-    string = cmd(f'runs ls --show-attrs {pattern}'.split())
+    string = ls(pattern, show_attrs=True)
     # eq_(string, '.\n')
 
 
+#
+#
 def test_list():
     path = TEST_RUN
     for _, dir_names, flags in ParamGenerator():
@@ -250,16 +262,16 @@ def test_lookup():
         for key, value in dict(
                 path=TEST_RUN, description=DESCRIPTION,
                 input_command=COMMAND).items():
-            eq_(cmd(f'runs lookup {key} {TEST_RUN}'.split()), value)
+            eq_(lookup(TEST_RUN, key), value)
         with assert_raises(SystemExit):
-            cmd('runs lookup x'.split())
+            main.main(['lookup', 'x', TEST_RUN])
 
 
 def test_chdesc():
     with _setup(TEST_RUN):
         description = 'new description'
         main.main([CHDESCRIPTION, TEST_RUN, '--description=' + description])
-        eq_(cmd(f'runs lookup description {TEST_RUN}'.split()), description)
+        eq_(lookup(TEST_RUN, 'description'), description)
 
 
 def check_move(path, new_path, dir_names=None, flags=None):
@@ -338,9 +350,7 @@ def test_move_dirs():
         # dest is dir and src is dir -> move node into dest
         yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
 
-    with _setup(
-            'test_run1', flags=['--run1']), _setup(
-                'test_run2', flags=['run2']):
+    with _setup('test_run1', flags=['--run1']), _setup('test_run2', flags=['run2']):
         move('test_run1', 'test_run2')
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'

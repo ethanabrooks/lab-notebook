@@ -5,7 +5,7 @@ import sys
 from configparser import ConfigParser, ExtendedInterpolation
 from pathlib import Path
 
-from runs.db import RunEntry, Table
+from runs.db import RunEntry, Table, no_match
 from runs.run import Run, move
 from runs.util import (CHDESCRIPTION, DEFAULT, KILLALL, LIST, LOOKUP, MAIN,
                        MOVE, NEW, PATH, PATTERN, REMOVE, REPRODUCE, TABLE,
@@ -107,8 +107,8 @@ def main(argv=sys.argv[1:]):
     new_parser.add_argument(
         '--description',
         help='Description of this run. Explain what this run was all about or '
-        'just write whatever your heart desires. If this argument is `commit-message`,'
-        'it will simply use the last commit message.')
+             'just write whatever your heart desires. If this argument is `commit-message`,'
+             'it will simply use the last commit message.')
     new_parser.add_argument(
         '--summary-path',
         help='Path where Tensorflow summary of run is to be written.')
@@ -117,8 +117,8 @@ def main(argv=sys.argv[1:]):
     remove_parser = subparsers.add_parser(
         REMOVE,
         help="Delete runs from the database (and all associated tensorboard "
-        "and checkpoint files). Don't worry, the script will ask for "
-        "confirmation before deleting anything.")
+             "and checkpoint files). Don't worry, the script will ask for "
+             "confirmation before deleting anything.")
     remove_parser.add_argument(
         PATTERN,
         help=
@@ -130,10 +130,10 @@ def main(argv=sys.argv[1:]):
     move_parser = subparsers.add_parser(
         MOVE,
         help='Move a run from OLD to NEW. '
-        'Functionality is identical to `mkdir -p` except that non-existent dirs'
-        'are created and empty dirs are removed automatically'
-        'The program will show you planned '
-        'moves and ask permission before changing anything.')
+             'Functionality is identical to `mkdir -p` except that non-existent dirs'
+             'are created and empty dirs are removed automatically'
+             'The program will show you planned '
+             'moves and ask permission before changing anything.')
     move_parser.add_argument(
         'source',
         help='Name of run to rename.' + path_clarification,
@@ -162,7 +162,7 @@ def main(argv=sys.argv[1:]):
         '--porcelain',
         action='store_true',
         help='Print list of path names without tree '
-        'formatting.')
+             'formatting.')
     set_defaults(list_parser, LIST)
 
     table_parser = subparsers.add_parser(
@@ -181,7 +181,7 @@ def main(argv=sys.argv[1:]):
         type=int,
         default=100,
         help='Maximum width of table columns. Longer values will '
-        'be truncated and appended with "...".')
+             'be truncated and appended with "...".')
     set_defaults(table_parser, TABLE)
 
     lookup_parser = subparsers.add_parser(
@@ -204,13 +204,13 @@ def main(argv=sys.argv[1:]):
         '--description',
         default=None,
         help='New description. If None, script will prompt for '
-        'a description in Vim')
+             'a description in Vim')
     set_defaults(chdesc_parser, CHDESCRIPTION)
 
     reproduce_parser = subparsers.add_parser(
         REPRODUCE,
         help='Print commands to reproduce a run. This command '
-        'does not have side-effects (besides printing).')
+             'does not have side-effects (besides printing).')
     reproduce_parser.add_argument(PATH)
     reproduce_parser.add_argument(
         '--description',
@@ -223,9 +223,9 @@ def main(argv=sys.argv[1:]):
         '--no-overwrite',
         action='store_true',
         help='If this flag is given, a timestamp will be '
-        'appended to any new name that is already in '
-        'the database.  Otherwise this entry will '
-        'overwrite any entry with the same name. ')
+             'appended to any new name that is already in '
+             'the database.  Otherwise this entry will '
+             'overwrite any entry with the same name. ')
     set_defaults(reproduce_parser, REPRODUCE)
 
     subparsers.add_parser(KILLALL, help='Destroy all runs.')
@@ -261,13 +261,14 @@ def main(argv=sys.argv[1:]):
             else:
                 pattern = '%'
 
+            entries = table[pattern]
             runs = [
                 Run(path=run.path,
                     table=table,
                     root=args.root,
                     dir_names=args.dir_names,
-                    quiet=args.quiet) for run in table[pattern]
-            ]
+                    quiet=args.quiet) for run in entries
+                ]
             run_paths = [str(run.path) for run in runs]
 
             if args.dest == REMOVE:
@@ -291,14 +292,17 @@ def main(argv=sys.argv[1:]):
                 raise NotImplemented
 
             elif args.dest == LOOKUP:
-                for run in table[pattern]:
-                    try:
-                        print(getattr(run, args.key))
-                    except AttributeError:
-                        # noinspection PyProtectedMember
-                        _exit(
-                            f"{args.key} is not a valid key. Valid keys are: {RunEntry.fields()}."
-                        )
+                if entries:
+                    for run in entries:
+                        try:
+                            print(getattr(run, args.key))
+                        except AttributeError:
+                            # noinspection PyProtectedMember
+                            _exit(
+                                f"{args.key} is not a valid key. Valid keys are: {RunEntry.fields()}.",
+                                quiet=args.quiet)
+                else:
+                    no_match(args.pattern, table)
 
             elif args.dest == MOVE:
                 # TODO: this kind of validation should occur within the classes

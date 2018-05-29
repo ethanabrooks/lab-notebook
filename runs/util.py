@@ -1,17 +1,12 @@
 import itertools
 import shutil
 import subprocess
-import sys
 from datetime import datetime
+from functools import wraps
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from termcolor import colored
-
-if sys.version_info.major == 2:
-    pass
-else:
-    FileNotFoundError = OSError
 
 
 def highlight(*args):
@@ -41,16 +36,6 @@ def prune_empty(path):
         prune_empty(path.parent)
 
 
-# def prune_leaves(node: Optional[NodeMixin]):
-#     # if the node has children or is a run node, terminate
-#     if node is None or node.children:
-#         return node
-#
-#     parent = node.parent
-#     node.parent = None
-#     prune_leaves(parent)
-
-
 def get_permission(*question):
     question = ' '.join(question)
     if not question.endswith((' ', '\n')):
@@ -64,10 +49,6 @@ def get_permission(*question):
             return False
         else:
             response = input('Please enter y[es]|n[o]')
-
-
-def is_run_node(node):
-    return hasattr(node, COMMIT)
 
 
 def cmd(args, fail_ok=False, cwd=None, quiet=False):
@@ -159,26 +140,3 @@ COMMIT = 'commit'
 DESCRIPTION = 'description'
 CHDESCRIPTION = 'change-description'
 KILLALL = 'killall'
-
-# @contextmanager
-# def read_remote_file(remote_filename, host, username):
-#     client = SSHClient()
-#     client.set_missing_host_key_policy(AutoAddPolicy())
-#     try:
-#         client.connect(host, username=username, look_for_keys=True)
-#     except SSHException:
-#         client.connect(host,
-#                        username=username,
-#                        password=getpass("Enter password:"),
-#                        look_for_keys=False)
-#     if not client:
-#         raise RuntimeError("Connection not opened.")
-#
-#     sftp = client.open_sftp()
-#     try:
-#         sftp.stat(remote_filename)
-#     except Exception:
-#         raise RuntimeError('There was a problem accessing', remote_filename)
-#
-#     with sftp.open(remote_filename) as f:
-#         yield f
