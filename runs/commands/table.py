@@ -1,4 +1,4 @@
-from runs.util import TABLE, PATTERN, nonempty_string
+from runs.util import PATTERN, TABLE, nonempty_string
 
 
 def add_table_parser(pattern_help, subparsers):
@@ -18,5 +18,5 @@ def add_table_parser(pattern_help, subparsers):
         type=int,
         default=100,
         help='Maximum width of table columns. Longer values will '
-             'be truncated and appended with "...".')
+        'be truncated and appended with "...".')
     return table_parser

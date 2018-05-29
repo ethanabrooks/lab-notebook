@@ -15,8 +15,7 @@ from runs.commands.new import add_new_parser
 from runs.commands.reproduce import add_reproduce_parser
 from runs.commands.rm import add_remove_parser
 from runs.commands.table import add_table_parser
-from runs.util import (DEFAULT, MAIN,
-                       findup, nonempty_string)
+from runs.util import DEFAULT, MAIN, findup, nonempty_string
 
 
 def main(argv=sys.argv[1:]):

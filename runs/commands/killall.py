@@ -25,8 +25,8 @@ def add_killall_parser(subparsers):
 @Table.wrapper
 def cli(table, root, *args, **kwargs):
     runs = [e.path for e in table.all()]
-    table.logger.check_permission(
-        '\n'.join(map(str, ["Runs to be removed:", *runs, "Continue?"])))
+    table.logger.check_permission('\n'.join(
+        map(str, ["Runs to be removed:", *runs, "Continue?"])))
     table.delete()
     table.path.unlink()
     shutil.rmtree(str(root), ignore_errors=True)

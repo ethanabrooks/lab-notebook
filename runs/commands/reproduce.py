@@ -1,6 +1,6 @@
 from runs.database import Table
 from runs.logger import Logger
-from runs.util import highlight, REPRODUCE, PATH, nonempty_string
+from runs.util import PATH, REPRODUCE, highlight, nonempty_string
 
 
 @Logger.wrapper
@@ -24,7 +24,7 @@ def add_reproduce_parser(subparsers):
     reproduce_parser = subparsers.add_parser(
         REPRODUCE,
         help='Print commands to reproduce a run. This command '
-             'does not have side-effects (besides printing).')
+        'does not have side-effects (besides printing).')
     reproduce_parser.add_argument(PATH)
     reproduce_parser.add_argument(
         '--description',
@@ -37,7 +37,7 @@ def add_reproduce_parser(subparsers):
         '--no-overwrite',
         action='store_true',
         help='If this flag is given, a timestamp will be '
-             'appended to any new name that is already in '
-             'the database.  Otherwise this entry will '
-             'overwrite any entry with the same name. ')
+        'appended to any new name that is already in '
+        'the database.  Otherwise this entry will '
+        'overwrite any entry with the same name. ')
     return reproduce_parser

@@ -16,7 +16,7 @@ def add_list_parser(pattern_help, subparsers):
         '--porcelain',
         action='store_true',
         help='Print list of path names without tree '
-             'formatting.')
+        'formatting.')
     return list_parser
 
 

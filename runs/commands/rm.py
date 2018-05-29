@@ -3,24 +3,23 @@ from runs.file_system import FileSystem
 from runs.logger import UI
 from runs.shell import Bash
 from runs.tmux_session import TMUXSession
-from runs.util import REMOVE, PATTERN, nonempty_string
+from runs.util import PATTERN, REMOVE, nonempty_string
 
 
 @UI.wrapper
 @Table.wrapper
-def cli(pattern, root, dir_names, table,
-        *args, **kwargs):
+def cli(pattern, root, dir_names, table, *args, **kwargs):
     entries = table[pattern]
     logger = table.logger
-    logger.check_permission(
-        '\n'.join([
-            "Runs to be removed:",
-            *[str(e.path) for e in entries],
-            "Continue?"]))
+    logger.check_permission('\n'.join(
+        ["Runs to be removed:", *[str(e.path) for e in entries], "Continue?"]))
     file_system = FileSystem(root=root, dir_names=dir_names)
     for entry in table[pattern]:
         remove(
-            path=entry.path, table=table, file_system=file_system, logger=logger)
+            path=entry.path,
+            table=table,
+            file_system=file_system,
+            logger=logger)
 
 
 def remove(path, table, logger, file_system):
@@ -33,8 +32,8 @@ def add_remove_parser(subparsers):
     remove_parser = subparsers.add_parser(
         REMOVE,
         help="Delete runs from the database (and all associated tensorboard "
-             "and checkpoint files). Don't worry, the script will ask for "
-             "confirmation before deleting anything.")
+        "and checkpoint files). Don't worry, the script will ask for "
+        "confirmation before deleting anything.")
     remove_parser.add_argument(
         PATTERN,
         help=

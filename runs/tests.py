@@ -7,7 +7,6 @@ from pathlib import Path
 
 from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, eq_, ok_)
-
 from runs import main
 from runs.commands import lookup, ls
 from runs.database import Table
@@ -98,6 +97,7 @@ class ParamGeneratorWithPatterns(ParamGenerator):
 
 
 # TODO what if config doesn't have required fields?
+
 
 def run_main(*args):
     main.main(['-q', '-y'] + list(args))
@@ -338,7 +338,8 @@ def test_move_dirs():
         yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
 
     with _setup(
-            'test_run1', flags=['--run1']), _setup('test_run2', flags=['run2']):
+            'test_run1', flags=['--run1']), _setup(
+                'test_run2', flags=['run2']):
         move('test_run1', 'test_run2')
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'

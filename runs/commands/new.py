@@ -1,15 +1,14 @@
 import re
 from datetime import datetime
-from pathlib import PurePath, Path
-from typing import Optional
+from pathlib import PurePath
 
 from runs.commands import rm
 from runs.database import RunEntry, Table
 from runs.file_system import FileSystem
-from runs.logger import UI, Bash
+from runs.logger import UI
 from runs.shell import Bash
 from runs.tmux_session import TMUXSession
-from runs.util import highlight, PATH, nonempty_string
+from runs.util import PATH, highlight, nonempty_string
 
 
 def add_new_parser(subparsers):
@@ -25,8 +24,8 @@ def add_new_parser(subparsers):
     parser.add_argument(
         '--description',
         help='Description of this run. Explain what this run was all about or '
-             'just write whatever your heart desires. If this argument is `commit-message`,'
-             'it will simply use the last commit message.')
+        'just write whatever your heart desires. If this argument is `commit-message`,'
+        'it will simply use the last commit message.')
     parser.add_argument(
         '--prefix',
         type=str,
@@ -61,8 +60,8 @@ def cli(path, prefix, command, description, flags, root, dir_names, table,
         file_system=FileSystem(root=root, dir_names=dir_names))
 
 
-def main(path: str, prefix: str, command: str, description: str,
-         flags: str, bash: Bash, ui: UI, table: Table, tmux: TMUXSession,
+def main(path: str, prefix: str, command: str, description: str, flags: str,
+         bash: Bash, ui: UI, table: Table, tmux: TMUXSession,
          file_system: FileSystem):
     # Check if repo is dirty
     if bash.dirty_repo():
@@ -70,8 +69,7 @@ def main(path: str, prefix: str, command: str, description: str,
             "Repo is dirty. You should commit before run. Run anyway?")
 
     if path in table:
-        rm.remove(path=path, table=table, logger=ui,
-                  file_system=file_system)
+        rm.remove(path=path, table=table, logger=ui, file_system=file_system)
 
     # create directories
     for dir_path in file_system.dir_paths(PurePath(path)):
@@ -98,13 +96,13 @@ def main(path: str, prefix: str, command: str, description: str,
     tmux.new(description, full_command)
 
     # new db entry
-    table += RunEntry(path=path,
-                      full_command=full_command,
-                      commit=bash.last_commit(),
-                      datetime=datetime.now().isoformat(),
-                      description=description,
-                      input_command=command)
-
+    table += RunEntry(
+        path=path,
+        full_command=full_command,
+        commit=bash.last_commit(),
+        datetime=datetime.now().isoformat(),
+        description=description,
+        input_command=command)
 
     # print result
     ui.print(

@@ -16,8 +16,7 @@ class Bash:
             universal_newlines=True)
         stdout, stderr = process.communicate(timeout=1)
         if stderr and not fail_ok:
-            self.logger.exit(
-                f"Command `{' '.join(args)}` failed: {stderr}")
+            self.logger.exit(f"Command `{' '.join(args)}` failed: {stderr}")
         return stdout.strip()
 
     def last_commit(self):

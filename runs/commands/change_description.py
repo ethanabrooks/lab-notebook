@@ -1,6 +1,6 @@
 from runs.database import Table
 from runs.logger import Logger
-from runs.util import string_from_vim, CHDESCRIPTION, PATH, nonempty_string
+from runs.util import CHDESCRIPTION, PATH, nonempty_string, string_from_vim
 
 
 def add_chdesc_parser(subparsers):
@@ -15,7 +15,7 @@ def add_chdesc_parser(subparsers):
         nargs='?',
         default=None,
         help='New description. If None, script will prompt for '
-             'a description in Vim')
+        'a description in Vim')
     return chdesc_parser
 
 
@@ -24,6 +24,5 @@ def add_chdesc_parser(subparsers):
 def cli(path, description, table, *args, **kwargs):
     entry = table.entry(path)
     if description is None:
-        description = string_from_vim('Edit description',
-                                      entry.description)
+        description = string_from_vim('Edit description', entry.description)
     table.update(path, description=description)

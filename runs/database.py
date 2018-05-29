@@ -4,16 +4,15 @@ from functools import partial, wraps
 from pathlib import Path, PurePath
 from typing import List, Tuple, Union
 
-from tabulate import tabulate
-
 from runs.logger import Logger
+from tabulate import tabulate
 
 
 class RunEntry(
-    namedtuple('RunEntry', [
-        'path', 'full_command', 'commit', 'datetime', 'description',
-        'input_command'
-    ])):
+        namedtuple('RunEntry', [
+            'path', 'full_command', 'commit', 'datetime', 'description',
+            'input_command'
+        ])):
     __slots__ = ()
 
     def __str__(self):
@@ -89,7 +88,7 @@ class Table:
             RunEntry(*e) for e in self.conn.execute(f"""
         SELECT * {self.condition(pattern)}
         """).fetchall()
-            ]
+        ]
 
     def __delitem__(self, pattern: PathLike):
         self.conn.execute(f"""
@@ -97,9 +96,11 @@ class Table:
         """)
 
     def all(self):
-        return [RunEntry(*e) for e in self.conn.execute(f"""
+        return [
+            RunEntry(*e) for e in self.conn.execute(f"""
             SELECT * FROM {self.table_name}
-            """).fetchall()]
+            """).fetchall()
+        ]
 
     def update(self, pattern: PathLike, **kwargs):
         updates = ','.join(f"'{k}' = '{v}'" for k, v in kwargs.items())
@@ -160,9 +161,9 @@ def table(runs, hidden_columns, column_width):
             return '_'
 
     keys = set([
-                   key for run in runs for key in vars(run.node())
-                   if not key.startswith('_')
-                   ])
+        key for run in runs for key in vars(run.node())
+        if not key.startswith('_')
+    ])
     headers = sorted(set(keys) - set(hidden_columns))
     table = [[run.path] + [get_values(run, key) for key in headers]
              for run in sorted(runs, key=lambda r: r.path)]

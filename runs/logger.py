@@ -39,7 +39,9 @@ class UI(Logger):
     def wrapper(func):
         @wraps(func)
         def ui_wrapper(assume_yes, quiet, *args, **kwargs):
-            return func(*args, **kwargs, logger=UI(assume_yes=assume_yes, quiet=quiet))
+            return func(
+                *args, **kwargs, logger=UI(assume_yes=assume_yes, quiet=quiet))
+
         return ui_wrapper
 
     def __init__(self, assume_yes: bool, quiet):
@@ -65,5 +67,3 @@ class UI(Logger):
     def check_permission(self, *question):
         if not self.get_permission(*question):
             self.exit()
-
-
