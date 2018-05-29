@@ -8,7 +8,7 @@ from runs.util import prune_empty
 class FileSystem:
     def __init__(self, root, dir_names):
         self.root = root
-        self.dir_names = dir_names if dir_names else []
+        self.dir_names = dir_names.split()
 
     def dir_paths(self, path: PurePath) -> List[Path]:
         return [Path(self.root, dir_name, path) for dir_name in self.dir_names]

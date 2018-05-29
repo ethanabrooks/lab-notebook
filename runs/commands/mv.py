@@ -1,10 +1,11 @@
 from itertools import zip_longest
 from pathlib import PurePath
 
-from runs.commands import remove
+from runs.commands import rm
 from runs.database import Table
 from runs.file_system import FileSystem
-from runs.logger import UI, Bash
+from runs.logger import UI
+from runs.shell import Bash
 from runs.tmux_session import TMUXSession
 from runs.util import ROOT_PATH, MOVE, SEP, nonempty_string
 
@@ -55,7 +56,7 @@ def move(table: Table, src_pattern: str, dest_path: str, tmux: TMUXSession,
     if dest_path in table and len(src_entries) > 1:
         ui.exit(
             f"'{dest_path}' already exists and '{src_pattern}' matches the following runs:",
-            *src_entries,
+            *[e.path for e in src_entries],
             "Cannot move multiple runs into an existing "
             "run.",
             sep='\n')
@@ -90,7 +91,7 @@ def move(table: Table, src_pattern: str, dest_path: str, tmux: TMUXSession,
 
     # check for conflicts with existing runs
 
-    existing_runs = [d.path for d in moves.values() if d in table]
+    existing_runs = [d for d in moves.values() if d in table]
     if existing_runs:
         ui.check_permission(
             'Runs to be removed:',
@@ -99,7 +100,7 @@ def move(table: Table, src_pattern: str, dest_path: str, tmux: TMUXSession,
     for src_path, dest_path in moves.items():
         if src_path != dest_path:
             if dest_path in table:
-                remove.execute(
+                rm.remove(
                     path=dest_path,
                     table=table,
                     logger=ui,

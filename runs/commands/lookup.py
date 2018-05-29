@@ -21,14 +21,19 @@ def add_lookup_parser(subparsers):
 @Logger.wrapper
 @Table.wrapper
 def cli(path, key, table, *args, **kwargs):
-    print(string(table, path, key, table.logger))
+    if key:
+        print(string(table, path, key, table.logger))
+    else:
+        print(entry(table, path))
+
+
+def entry(table, path):
+    return table.entry(path)
 
 
 def string(table, path, key, logger):
     entry = table.entry(path)
-    if key is None:
-        return entry
-    elif hasattr(entry, key):
+    if hasattr(entry, key):
         return getattr(entry, key)
     else:
         logger.exit(

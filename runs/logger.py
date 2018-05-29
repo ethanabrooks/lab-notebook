@@ -1,5 +1,4 @@
-import subprocess
-from functools import partial, wraps
+from functools import wraps
 
 
 class Logger:
@@ -14,9 +13,10 @@ class Logger:
         return _wrapper
 
     def __init__(self, quiet):
-        if Logger.exists:
-            raise RuntimeError(
-                "There should only be one logger in existence at a time.")
+        # TODO: make this class singleton somehow
+        # if Logger.exists:
+        #     raise RuntimeError(
+        #         "There should only be one logger in existence at a time.")
         Logger.exists = True
         self.quiet = quiet
 
@@ -67,33 +67,3 @@ class UI(Logger):
             self.exit()
 
 
-class Bash:
-    def __init__(self, logger: Logger):
-        self.logger = logger
-
-    def cmd(self, args, fail_ok=False, cwd=None):
-        process = subprocess.Popen(
-            args,
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            cwd=cwd,
-            universal_newlines=True)
-        stdout, stderr = process.communicate(timeout=1)
-        if stderr and not fail_ok:
-            if not self.quiet:
-                print(f"Command `{' '.join(args)}` failed: {stderr}")
-            exit()
-        return stdout.strip()
-
-
-class GitBash(Bash):
-    def last_commit(self):
-        try:
-            return self.cmd('git rev-parse HEAD'.split())
-        except OSError:
-            self.logger.exit(
-                'Could not detect last commit. Perhaps you have not committed yet?'
-            )
-
-    def dirty_repo(self):
-        return self.cmd('git status --porcelain'.split()) is not ''

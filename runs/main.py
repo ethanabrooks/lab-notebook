@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 import argparse
-import inspect
-import os
-import pprint
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
 from importlib import import_module
 from pathlib import Path
+from pprint import pprint
 
 from runs.commands.change_description import add_chdesc_parser
 from runs.commands.killall import add_killall_parser
@@ -14,9 +12,10 @@ from runs.commands.lookup import add_lookup_parser
 from runs.commands.ls import add_list_parser
 from runs.commands.mv import add_move_parser
 from runs.commands.new import add_new_parser
-from runs.commands.remove import add_remove_parser
-from runs.util import (DEFAULT, KILLALL, MAIN,
-                       PATH, PATTERN, REPRODUCE, TABLE,
+from runs.commands.reproduce import add_reproduce_parser
+from runs.commands.rm import add_remove_parser
+from runs.commands.table import add_table_parser
+from runs.util import (DEFAULT, MAIN,
                        findup, nonempty_string)
 
 
@@ -39,29 +38,48 @@ def main(argv=sys.argv[1:]):
         config['flags'] = dict()
 
     # TODO can we improve this?
-    def set_defaults(parser: argparse.ArgumentParser):
+    def set_defaults(parser: argparse.ArgumentParser, config_section=None):
         assert isinstance(parser, argparse.ArgumentParser)
-        name = parser.prog.split()[-1]
-        assert isinstance(name, str)
+        if config_section is None:
+            config_section = parser.prog.split()[-1]
+        assert isinstance(config_section, str)
         parser.set_defaults(**config[DEFAULT])
         parser.set_defaults(**config[MAIN])
-        if name in config:
-            parser.set_defaults(**config[name])
+        if config_section in config:
+            parser.set_defaults(**config[config_section])
+            parser.set_defaults(**config['flags'])
 
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--quiet', '-q', action='store_true', help='Suppress print output')
     parser.add_argument(
         '--db-path',
         help='path to YAML file storing run database information.',
         type=Path)
     parser.add_argument(
-        '--quiet', '-q', action='store_true', help='Suppress print output')
+        '--root',
+        help=
+        'Custom path to directory where config directories (if any) are automatically '
+        'created',
+        type=nonempty_string)
+    parser.add_argument(
+        '--dir-names',
+        type=str,
+        help="directories to create and sync automatically with each run")
+    parser.add_argument(
+        '--assume-yes',
+        '-y',
+        action='store_true',
+        help='Don\'t ask permission before performing operations.')
     set_defaults(parser)
 
     subparsers = parser.add_subparsers(dest='dest')
     path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
 
+    # TODO: tighten this
     new_parser = add_new_parser(subparsers)
     set_defaults(new_parser)
+    set_defaults(new_parser, config_section='flags')
 
     remove_parser = add_remove_parser(subparsers)
     set_defaults(remove_parser)
@@ -74,23 +92,7 @@ def main(argv=sys.argv[1:]):
     list_parser = add_list_parser(pattern_help, subparsers)
     set_defaults(list_parser)
 
-    table_parser = subparsers.add_parser(
-        TABLE, help='Display contents of run database as a table.')
-    table_parser.add_argument(
-        PATTERN,
-        nargs='?',
-        default='*',
-        help=pattern_help,
-        type=nonempty_string)
-    table_parser.add_argument(
-        '--hidden-columns',
-        help='Comma-separated list of columns to not display in table.')
-    table_parser.add_argument(
-        '--column-width',
-        type=int,
-        default=100,
-        help='Maximum width of table columns. Longer values will '
-        'be truncated and appended with "...".')
+    table_parser = add_table_parser(pattern_help, subparsers)
     set_defaults(table_parser)
 
     lookup_parser = add_lookup_parser(subparsers)
@@ -99,25 +101,7 @@ def main(argv=sys.argv[1:]):
     chdesc_parser = add_chdesc_parser(subparsers)
     set_defaults(chdesc_parser)
 
-    reproduce_parser = subparsers.add_parser(
-        REPRODUCE,
-        help='Print commands to reproduce a run. This command '
-        'does not have side-effects (besides printing).')
-    reproduce_parser.add_argument(PATH)
-    reproduce_parser.add_argument(
-        '--description',
-        type=nonempty_string,
-        default=None,
-        help=
-        "Description to be assigned to new run. If None, use the same description as "
-        "the run being reproduced.")
-    reproduce_parser.add_argument(
-        '--no-overwrite',
-        action='store_true',
-        help='If this flag is given, a timestamp will be '
-        'appended to any new name that is already in '
-        'the database.  Otherwise this entry will '
-        'overwrite any entry with the same name. ')
+    reproduce_parser = add_reproduce_parser(subparsers)
     set_defaults(reproduce_parser)
     killall_parser = add_killall_parser(subparsers)
     set_defaults(killall_parser)
@@ -144,7 +128,6 @@ def main(argv=sys.argv[1:]):
 
     module = import_module('runs.commands.' + args.dest.replace('-', '_'))
     kwargs = {k: v for k, v in vars(args).items()}
-    pprint.pprint(kwargs)
     module.cli(**kwargs)
 
 

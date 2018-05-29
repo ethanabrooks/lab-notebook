@@ -1,11 +1,9 @@
-from functools import partial, wraps
-
-from runs.logger import Bash
+from runs.shell import Bash
 
 
 class TMUXSession:
     def __init__(self, path: str, bash: Bash):
-        self.name = path.replace('.', ',').replace(':', ';')
+        self.name = str(path).replace('.', ',').replace(':', ';')
         self.cmd = bash.cmd
 
     def new(self, window_name, command):
