@@ -1,32 +1,24 @@
-import os
 import shutil
 import sqlite3
 from collections import namedtuple
-from contextlib import contextmanager
-from functools import wraps
+from functools import partial, wraps
 from pathlib import Path, PurePath
 from typing import List, Tuple, Union
 
-from runs.util import _exit, get_permission
+# noinspection PyClassHasNoInit
+from runs.logger import Logger
 from tabulate import tabulate
 
 
-@contextmanager
-def open_table(path):
-    conn = sqlite3.connect(path)
-    yield Table(cursor=conn.cursor())
-    conn.commit()
-    conn.close()
-
-
 class RunEntry(
-    namedtuple('RunEntry', [
-        'path', 'full_command', 'commit', 'datetime', 'description',
-        'input_command'
-    ])):
+        namedtuple('RunEntry', [
+            'path', 'full_command', 'commit', 'datetime', 'description',
+            'input_command'
+        ])):
     __slots__ = ()
 
     def __str__(self):
+        # noinspection PyUnresolvedReferences
         return ','.join([f"'{x}'" for x in self])
 
     def replace(self, **kwargs):
@@ -43,23 +35,18 @@ class RunEntry(
 PathLike = Union[str, PurePath, Path]
 
 
-class Conn:
-    def __init__(self, conn):
-        self.conn = conn
-
-    def execute(self, x):
-        print(x)
-        return self.conn.execute(x)
-
-    def commit(self):
-        return self.conn.commit()
-
-    def close(self):
-        return self.conn.close()
-
-
 class Table:
-    def __init__(self, path):
+    @staticmethod
+    def wrapper(func):
+        @wraps(func)
+        def _wrapper(db_path, logger):
+            with Table(db_path, logger) as table:
+                return partial(func, table=table)
+
+        return _wrapper
+
+    def __init__(self, path, logger: Logger):
+        self.logger = logger
         self.path = path
         self.table_name = 'runs'
         self.conn = None
@@ -80,15 +67,22 @@ class Table:
         self.conn.commit()
         self.conn.close()
 
+    # noinspection PyMethodMayBeStatic
     def condition(self, pattern) -> str:
-        return "FROM {} WHERE {} LIKE '{}'".format(self.table_name, self.key,
-                                                   pattern)
+        return f"""
+        FROM {self.table_name} WHERE {self.key} LIKE '{pattern}'
+        """
 
     def __contains__(self, pattern: PathLike) -> bool:
         return bool(
             self.conn.execute(f"""
             SELECT COUNT(*) {self.condition(pattern)}
             """).fetchone()[0])
+
+    def all(self):
+        return self.conn.execute(f"""
+            SELECT * FROM {self.table_name}
+            """).fetchall()
 
     def __iadd__(self, run: RunEntry) -> None:
         self.conn.execute(f"""
@@ -106,7 +100,7 @@ class Table:
             RunEntry(*e) for e in self.conn.execute(f"""
         SELECT * {self.condition(pattern)}
         """).fetchall()
-            ]
+        ]
 
     def __delitem__(self, pattern: PathLike):
         self.conn.execute(f"""
@@ -117,6 +111,18 @@ class Table:
         self.conn.execute(f"""
         DROP TABLE IF EXISTS {self.table_name}
         """)
+
+    def entry(self, path: PathLike):
+        entries = self[path]
+        if len(entries) == 0:
+            self.logger.exit(
+                f"Found no entries for {path}. Current entries:",
+                *[e.path for e in self.all()],
+                sep='\n')
+        if len(entries) > 1:
+            self.logger.exit(
+                f"Found multiple entries for {path}:", *entries, sep='\n')
+        return entries[0]
 
 
 def tree_string(tree, print_attrs=True):
@@ -154,34 +160,10 @@ def table(runs, hidden_columns, column_width):
             return '_'
 
     keys = set([
-                   key for run in runs for key in vars(run.node())
-                   if not key.startswith('_')
-                   ])
+        key for run in runs for key in vars(run.node())
+        if not key.startswith('_')
+    ])
     headers = sorted(set(keys) - set(hidden_columns))
     table = [[run.path] + [get_values(run, key) for key in headers]
              for run in sorted(runs, key=lambda r: r.path)]
     return tabulate(table, headers=headers)
-
-
-def killall(db_path, root):
-    if db_path.exists():
-        if get_permission("Curent runs:\n{}\nDestroy all?".format(
-                tree_string(db_path=db_path))):
-            db_path.unlink()
-    shutil.rmtree(root, ignore_errors=True)
-
-
-def no_match(pattern, table):
-    _exit(f'No runs match pattern "{pattern}". Recorded runs:\n'
-          f'{tree_string(table["%"])}')
-
-
-def with_table(db_path):
-    def with_table_decorator(func):
-        with Table(db_path) as table:
-            @wraps(func)
-            def wrapper(*args, **kwargs):
-                return func(table, *args, **kwargs)
-        return wrapper
-
-    return with_table_decorator

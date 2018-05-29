@@ -7,9 +7,8 @@ from pathlib import Path
 
 from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, assert_true, eq_, ok_)
-
 from runs import main
-from runs.db import Table
+from runs.database import Table, with_table
 from runs.util import CHDESCRIPTION, cmd
 
 # TODO: sad path
@@ -45,6 +44,7 @@ def quote(string):
     return '"' + string + '"'
 
 
+@with_table(DB_PATH)
 def ls(pattern=None, show_attrs=False):
     command = ['runs', 'ls']
     if show_attrs:
@@ -350,7 +350,9 @@ def test_move_dirs():
         # dest is dir and src is dir -> move node into dest
         yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
 
-    with _setup('test_run1', flags=['--run1']), _setup('test_run2', flags=['run2']):
+    with _setup(
+            'test_run1', flags=['--run1']), _setup(
+                'test_run2', flags=['run2']):
         move('test_run1', 'test_run2')
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'

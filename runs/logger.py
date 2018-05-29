@@ -1,0 +1,100 @@
+import subprocess
+from functools import partial, wraps
+
+
+class Logger:
+    exists = False
+
+    @staticmethod
+    def wrapper(func):
+        @wraps(func)
+        def _wrapper(quiet):
+            return partial(func, logger=Logger(quiet=quiet))
+
+        return _wrapper
+
+    def __init__(self, quiet):
+        if Logger.exists:
+            raise RuntimeError(
+                "There should only be one logger in existence at a time.")
+        Logger.exists = True
+        self.quiet = quiet
+
+    def print(self, *msg, **kwargs):
+        if not self.quiet:
+            print(*msg, **kwargs)
+
+    def exit(self, *msg, **kwargs):
+        self.print(*msg, **kwargs)
+        exit()
+
+    def exit_no_match(self, pattern):
+        self.exit(f'No runs match pattern "{pattern}". Recorded runs:\n')
+        # TODO
+        # f'{tree_string(table["%"])}')
+
+
+class UI(Logger):
+    @staticmethod
+    def wrapper(func):
+        @wraps(func)
+        def _wrapper(assume_yes, quiet):
+            return partial(func, ui=UI(assume_yes=assume_yes, quiet=quiet))
+
+        return _wrapper
+
+    def __init__(self, assume_yes: bool, quiet):
+        super().__init__(quiet=quiet)
+        self.assume_yes = assume_yes
+
+    def get_permission(self, *question, **kwargs):
+        if self.assume_yes:
+            return True
+        question = ' '.join(question)
+        if not question.endswith((' ', '\n')):
+            question += ' '
+        response = input(*question, **kwargs)
+        while True:
+            response = response.lower()
+            if response in ['y', 'yes']:
+                return True
+            if response in ['n', 'no']:
+                return False
+            else:
+                response = input('Please enter y[es]|n[o]')
+
+    def check_permission(self, *question, **kwargs):
+        if not self.get_permission(*question, **kwargs):
+            self.exit()
+
+
+class Bash:
+    def __init__(self, logger: Logger):
+        self.logger = logger
+
+    def cmd(self, args, fail_ok=False, cwd=None):
+        process = subprocess.Popen(
+            args,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            cwd=cwd,
+            universal_newlines=True)
+        stdout, stderr = process.communicate(timeout=1)
+        if stderr and not fail_ok:
+            if not self.quiet:
+                print(f"Command `{' '.join(args)}` failed: {stderr}")
+            exit()
+        return stdout.strip()
+
+
+class GitBash(Bash):
+    def last_commit(self):
+        try:
+            return self.cmd('git rev-parse HEAD'.split())
+        except OSError:
+            self.logger.exit(
+                'Could not detect last commit. Perhaps you have not committed yet?'
+            )
+
+    def dirty_repo(self):
+        return self.cmd('git status --porcelain'.split()) is not ''

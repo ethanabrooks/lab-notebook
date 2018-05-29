@@ -2,11 +2,27 @@ import itertools
 import shutil
 import subprocess
 from datetime import datetime
-from functools import wraps
 from pathlib import Path
 from typing import List
 
 from termcolor import colored
+
+
+def get_permission(self, *question):
+    if self.assume_yes:
+        return True
+    question = ' '.join(question)
+    if not question.endswith((' ', '\n')):
+        question += ' '
+    response = input(question)
+    while True:
+        response = response.lower()
+        if response in ['y', 'yes']:
+            return True
+        if response in ['n', 'no']:
+            return False
+        else:
+            response = input('Please enter y[es]|n[o]')
 
 
 def highlight(*args):
@@ -14,7 +30,7 @@ def highlight(*args):
     return colored(string, color='blue', attrs=['bold'])
 
 
-def search_ancestors(filename):
+def findup(filename):
     dirpath = Path('.').resolve()
     while not dirpath.match(dirpath.root):
         filepath = Path(dirpath, filename)
@@ -34,62 +50,6 @@ def prune_empty(path):
         # otherwise, remove it
         shutil.rmtree(str(path), ignore_errors=True)
         prune_empty(path.parent)
-
-
-def get_permission(*question):
-    question = ' '.join(question)
-    if not question.endswith((' ', '\n')):
-        question += ' '
-    response = input(question)
-    while True:
-        response = response.lower()
-        if response in ['y', 'yes']:
-            return True
-        if response in ['n', 'no']:
-            return False
-        else:
-            response = input('Please enter y[es]|n[o]')
-
-
-def cmd(args, fail_ok=False, cwd=None, quiet=False):
-    process = subprocess.Popen(
-        args,
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        cwd=cwd,
-        universal_newlines=True)
-    stdout, stderr = process.communicate(timeout=1)
-    if stderr and not fail_ok:
-        _exit(
-            "Command `{}` failed: {}".format(' '.join(args), stderr),
-            quiet=quiet)
-    else:
-        return stdout.strip()
-
-
-def dirty_repo(quiet=False):
-    return cmd('git status --porcelain'.split(), quiet=quiet) is not ''
-
-
-def _print(*msg, quiet=False):
-    if not quiet:
-        print(*msg)
-
-
-def _exit(*msg, quiet=False):
-    _print(*msg, quiet=quiet)
-    exit()
-
-
-def last_commit(quiet=False):
-    try:
-        return cmd('git rev-parse HEAD'.split())
-    except OSError:
-        if not quiet:
-            print(
-                'Could not detect last commit. Perhaps you have not committed yet?'
-            )
-        exit()
 
 
 def string_from_vim(prompt, string=None):
