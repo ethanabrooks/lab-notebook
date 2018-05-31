@@ -1,19 +1,29 @@
-import os
-import pprint
+import argparse
+import itertools
 import shutil
 import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
+from typing import List
 
-import yaml
-from anytree import NodeMixin, RenderTree
 from termcolor import colored
 
-if sys.version_info.major == 2:
-    pass
-else:
-    FileNotFoundError = OSError
+
+def get_permission(self, *question):
+    if self.assume_yes:
+        return True
+    question = ' '.join(question)
+    if not question.endswith((' ', '\n')):
+        question += ' '
+    response = input(question)
+    while True:
+        response = response.lower()
+        if response in ['y', 'yes']:
+            return True
+        if response in ['n', 'no']:
+            return False
+        else:
+            response = input('Please enter y[es]|n[o]')
 
 
 def highlight(*args):
@@ -21,7 +31,7 @@ def highlight(*args):
     return colored(string, color='blue', attrs=['bold'])
 
 
-def search_ancestors(filename):
+def find_up(filename):
     dirpath = Path('.').resolve()
     while not dirpath.match(dirpath.root):
         filepath = Path(dirpath, filename)
@@ -43,79 +53,6 @@ def prune_empty(path):
         prune_empty(path.parent)
 
 
-def prune_leaves(node):
-    assert isinstance(node, (NodeMixin, type(None)))
-
-    # if the node has children or is a run node, terminate
-    if node is None or node.children:
-        return node
-
-    parent = node.parent
-    node.parent = None
-    prune_leaves(parent)
-
-
-def get_permission(*question):
-    question = ' '.join(question)
-    if not question.endswith((' ', '\n')):
-        question += ' '
-    response = input(question)
-    while True:
-        response = response.lower()
-        if response in ['y', 'yes']:
-            return True
-        if response in ['n', 'no']:
-            return False
-        else:
-            response = input('Please enter y[es]|n[o]')
-
-
-def is_run_node(node):
-    assert isinstance(node, NodeMixin)
-    return hasattr(node, COMMIT)
-
-
-def cmd(args, fail_ok=False, cwd=None, quiet=False):
-    process = subprocess.Popen(
-        args,
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        cwd=cwd,
-        universal_newlines=True)
-    stdout, stderr = process.communicate(timeout=1)
-    if stderr and not fail_ok:
-        _exit(
-            "Command `{}` failed: {}".format(' '.join(args), stderr),
-            quiet=quiet)
-    else:
-        return stdout.strip()
-
-
-def dirty_repo(quiet=False):
-    return cmd('git status --porcelain'.split(), quiet=quiet) is not ''
-
-
-def _print(*msg, quiet=False):
-    if not quiet:
-        print(*msg)
-
-
-def _exit(*msg, quiet=False):
-    _print(*msg, quiet=quiet)
-    exit()
-
-
-def last_commit(quiet=False):
-    try:
-        return cmd('git rev-parse HEAD'.split())
-    except OSError:
-        if not quiet:
-            print(
-                'Could not detect last commit. Perhaps you have not committed yet?'
-            )
-        exit()
-
-
 def string_from_vim(prompt, string=None):
     if string is None:
         string = ' '
@@ -132,6 +69,16 @@ def string_from_vim(prompt, string=None):
         prompt, string = file_contents.split(delimiter)
     path.unlink()
     return string
+
+
+def generate_runs(path: str, flags: List[str]):
+    flag_combinations = list(itertools.product(*flags))
+    for flags in flag_combinations:
+        if len(flag_combinations) > 1:
+            path += '_' + '_'.join(f.lstrip('-') for f in flags)
+        yield path, flags
+    if not flag_combinations:
+        yield path, []
 
 
 PATH = 'path'
@@ -155,25 +102,8 @@ DESCRIPTION = 'description'
 CHDESCRIPTION = 'change-description'
 KILLALL = 'killall'
 
-# @contextmanager
-# def read_remote_file(remote_filename, host, username):
-#     client = SSHClient()
-#     client.set_missing_host_key_policy(AutoAddPolicy())
-#     try:
-#         client.connect(host, username=username, look_for_keys=True)
-#     except SSHException:
-#         client.connect(host,
-#                        username=username,
-#                        password=getpass("Enter password:"),
-#                        look_for_keys=False)
-#     if not client:
-#         raise RuntimeError("Connection not opened.")
-#
-#     sftp = client.open_sftp()
-#     try:
-#         sftp.stat(remote_filename)
-#     except Exception:
-#         raise RuntimeError('There was a problem accessing', remote_filename)
-#
-#     with sftp.open(remote_filename) as f:
-#         yield f
+
+def nonempty_string(value):
+    if value == '' or not isinstance(value, str):
+        raise argparse.ArgumentTypeError("Value must be a nonempty string.")
+    return value
