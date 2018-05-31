@@ -31,7 +31,7 @@ def highlight(*args):
     return colored(string, color='blue', attrs=['bold'])
 
 
-def findup(filename):
+def find_up(filename):
     dirpath = Path('.').resolve()
     while not dirpath.match(dirpath.root):
         filepath = Path(dirpath, filename)

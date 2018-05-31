@@ -7,6 +7,8 @@ from pathlib import Path
 
 from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, eq_, ok_)
+
+import runs
 from runs import main
 from runs.commands import lookup, ls
 from runs.database import Table
@@ -143,7 +145,7 @@ def check_tmux(path):
 
 def check_db(path, flags):
     with TABLE as table:
-        entry = lookup.entry(table=table, path=path)
+        entry = table.entry(path)
 
     # check known values
     eq_(entry.description, DESCRIPTION)
@@ -248,10 +250,9 @@ def test_list():
 
 
 def test_table():
-    pass
-    # TODO
-    # with _setup(TEST_RUN):
-    #     yield check_table, cmd(['runs', 'table'])
+    with _setup(TEST_RUN), TABLE as table:
+        string = runs.commands.table.string(table, None, None, 100)
+        yield check_table, string
 
 
 def test_lookup():
@@ -259,16 +260,16 @@ def test_lookup():
         for key, value in dict(
                 path=TEST_RUN, description=DESCRIPTION,
                 input_command=COMMAND).items():
-            eq_(lookup.string(table, TEST_RUN, key, LOGGER), value)
+            assert_in(value, ''.join(lookup.strings(table, TEST_RUN, key)))
         with assert_raises(SystemExit):
-            run_main('lookup', 'x', TEST_RUN)
+            run_main('lookup', TEST_RUN, 'x')
 
 
 def test_chdesc():
     with _setup(TEST_RUN), TABLE as table:
         description = 'new description'
         run_main(CHDESCRIPTION, TEST_RUN, description)
-        eq_(lookup.entry(table, TEST_RUN).description, description)
+        eq_(table.entry(TEST_RUN).description, description)
 
 
 def test_move():
@@ -344,7 +345,7 @@ def test_move_dirs():
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'
         with TABLE as table:
-            assert_in('--run1', lookup.entry(table, 'test_run2').full_command)
+            assert_in('--run1', table.entry('test_run2').full_command)
 
     with _setup('test_run1'), _setup('test_run2'), _setup('not_a_dir'):
         # src is multi, dest is run -> exits with no change

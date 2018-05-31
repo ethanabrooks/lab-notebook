@@ -15,7 +15,7 @@ from runs.commands.new import add_new_parser
 from runs.commands.reproduce import add_reproduce_parser
 from runs.commands.rm import add_remove_parser
 from runs.commands.table import add_table_parser
-from runs.util import DEFAULT, MAIN, findup, nonempty_string
+from runs.util import DEFAULT, MAIN, find_up, nonempty_string
 
 
 def main(argv=sys.argv[1:]):
@@ -24,7 +24,7 @@ def main(argv=sys.argv[1:]):
         allow_no_value=True,
         interpolation=ExtendedInterpolation())
     config_filename = '.runsrc'
-    config_path = findup(config_filename)
+    config_path = find_up(config_filename)
     if config_path:
         config.read(str(config_path))
     else:

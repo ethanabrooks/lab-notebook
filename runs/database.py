@@ -1,19 +1,21 @@
 import sqlite3
 from collections import namedtuple
-from functools import partial, wraps
+from functools import wraps
 from pathlib import Path, PurePath
 from typing import List, Tuple, Union
 
 from runs.logger import Logger
-from tabulate import tabulate
 
 
 class RunEntry(
-        namedtuple('RunEntry', [
-            'path', 'full_command', 'commit', 'datetime', 'description',
-            'input_command'
-        ])):
+    namedtuple('RunEntry', [
+        'path', 'full_command', 'commit', 'datetime', 'description',
+        'input_command'
+    ])):
     __slots__ = ()
+
+    class KeyError(KeyError):
+        pass
 
     def __str__(self):
         # noinspection PyUnresolvedReferences
@@ -28,6 +30,13 @@ class RunEntry(
 
     def asdict(self) -> dict:
         return self._asdict()
+
+    def get(self, key):
+        try:
+            return getattr(self, key)
+        except AttributeError:
+            raise RunEntry.KeyError
+
 
 
 PathLike = Union[str, PurePath, Path]
@@ -88,7 +97,7 @@ class Table:
             RunEntry(*e) for e in self.conn.execute(f"""
         SELECT * {self.condition(pattern)}
         """).fetchall()
-        ]
+            ]
 
     def __delitem__(self, pattern: PathLike):
         self.conn.execute(f"""
@@ -100,7 +109,7 @@ class Table:
             RunEntry(*e) for e in self.conn.execute(f"""
             SELECT * FROM {self.table_name}
             """).fetchall()
-        ]
+            ]
 
     def update(self, pattern: PathLike, **kwargs):
         updates = ','.join(f"'{k}' = '{v}'" for k, v in kwargs.items())
@@ -146,25 +155,3 @@ def tree_string(tree, print_attrs=True):
     #         for line in pnode:
     #             string += "{}{}\n".format(fill, line)
     return string
-
-
-def table(runs, hidden_columns, column_width):
-    assert isinstance(column_width, int)
-
-    def get_values(run, key):
-        try:
-            value = str(getattr(run.node(), key))
-            if len(value) > column_width:
-                value = value[:column_width] + '...'
-            return value
-        except AttributeError:
-            return '_'
-
-    keys = set([
-        key for run in runs for key in vars(run.node())
-        if not key.startswith('_')
-    ])
-    headers = sorted(set(keys) - set(hidden_columns))
-    table = [[run.path] + [get_values(run, key) for key in headers]
-             for run in sorted(runs, key=lambda r: r.path)]
-    return tabulate(table, headers=headers)
