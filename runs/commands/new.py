@@ -18,9 +18,7 @@ def add_subparser(subparsers):
         help='Unique path assigned to new run. "\\"-delimited.',
         type=nonempty_string)
     parser.add_argument(
-        'command',
-        help='Command that will be run in tmux.',
-        type=nonempty_string)
+        'command', help='Command that will be run in tmux.', type=nonempty_string)
     parser.add_argument(
         '--description',
         help='Description of this run. Explain what this run was all about or '
@@ -29,8 +27,7 @@ def add_subparser(subparsers):
     parser.add_argument(
         '--prefix',
         type=str,
-        help=
-        "String to preprend to all main commands, for example, sourcing a virtualenv"
+        help="String to preprend to all main commands, for example, sourcing a virtualenv"
     )
     parser.add_argument(
         '--flags',
@@ -44,8 +41,8 @@ def add_subparser(subparsers):
 
 @UI.wrapper
 @Table.wrapper
-def cli(path, prefix, command, description, flags, root, dir_names, table,
-        *args, **kwargs):
+def cli(path, prefix, command, description, flags, root, dir_names, table, *args,
+        **kwargs):
     logger = table.logger
     return main(
         path=path,
@@ -60,13 +57,11 @@ def cli(path, prefix, command, description, flags, root, dir_names, table,
         file_system=FileSystem(root=root, dir_names=dir_names))
 
 
-def main(path: str, prefix: str, command: str, description: str, flags: str,
-         bash: Bash, ui: UI, table: Table, tmux: TMUXSession,
-         file_system: FileSystem):
+def main(path: str, prefix: str, command: str, description: str, flags: str, bash: Bash,
+         ui: UI, table: Table, tmux: TMUXSession, file_system: FileSystem):
     # Check if repo is dirty
     if bash.dirty_repo():
-        ui.check_permission(
-            "Repo is dirty. You should commit before run. Run anyway?")
+        ui.check_permission("Repo is dirty. You should commit before run. Run anyway?")
 
     if path in table:
         rm.remove(path=path, table=table, logger=ui, file_system=file_system)

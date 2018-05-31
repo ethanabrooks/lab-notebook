@@ -17,8 +17,7 @@ class TMUXSession:
     def rename(self, new):
         if isinstance(new, TMUXSession):
             new = str(new)
-        self.cmd(
-            'tmux rename-session -t '.split() + [self.name, new], fail_ok=True)
+        self.cmd('tmux rename-session -t '.split() + [self.name, new], fail_ok=True)
 
     def __str__(self):
         return self.name

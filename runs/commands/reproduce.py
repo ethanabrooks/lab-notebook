@@ -30,8 +30,7 @@ def add_subparser(subparsers):
         '--description',
         type=nonempty_string,
         default=None,
-        help=
-        "Description to be assigned to new run. If None, use the same description as "
+        help="Description to be assigned to new run. If None, use the same description as "
         "the run being reproduced.")
     reproduce_parser.add_argument(
         '--no-overwrite',

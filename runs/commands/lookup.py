@@ -12,13 +12,8 @@ def add_subparser(subparsers):
         help='Pattern of runs for which to retrieve key.',
         type=nonempty_string)
     lookup_parser.add_argument(
-        'key',
-        default=None,
-        nargs='?',
-        help='Key that value is associated with.')
-    lookup_parser.add_argument(
-        '--porcelain',
-        action='store_true')
+        'key', default=None, nargs='?', help='Key that value is associated with.')
+    lookup_parser.add_argument('--porcelain', action='store_true')
     return lookup_parser
 
 
@@ -27,15 +22,10 @@ def add_subparser(subparsers):
 def cli(pattern, key, table, porcelain, *args, **kwargs):
     logger = table.logger
     try:
-        logger.print(string(table=table,
-                            pattern=pattern,
-                            key=key,
-                            porcelain=porcelain))
+        logger.print(string(table=table, pattern=pattern, key=key, porcelain=porcelain))
     except RunEntry.KeyError:
         logger.exit(
-            f"{key} is not a valid key. Valid keys are:",
-            RunEntry.fields(),
-            sep='\n')
+            f"{key} is not a valid key. Valid keys are:", RunEntry.fields(), sep='\n')
 
 
 def string(table, pattern, key, porcelain=True):

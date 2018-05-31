@@ -1,8 +1,7 @@
-from tabulate import tabulate
-
-from runs.database import Table, RunEntry
+from runs.database import RunEntry, Table
 from runs.logger import Logger
 from runs.util import PATTERN, TABLE, nonempty_string
+from tabulate import tabulate
 
 help = 'Only display paths matching this pattern.'
 
@@ -11,11 +10,7 @@ def add_subparser(subparsers):
     table_parser = subparsers.add_parser(
         TABLE, help='Display contents of run database as a table.')
     table_parser.add_argument(
-        PATTERN,
-        nargs='?',
-        default=None,
-        help=help,
-        type=nonempty_string)
+        PATTERN, nargs='?', default=None, help=help, type=nonempty_string)
     table_parser.add_argument(
         '--hidden-columns',
         default=None,
@@ -25,7 +20,7 @@ def add_subparser(subparsers):
         type=int,
         default=100,
         help='Maximum width of table columns. Longer values will '
-             'be truncated and appended with "...".')
+        'be truncated and appended with "...".')
     return table_parser
 
 

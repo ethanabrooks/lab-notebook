@@ -15,11 +15,7 @@ def cli(pattern, root, dir_names, table, *args, **kwargs):
         ["Runs to be removed:", *[str(e.path) for e in entries], "Continue?"]))
     file_system = FileSystem(root=root, dir_names=dir_names)
     for entry in table[pattern]:
-        remove(
-            path=entry.path,
-            table=table,
-            file_system=file_system,
-            logger=logger)
+        remove(path=entry.path, table=table, file_system=file_system, logger=logger)
 
 
 def remove(path, table, logger, file_system):

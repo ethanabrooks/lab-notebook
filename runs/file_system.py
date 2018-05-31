@@ -23,8 +23,7 @@ class FileSystem:
             prune_empty(path.parent)
 
     def mvdirs(self, old_path: PurePath, new_path: PurePath) -> None:
-        for old, new in zip(
-                self.dir_paths(old_path), self.dir_paths(new_path)):
+        for old, new in zip(self.dir_paths(old_path), self.dir_paths(new_path)):
             assert isinstance(old, Path)
             assert isinstance(new, Path)
             new.parent.mkdir(exist_ok=True, parents=True)

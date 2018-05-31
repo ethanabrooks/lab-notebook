@@ -9,8 +9,9 @@ from runs.shell import Bash
 from runs.tmux_session import TMUXSession
 from runs.util import MOVE, ROOT_PATH, SEP, nonempty_string
 
-
 path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
+
+
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
         MOVE,
@@ -36,8 +37,7 @@ def add_subparser(subparsers):
 
 @UI.wrapper
 @Table.wrapper
-def cli(source, destination, kill_tmux, table, root, dir_names, *args,
-        **kwargs):
+def cli(source, destination, kill_tmux, table, root, dir_names, *args, **kwargs):
     logger = table.logger
     move(
         table=table,
@@ -69,10 +69,11 @@ def move(table: Table, src_pattern: str, dest_path: str, tmux: TMUXSession,
             if is_dir(dest_path) or len(src_entries) > 1:
                 old_parts = PurePath(src_pattern).parent.parts
                 src_parts = PurePath(src_path).parts
-                return PurePath(dest_path, *[
-                    p for p, from_old in zip_longest(src_parts, old_parts)
-                    if not from_old
-                ])
+                return PurePath(
+                    dest_path, *[
+                        p for p, from_old in zip_longest(src_parts, old_parts)
+                        if not from_old
+                    ])
             else:
                 return PurePath(dest_path, PurePath(src_path).stem)
         else:
@@ -84,8 +85,7 @@ def move(table: Table, src_pattern: str, dest_path: str, tmux: TMUXSession,
     moves = {s.path: get_dest(s.path) for s in src_entries}
 
     # check before moving
-    ui.check_permission("Planned moves:",
-                        *[f"{s} -> {d}" for s, d in moves.items()],
+    ui.check_permission("Planned moves:", *[f"{s} -> {d}" for s, d in moves.items()],
                         'Continue?')
 
     # check for conflicts with existing runs
@@ -96,11 +96,7 @@ def move(table: Table, src_pattern: str, dest_path: str, tmux: TMUXSession,
     for src_path, dest_path in moves.items():
         if src_path != dest_path:
             if dest_path in table:
-                rm.remove(
-                    path=dest_path,
-                    table=table,
-                    logger=ui,
-                    file_system=file_system)
+                rm.remove(path=dest_path, table=table, logger=ui, file_system=file_system)
 
             # Move individual run
             file_system.mvdirs(src_path, dest_path)

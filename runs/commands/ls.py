@@ -10,10 +10,8 @@ help = 'Only display paths matching this pattern.'
 
 
 def add_subparser(subparsers):
-    list_parser = subparsers.add_parser(
-        LIST, help='List all names in run database.')
-    list_parser.add_argument(
-        PATTERN, nargs='?', help=help, type=nonempty_string)
+    list_parser = subparsers.add_parser(LIST, help='List all names in run database.')
+    list_parser.add_argument(PATTERN, nargs='?', help=help, type=nonempty_string)
     list_parser.add_argument(
         '--show-attrs',
         action='store_true',
@@ -22,16 +20,14 @@ def add_subparser(subparsers):
         '--porcelain',
         action='store_true',
         help='Print list of path names without tree '
-             'formatting.')
+        'formatting.')
     return list_parser
 
 
 @Logger.wrapper
 @Table.wrapper
 def cli(pattern, table, porcelain, *args, **kwargs):
-    table.logger.print(string(pattern=pattern,
-                              table=table,
-                              porcelain=porcelain))
+    table.logger.print(string(pattern=pattern, table=table, porcelain=porcelain))
 
 
 def string(pattern, table, porcelain=True):
@@ -64,14 +60,10 @@ def tree_strings(tree, prefix='', root_prefix='', root='.'):
     if tree:
         *rest, last = tree.items()
         for root, tree in rest:
-            for string in tree_strings(tree=tree,
-                                       prefix=prefix,
-                                       root_prefix='├── ',
-                                       root=root):
+            for string in tree_strings(
+                    tree=tree, prefix=prefix, root_prefix='├── ', root=root):
                 yield string
         root, tree = last
-        for string in tree_strings(tree=tree,
-                                   prefix=prefix,
-                                   root_prefix='└── ',
-                                   root=root):
+        for string in tree_strings(
+                tree=tree, prefix=prefix, root_prefix='└── ', root=root):
             yield string

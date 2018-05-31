@@ -14,8 +14,7 @@ def add_subparser(subparsers):
         help='Don\'t ask permission before performing operations.')
     parser.add_argument(
         '--root',
-        help=
-        'Custom path to directory where config directories (if any) are automatically '
+        help='Custom path to directory where config directories (if any) are automatically '
         'created',
         type=nonempty_string)
     return parser

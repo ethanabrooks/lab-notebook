@@ -7,15 +7,8 @@ from pathlib import Path
 from pprint import pprint
 
 from runs import commands
-from runs.commands import change_description
-from runs.commands import killall
-from runs.commands import lookup
-from runs.commands import ls
-from runs.commands import mv
-from runs.commands import new
-from runs.commands import reproduce
-from runs.commands import rm
-from runs.commands import table
+from runs.commands import (change_description, killall, lookup, ls, mv, new,
+                           reproduce, rm, table)
 from runs.commands.change_description import add_subparser
 from runs.commands.killall import add_subparser
 from runs.commands.lookup import add_subparser
@@ -30,9 +23,7 @@ from runs.util import DEFAULT, MAIN, find_up, nonempty_string
 
 def main(argv=sys.argv[1:]):
     config = ConfigParser(
-        delimiters=[':'],
-        allow_no_value=True,
-        interpolation=ExtendedInterpolation())
+        delimiters=[':'], allow_no_value=True, interpolation=ExtendedInterpolation())
     config_filename = '.runsrc'
     config_path = find_up(config_filename)
     if config_path:
@@ -55,8 +46,7 @@ def main(argv=sys.argv[1:]):
         type=Path)
     parser.add_argument(
         '--root',
-        help=
-        'Custom path to directory where config directories (if any) are automatically '
+        help='Custom path to directory where config directories (if any) are automatically '
         'created',
         type=nonempty_string)
     parser.add_argument(
@@ -71,18 +61,19 @@ def main(argv=sys.argv[1:]):
 
     subparsers = parser.add_subparsers(dest='dest')
 
-    for subparser in [parser] + [adder(subparsers)
-                                 for adder in [
-                                     new.add_subparser,
-                                     rm.add_subparser,
-                                     mv.add_subparser,
-                                     ls.add_subparser,
-                                     table.add_subparser,
-                                     lookup.add_subparser,
-                                     change_description.add_subparser,
-                                     reproduce.add_subparser,
-                                     killall.add_subparser,
-                                 ]]:
+    for subparser in [parser] + [
+            adder(subparsers) for adder in [
+                new.add_subparser,
+                rm.add_subparser,
+                mv.add_subparser,
+                ls.add_subparser,
+                table.add_subparser,
+                lookup.add_subparser,
+                change_description.add_subparser,
+                reproduce.add_subparser,
+                killall.add_subparser,
+            ]
+    ]:
         assert isinstance(subparser, argparse.ArgumentParser)
         config_section = subparser.prog.split()[-1]
         assert isinstance(config_section, str)

@@ -5,10 +5,9 @@ from contextlib import contextmanager
 from fnmatch import fnmatch
 from pathlib import Path
 
+import runs
 from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, eq_, ok_)
-
-import runs
 from runs import main
 from runs.commands import lookup, ls
 from runs.database import Table
@@ -41,8 +40,7 @@ TABLE = Table(DB_PATH, LOGGER)
 
 def sessions():
     try:
-        output = BASH.cmd(
-            'tmux list-session -F "#{session_name}"'.split(), fail_ok=True)
+        output = BASH.cmd('tmux list-session -F "#{session_name}"'.split(), fail_ok=True)
         assert isinstance(output, str)
         return output.split('\n')
     except subprocess.CalledProcessError:
@@ -76,8 +74,7 @@ class ParamGenerator:
 
     def __add__(self, other):
         assert isinstance(other, ParamGenerator)
-        return ParamGenerator(self.paths + other.paths,
-                              self.dir_names + other.dir_names,
+        return ParamGenerator(self.paths + other.paths, self.dir_names + other.dir_names,
                               self.flags + other.flags)
 
 
@@ -88,9 +85,8 @@ class SimpleParamGenerator(ParamGenerator):
 
 class ParamGeneratorWithSubdir(ParamGenerator):
     def __init__(self):
-        super().__init__(paths=[
-            SUBDIR + SEP + TEST_RUN, SUBDIR + SEP + SUBDIR + SEP + TEST_RUN
-        ])
+        super().__init__(
+            paths=[SUBDIR + SEP + TEST_RUN, SUBDIR + SEP + SUBDIR + SEP + TEST_RUN])
 
 
 class ParamGeneratorWithPatterns(ParamGenerator):
@@ -146,11 +142,27 @@ def check_tmux(path):
 def check_db(path, flags):
     with TABLE as table:
         # check known values
-        assert_in(DESCRIPTION, lookup.string(table, path, 'description', ))
-        assert_in(COMMAND, lookup.string(table, path, 'input_command', ))
-        assert_in(path, lookup.string(table, path, 'path', ))
+        assert_in(DESCRIPTION, lookup.string(
+            table,
+            path,
+            'description',
+        ))
+        assert_in(COMMAND, lookup.string(
+            table,
+            path,
+            'input_command',
+        ))
+        assert_in(path, lookup.string(
+            table,
+            path,
+            'path',
+        ))
         for flag in flags:
-            assert_in(flag, lookup.string(table, path, 'full_command', ))
+            assert_in(flag, lookup.string(
+                table,
+                path,
+                'full_command',
+            ))
 
 
 def check_files(path, dir_names):
@@ -212,15 +224,12 @@ def test_new():
 
 
 def test_rm():
-    for path, dir_names, flags in ParamGenerator() + ParamGeneratorWithSubdir(
-    ):
+    for path, dir_names, flags in ParamGenerator() + ParamGeneratorWithSubdir():
         with _setup(path, dir_names, flags):
             run_main('rm', path)
             yield check_tmux_killed, path
             yield check_del_entry, path
             yield check_rm_files, path
-
-            # TODO: patterns
 
 
 def test_list():
@@ -242,8 +251,7 @@ def test_table():
 def test_lookup():
     with _setup(TEST_RUN), TABLE as table:
         for key, value in dict(
-                path=TEST_RUN, description=DESCRIPTION,
-                input_command=COMMAND).items():
+                path=TEST_RUN, description=DESCRIPTION, input_command=COMMAND).items():
             assert_in(value, lookup.string(table, TEST_RUN, key))
         with assert_raises(SystemExit):
             run_main('lookup', TEST_RUN, 'x')
@@ -322,9 +330,7 @@ def test_move_dirs():
         # dest is dir and src is dir -> move node into dest
         yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
 
-    with _setup(
-            'test_run1', flags=['--run1']), _setup(
-        'test_run2', flags=['run2']):
+    with _setup('test_run1', flags=['--run1']), _setup('test_run2', flags=['run2']):
         move('test_run1', 'test_run2')
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'

@@ -24,8 +24,7 @@ class Bash:
             return self.cmd('git rev-parse HEAD'.split())
         except OSError:
             self.logger.exit(
-                'Could not detect last commit. Perhaps you have not committed yet?'
-            )
+                'Could not detect last commit. Perhaps you have not committed yet?')
 
     def dirty_repo(self):
         return self.cmd('git status --porcelain'.split()) is not ''

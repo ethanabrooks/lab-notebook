@@ -8,10 +8,9 @@ from runs.logger import Logger
 
 
 class RunEntry(
-    namedtuple('RunEntry', [
-        'path', 'full_command', 'commit', 'datetime', 'description',
-        'input_command'
-    ])):
+        namedtuple('RunEntry', [
+            'path', 'full_command', 'commit', 'datetime', 'description', 'input_command'
+        ])):
     __slots__ = ()
 
     class KeyError(KeyError):
@@ -36,7 +35,6 @@ class RunEntry(
             return getattr(self, key)
         except AttributeError:
             raise RunEntry.KeyError
-
 
 
 PathLike = Union[str, PurePath, Path]
@@ -97,7 +95,7 @@ class Table:
             RunEntry(*e) for e in self.conn.execute(f"""
         SELECT * {self.condition(pattern)}
         """).fetchall()
-            ]
+        ]
 
     def __delitem__(self, pattern: PathLike):
         self.conn.execute(f"""
@@ -109,7 +107,7 @@ class Table:
             RunEntry(*e) for e in self.conn.execute(f"""
             SELECT * FROM {self.table_name}
             """).fetchall()
-            ]
+        ]
 
     def update(self, pattern: PathLike, **kwargs):
         updates = ','.join(f"'{k}' = '{v}'" for k, v in kwargs.items())
@@ -130,8 +128,7 @@ class Table:
                 *[e.path for e in self.all()],
                 sep='\n')
         if len(entries) > 1:
-            self.logger.exit(
-                f"Found multiple entries for {path}:", *entries, sep='\n')
+            self.logger.exit(f"Found multiple entries for {path}:", *entries, sep='\n')
         return entries[0]
 
 

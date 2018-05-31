@@ -39,8 +39,7 @@ class UI(Logger):
     def wrapper(func):
         @wraps(func)
         def ui_wrapper(assume_yes, quiet, *args, **kwargs):
-            return func(
-                *args, **kwargs, logger=UI(assume_yes=assume_yes, quiet=quiet))
+            return func(*args, **kwargs, logger=UI(assume_yes=assume_yes, quiet=quiet))
 
         return ui_wrapper
 
