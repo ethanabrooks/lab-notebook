@@ -27,6 +27,13 @@ class FileSystem:
             assert isinstance(old, Path)
             assert isinstance(new, Path)
             new.parent.mkdir(exist_ok=True, parents=True)
-            if old.exists():
-                old.rename(new)
+            if old.exists() and old.is_dir():
+                try:
+                    old.rename(new)
+                except OSError:
+                    # deal with x -> x/y
+                    tmp = Path(old.parent, 'tmp')
+                    old.rename(tmp)
+                    new.parent.mkdir(exist_ok=True, parents=True)
+                    tmp.rename(new)
                 prune_empty(old.parent)
