@@ -1,3 +1,7 @@
+from collections import defaultdict
+from pathlib import PurePath
+from pprint import pprint
+
 from runs.database import Table
 from runs.logger import Logger
 from runs.util import LIST, PATTERN, nonempty_string
@@ -24,12 +28,56 @@ def add_subparser(subparsers):
 
 @Logger.wrapper
 @Table.wrapper
-def cli(pattern, table, *args, **kwargs):
-    for string in strings(pattern, table):
-        print(string)
+def cli(pattern, table, porcelain, *args, **kwargs):
+    if pattern:
+        entries = table[pattern]
+    else:
+        entries = table.all()
+    paths = [e.path for e in entries]
+    if porcelain:
+        for string in paths:
+            print(string)
+    else:
+        tree = build_tree(paths)
+        pprint(tree)
+        for string in tree_strings(tree):
+            print(string)
 
 
 def strings(pattern, table):
-    if pattern is None:
-        pattern = '%'
     return [e.path for e in table[pattern]]
+
+
+def build_tree(paths):
+    aggregator = defaultdict(list)
+    for path in paths:
+        try:
+            print(path)
+            head, *tail = PurePath(path).parts
+        except ValueError:
+            return dict()
+        aggregator[head].append(PurePath(*tail))
+    return {k: build_tree(v) for k, v in aggregator.items()}
+
+
+def tree_strings(tree, prefix='', root_prefix='', root='.'):
+    yield prefix + root_prefix + root
+    if root_prefix == '├── ':
+        prefix += "│   "
+    if root_prefix == '└── ':
+        prefix += "    "
+    if tree:
+        *rest, last = tree.items()
+        for root, tree in rest:
+            for string in tree_strings(tree=tree,
+                                       prefix=prefix,
+                                       root_prefix='├── ',
+                                       root=root):
+                yield string
+        root, tree = last
+        for string in tree_strings(tree=tree,
+                                   prefix=prefix,
+                                   root_prefix='└── ',
+                                   root=root):
+            yield string
+
