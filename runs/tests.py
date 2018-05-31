@@ -337,6 +337,11 @@ def test_move_dirs():
         with DB as db:
             assert_in('--run1', lookup.string(db, 'test_run2', 'full_command'))
 
+    with _setup('test'):
+        move('test', 'test/test2')
+        # move into self; this is a problem for movedir
+        yield check_move, 'test', 'test/test2'
+
     with _setup('test_run1'), _setup('test_run2'), _setup('not_a_dir'):
         # src is multi, dest is run -> exits with no change
         with assert_raises(SystemExit):

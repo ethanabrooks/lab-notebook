@@ -1,6 +1,9 @@
+import codecs
 import re
 from datetime import datetime
 from pathlib import PurePath
+
+import itertools
 
 from runs.commands import rm
 from runs.database import RunEntry, DataBase
@@ -22,8 +25,8 @@ def add_subparser(subparsers):
     parser.add_argument(
         '--description',
         help='Description of this run. Explain what this run was all about or '
-        'just write whatever your heart desires. If this argument is `commit-message`,'
-        'it will simply use the last commit message.')
+             'just write whatever your heart desires. If this argument is `commit-message`,'
+             'it will simply use the last commit message.')
     parser.add_argument(
         '--prefix',
         type=str,
@@ -41,38 +44,81 @@ def add_subparser(subparsers):
 
 @UI.wrapper
 @DataBase.wrapper
-def cli(path, prefix, command, description, flags, root, dir_names, db, *args,
-        **kwargs):
-    logger = db.logger
-    return main(
-        path=path,
-        prefix=prefix,
-        command=command,
-        description=description,
-        flags=flags,
-        bash=Bash(logger=logger),
-        ui=logger,
-        db=db,
-        tmux=TMUXSession(path=path, bash=Bash(logger=logger)),
-        file_system=FileSystem(root=root, dir_names=dir_names))
+def cli(path: str, prefix: str, command: str, description: str, flags: str,
+        root: str, dir_names: str, db: DataBase, *args, **kwargs):
+    ui = db.logger
+    bash = Bash(logger=ui)
+    file_system = FileSystem(root=root, dir_names=dir_names)
 
+    if flags:
+        flags = codecs.decode(flags, encoding='unicode_escape').strip('\n').split('\n')
+    else:
+        flags = []
+    flag_variants = []
+    for flag in flags:
+        if re.match('--[ ^=] *=', flag):
+            key, values = flag.split('=')
+            flag_variants.append([key + '=' + value for value in values.split('|')])
+        elif re.match('--[ ^=] * ', flag):
+            key, values = flag.split(' ')
+            flag_variants.append([key + ' ' + value for value in values.split('|')])
+        else:
+            flag_variants.append([flag])
 
-def main(path: str, prefix: str, command: str, description: str, flags: str, bash: Bash,
-         ui: UI, db: DataBase, tmux: TMUXSession, file_system: FileSystem):
-    # Check if repo is dirty
+    runs = list(generate_runs(path, flag_variants))
+    if len(runs) > 1:
+        commands = [build_command(command, p, prefix, f) for p, f in runs]
+        ui.check_permission('\n'.join(["Generating the following runs:"] +
+                                      [f"{path}: {command}" for command in commands] +
+                                      ["Continue?"]))
+
     if bash.dirty_repo():
         ui.check_permission("Repo is dirty. You should commit before run. Run anyway?")
+    for path, flags in runs:
+        # Check if repo is dirty
+        if path in db:
+            rm.remove(path=path, db=db, logger=ui, file_system=file_system)
 
-    if path in db:
-        rm.remove(path=path, db=db, logger=ui, file_system=file_system)
+    for path, flags in runs:
+        new(
+            path=path,
+            prefix=prefix,
+            command=command,
+            description=description,
+            flags=flags,
+            bash=bash,
+            ui=ui,
+            db=db,
+            tmux=TMUXSession(path=path, bash=Bash(logger=ui)),
+            file_system=file_system)
 
+
+def generate_runs(path: str, flags):
+    flag_combinations = list(itertools.product(*flags))
+    for i, flags in enumerate(flag_combinations):
+        new_path = path
+        if len(flag_combinations) > 1:
+            new_path += str(i)
+        yield new_path, flags
+
+
+def build_command(command, path, prefix, flags):
+    for flag in flags:
+        flag = interpolate_keywords(path, flag)
+        command += ' ' + flag
+    if prefix:
+        return f'{prefix} {full_command}'
+    return command
+
+
+def new(path: str, prefix: str, command: str, description: str, flags: list, bash: Bash,
+        ui: UI, db: DataBase, tmux: TMUXSession, file_system: FileSystem):
     # create directories
     for dir_path in file_system.dir_paths(PurePath(path)):
         dir_path.mkdir(exist_ok=True, parents=True)
 
     # process info
     full_command = command
-    flags = flags.strip('\n').split('\n') if flags else []
     for flag in flags:
         flag = interpolate_keywords(path, flag)
         full_command += ' ' + flag

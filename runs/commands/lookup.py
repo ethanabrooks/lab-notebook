@@ -1,6 +1,7 @@
 import runs
 from runs.database import RunEntry, DataBase
 from runs.logger import Logger
+from runs.util import highlight
 from runs.util import nonempty_string
 
 
@@ -40,7 +41,7 @@ def strings(db, pattern, key, porcelain):
                 yield str(value)
         else:
             for path, attr in attr_dict.items():
-                yield f'{path}.{key} = {attr}'
+                yield highlight(path + ": ") + str(attr)
     else:
         if porcelain:
             for entry in db[pattern]:
