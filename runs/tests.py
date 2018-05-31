@@ -145,14 +145,12 @@ def check_tmux(path):
 
 def check_db(path, flags):
     with TABLE as table:
-        entry = table.entry(path)
-
-    # check known values
-    eq_(entry.description, DESCRIPTION)
-    eq_(entry.input_command, COMMAND)
-    eq_(entry.path, path)
-    for flag in flags:
-        assert_in(flag, entry.full_command)
+        # check known values
+        assert_in(DESCRIPTION, lookup.string(table, path, 'description', ))
+        assert_in(COMMAND, lookup.string(table, path, 'input_command', ))
+        assert_in(path, lookup.string(table, path, 'path', ))
+        for flag in flags:
+            assert_in(flag, lookup.string(table, path, 'full_command', ))
 
 
 def check_files(path, dir_names):
@@ -176,29 +174,16 @@ def check_rm_files(path):
             assert_false(fnmatch(filename, path))
 
 
-#
-def check_list_happy(pattern, show_attrs):
-    # TODO
-    pass
-    # string = ls(pattern, show_attrs)
-    # if print_attrs:
-    #     assert_in('test_run', string)
-    #     assert_in('commit', string)
-    # else:
-    #     pass
-
-
-#         eq_(string, """\
-# .
-# └── test_run
-# """)
+def check_list_happy(pattern):
+    with TABLE as table:
+        string = ls.string(pattern, table)
+        assert_in('test_run', string)
 
 
 def check_list_sad(pattern):
-    # TODO
-    pass
-    # string = ls(pattern, show_attrs=True)
-    # eq_(string, '.\n')
+    with TABLE as table:
+        string = ls.string(pattern, table, porcelain=False)
+        eq_(string, '.')
 
 
 def check_table(table):
@@ -243,8 +228,7 @@ def test_list():
     for _, dir_names, flags in ParamGenerator():
         with _setup(path, dir_names, flags):
             for pattern in ['%', 'test%']:
-                for print_attrs in range(2):
-                    yield check_list_happy, pattern, print_attrs
+                yield check_list_happy, pattern
             for pattern in ['x%', 'test']:
                 yield check_list_sad, pattern
 
@@ -260,7 +244,7 @@ def test_lookup():
         for key, value in dict(
                 path=TEST_RUN, description=DESCRIPTION,
                 input_command=COMMAND).items():
-            assert_in(value, ''.join(lookup.strings(table, TEST_RUN, key)))
+            assert_in(value, lookup.string(table, TEST_RUN, key))
         with assert_raises(SystemExit):
             run_main('lookup', TEST_RUN, 'x')
 
@@ -269,7 +253,7 @@ def test_chdesc():
     with _setup(TEST_RUN), TABLE as table:
         description = 'new description'
         run_main(CHDESCRIPTION, TEST_RUN, description)
-        eq_(table.entry(TEST_RUN).description, description)
+        assert_in(description, lookup.string(table, TEST_RUN, 'description'))
 
 
 def test_move():
@@ -340,12 +324,12 @@ def test_move_dirs():
 
     with _setup(
             'test_run1', flags=['--run1']), _setup(
-                'test_run2', flags=['run2']):
+        'test_run2', flags=['run2']):
         move('test_run1', 'test_run2')
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'
         with TABLE as table:
-            assert_in('--run1', table.entry('test_run2').full_command)
+            assert_in('--run1', lookup.string(table, 'test_run2', 'full_command'))
 
     with _setup('test_run1'), _setup('test_run2'), _setup('not_a_dir'):
         # src is multi, dest is run -> exits with no change

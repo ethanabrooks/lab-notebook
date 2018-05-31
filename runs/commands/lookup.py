@@ -27,8 +27,10 @@ def add_subparser(subparsers):
 def cli(pattern, key, table, porcelain, *args, **kwargs):
     logger = table.logger
     try:
-        for string in strings(table, pattern, key, porcelain):
-            logger.print(string)
+        logger.print(string(table=table,
+                            pattern=pattern,
+                            key=key,
+                            porcelain=porcelain))
     except RunEntry.KeyError:
         logger.exit(
             f"{key} is not a valid key. Valid keys are:",
@@ -36,19 +38,25 @@ def cli(pattern, key, table, porcelain, *args, **kwargs):
             sep='\n')
 
 
-def strings(table, pattern, key, porcelain=True):
+def string(table, pattern, key, porcelain=True):
+    return '\n'.join(strings(table, pattern, key, porcelain))
+
+
+def strings(table, pattern, key, porcelain):
     if key:
         attr_dict = get_dict(table, pattern, key)
         if porcelain:
-            return [attr for attr in attr_dict.values()]
+            for value in attr_dict.values():
+                yield str(value)
         else:
-            return [f'{path}.{key} = {attr}'
-                    for path, attr in attr_dict.items()]
+            for path, attr in attr_dict.items():
+                yield f'{path}.{key} = {attr}'
     else:
         if porcelain:
-            return [attr for attr in table[pattern]]
+            for entry in table[pattern]:
+                yield str(entry)
         else:
-            return [runs.commands.table.string(table, pattern)]
+            yield runs.commands.table.string(table, pattern)
 
 
 def get_dict(table, path, key):

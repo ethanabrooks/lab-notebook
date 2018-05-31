@@ -29,30 +29,25 @@ def add_subparser(subparsers):
 @Logger.wrapper
 @Table.wrapper
 def cli(pattern, table, porcelain, *args, **kwargs):
-    if pattern:
-        entries = table[pattern]
-    else:
-        entries = table.all()
+    table.logger.print(string(pattern=pattern,
+                              table=table,
+                              porcelain=porcelain))
+
+
+def string(pattern, table, porcelain=True):
+    return '\n'.join(strings(pattern, table, porcelain))
+
+
+def strings(pattern, table, porcelain=True):
+    entries = table[pattern] if pattern else table.all()
     paths = [e.path for e in entries]
-    if porcelain:
-        for string in paths:
-            print(string)
-    else:
-        tree = build_tree(paths)
-        pprint(tree)
-        for string in tree_strings(tree):
-            print(string)
-
-
-def strings(pattern, table):
-    return [e.path for e in table[pattern]]
+    return paths if porcelain else tree_strings(build_tree(paths))
 
 
 def build_tree(paths):
     aggregator = defaultdict(list)
     for path in paths:
         try:
-            print(path)
             head, *tail = PurePath(path).parts
         except ValueError:
             return dict()
@@ -80,4 +75,3 @@ def tree_strings(tree, prefix='', root_prefix='', root='.'):
                                    root_prefix='└── ',
                                    root=root):
             yield string
-
