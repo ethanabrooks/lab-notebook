@@ -32,7 +32,7 @@ def cli(pattern, db, hidden_columns, column_width, *args, **kwargs):
 
 def string(db, pattern=None, hidden_columns=None, column_width=100):
     if hidden_columns is None:
-        hidden_columns = ['full_command']
+        hidden_columns = ['full_command', 'path']
     assert isinstance(column_width, int)
 
     def get_values(entry, key):

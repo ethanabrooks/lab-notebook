@@ -27,6 +27,7 @@ setup(
     entry_points={
         'console_scripts': [
             'runs = runs.main:main',
+            'convert-to-db = runs.convert_to_db:main',
         ],
     },
     scripts=['runs-git'],
