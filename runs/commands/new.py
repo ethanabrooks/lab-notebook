@@ -56,10 +56,10 @@ def cli(path: str, prefix: str, command: str, description: str, flags: str,
         flags = []
     flag_variants = []
     for flag in flags:
-        if re.match('--[ ^=] *=', flag):
+        if re.match('--[^=]*=.*', flag):
             key, values = flag.split('=')
             flag_variants.append([key + '=' + value for value in values.split('|')])
-        elif re.match('--[ ^=] * ', flag):
+        elif re.match('--[^=]* .*', flag):
             key, values = flag.split(' ')
             flag_variants.append([key + ' ' + value for value in values.split('|')])
         else:
@@ -67,9 +67,9 @@ def cli(path: str, prefix: str, command: str, description: str, flags: str,
 
     runs = list(generate_runs(path, flag_variants))
     if len(runs) > 1:
-        commands = [build_command(command, p, prefix, f) for p, f in runs]
         ui.check_permission('\n'.join(["Generating the following runs:"] +
-                                      [f"{path}: {command}" for command in commands] +
+                                      [f"{p}: {build_command(command, p, prefix, f)}"
+                                       for p, f in runs] +
                                       ["Continue?"]))
 
     if bash.dirty_repo():

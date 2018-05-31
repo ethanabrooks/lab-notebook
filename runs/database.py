@@ -75,33 +75,34 @@ class DataBase:
         self.conn.close()
 
     # noinspection PyMethodMayBeStatic
-    def condition(self, pattern) -> str:
+    def condition(self) -> str:
         return f"""
-        FROM {self.table_name} WHERE {self.key} LIKE '{pattern}'
+        FROM {self.table_name} WHERE {self.key} LIKE ?
         """
 
     def __contains__(self, pattern: PathLike) -> bool:
         return bool(
             self.conn.execute(f"""
-            SELECT COUNT(*) {self.condition(pattern)}
-            """).fetchone()[0])
+            SELECT COUNT(*) {self.condition()}
+            """, (str(pattern),)).fetchone()[0])
 
     def __getitem__(self, pattern: PathLike) -> List[RunEntry]:
         return [
             RunEntry(*e) for e in self.conn.execute(f"""
-        SELECT * {self.condition(pattern)}
-        """).fetchall()
+        SELECT * {self.condition()}
+        """, (str(pattern),)).fetchall()
             ]
 
     def __delitem__(self, pattern: PathLike):
         self.conn.execute(f"""
-        DELETE {self.condition(pattern)}
-        """)
+        DELETE {self.condition()}
+        """, (str(pattern),))
 
     def append(self, run: RunEntry):
         self.conn.execute(f"""
-        INSERT INTO {self.table_name} ({self.fields}) VALUES ({run})
-        """)
+        INSERT INTO {self.table_name} ({self.fields})
+        VALUES ({','.join('?' for _ in run)})
+        """, run)
         return self
 
     def all(self):
@@ -114,8 +115,8 @@ class DataBase:
     def update(self, pattern: PathLike, **kwargs):
         updates = ','.join(f"'{k}' = '{v}'" for k, v in kwargs.items())
         self.conn.execute(f"""
-        UPDATE {self.table_name} SET {updates} WHERE {self.key} LIKE '{pattern}'
-        """)
+        UPDATE {self.table_name} SET {updates} WHERE {self.key} LIKE ?
+        """, (str(pattern),))
 
     def delete(self):
         self.conn.execute(f"""
