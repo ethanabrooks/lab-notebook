@@ -1,16 +1,16 @@
-from runs.database import Table
+from runs.database import DataBase
 from runs.logger import Logger
 from runs.util import PATH, REPRODUCE, highlight, nonempty_string
 
 
 @Logger.wrapper
-@Table.wrapper
-def cli(path, table, *args, **kwargs):
-    print(string(path, table))
+@DataBase.wrapper
+def cli(path, db, *args, **kwargs):
+    print(string(path, db))
 
 
-def string(path, table):
-    entry = table.entry(path)
+def string(path, db):
+    entry = db.entry(path)
     return '\n'.join([
         'To reproduce:',
         highlight(f'git checkout {entry.commit}\n'),

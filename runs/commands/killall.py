@@ -1,6 +1,6 @@
 import shutil
 
-from runs.database import Table
+from runs.database import DataBase
 from runs.logger import UI
 from runs.util import nonempty_string
 
@@ -21,11 +21,11 @@ def add_subparser(subparsers):
 
 
 @UI.wrapper
-@Table.wrapper
-def cli(table, root, *args, **kwargs):
-    runs = [e.path for e in table.all()]
-    table.logger.check_permission('\n'.join(
+@DataBase.wrapper
+def cli(db, root, *args, **kwargs):
+    runs = [e.path for e in db.all()]
+    db.logger.check_permission('\n'.join(
         map(str, ["Runs to be removed:", *runs, "Continue?"])))
-    table.delete()
-    table.path.unlink()
+    db.delete()
+    db.path.unlink()
     shutil.rmtree(str(root), ignore_errors=True)

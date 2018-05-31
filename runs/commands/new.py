@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import PurePath
 
 from runs.commands import rm
-from runs.database import RunEntry, Table
+from runs.database import RunEntry, DataBase
 from runs.file_system import FileSystem
 from runs.logger import UI
 from runs.shell import Bash
@@ -40,10 +40,10 @@ def add_subparser(subparsers):
 
 
 @UI.wrapper
-@Table.wrapper
-def cli(path, prefix, command, description, flags, root, dir_names, table, *args,
+@DataBase.wrapper
+def cli(path, prefix, command, description, flags, root, dir_names, db, *args,
         **kwargs):
-    logger = table.logger
+    logger = db.logger
     return main(
         path=path,
         prefix=prefix,
@@ -52,19 +52,19 @@ def cli(path, prefix, command, description, flags, root, dir_names, table, *args
         flags=flags,
         bash=Bash(logger=logger),
         ui=logger,
-        table=table,
+        db=db,
         tmux=TMUXSession(path=path, bash=Bash(logger=logger)),
         file_system=FileSystem(root=root, dir_names=dir_names))
 
 
 def main(path: str, prefix: str, command: str, description: str, flags: str, bash: Bash,
-         ui: UI, table: Table, tmux: TMUXSession, file_system: FileSystem):
+         ui: UI, db: DataBase, tmux: TMUXSession, file_system: FileSystem):
     # Check if repo is dirty
     if bash.dirty_repo():
         ui.check_permission("Repo is dirty. You should commit before run. Run anyway?")
 
-    if path in table:
-        rm.remove(path=path, table=table, logger=ui, file_system=file_system)
+    if path in db:
+        rm.remove(path=path, db=db, logger=ui, file_system=file_system)
 
     # create directories
     for dir_path in file_system.dir_paths(PurePath(path)):
@@ -91,13 +91,13 @@ def main(path: str, prefix: str, command: str, description: str, flags: str, bas
     tmux.new(description, full_command)
 
     # new db entry
-    table += RunEntry(
+    db.append(RunEntry(
         path=path,
         full_command=full_command,
         commit=bash.last_commit(),
         datetime=datetime.now().isoformat(),
         description=description,
-        input_command=command)
+        input_command=command))
 
     # print result
     ui.print(

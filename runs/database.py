@@ -7,10 +7,11 @@ from typing import List, Tuple, Union
 from runs.logger import Logger
 
 
+# noinspection PyClassHasNoInit
 class RunEntry(
-        namedtuple('RunEntry', [
-            'path', 'full_command', 'commit', 'datetime', 'description', 'input_command'
-        ])):
+    namedtuple('RunEntry', [
+        'path', 'full_command', 'commit', 'datetime', 'description', 'input_command'
+    ])):
     __slots__ = ()
 
     class KeyError(KeyError):
@@ -40,15 +41,15 @@ class RunEntry(
 PathLike = Union[str, PurePath, Path]
 
 
-class Table:
+class DataBase:
     @staticmethod
     def wrapper(func):
         @wraps(func)
-        def table_wrapper(db_path, logger, *args, **kwargs):
-            with Table(db_path, logger) as table:
-                return func(*args, **kwargs, table=table)
+        def db_wrapper(db_path, logger, *args, **kwargs):
+            with DataBase(db_path, logger) as db:
+                return func(*args, **kwargs, db=db)
 
-        return table_wrapper
+        return db_wrapper
 
     def __init__(self, path, logger: Logger):
         self.logger = logger
@@ -61,6 +62,7 @@ class Table:
 
     def __enter__(self):
         self.conn = sqlite3.connect(str(self.path))
+        # noinspection PyUnresolvedReferences
         fields = [f"'{f}' text NOT NULL" for f in self.fields]
         fields[0] += ' PRIMARY KEY'
         self.conn.execute(f"""
@@ -84,30 +86,30 @@ class Table:
             SELECT COUNT(*) {self.condition(pattern)}
             """).fetchone()[0])
 
-    def __iadd__(self, run: RunEntry):
-        self.conn.execute(f"""
-        INSERT INTO {self.table_name} ({self.fields}) VALUES ({run})
-        """)
-        return self
-
     def __getitem__(self, pattern: PathLike) -> List[RunEntry]:
         return [
             RunEntry(*e) for e in self.conn.execute(f"""
         SELECT * {self.condition(pattern)}
         """).fetchall()
-        ]
+            ]
 
     def __delitem__(self, pattern: PathLike):
         self.conn.execute(f"""
         DELETE {self.condition(pattern)}
         """)
 
+    def append(self, run: RunEntry):
+        self.conn.execute(f"""
+        INSERT INTO {self.table_name} ({self.fields}) VALUES ({run})
+        """)
+        return self
+
     def all(self):
         return [
             RunEntry(*e) for e in self.conn.execute(f"""
             SELECT * FROM {self.table_name}
             """).fetchall()
-        ]
+            ]
 
     def update(self, pattern: PathLike, **kwargs):
         updates = ','.join(f"'{k}' = '{v}'" for k, v in kwargs.items())

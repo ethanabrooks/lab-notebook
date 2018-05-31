@@ -10,7 +10,7 @@ from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, eq_, ok_)
 from runs import main
 from runs.commands import lookup, ls
-from runs.database import Table
+from runs.database import DataBase
 from runs.logger import UI
 from runs.shell import Bash
 from runs.util import CHDESCRIPTION
@@ -35,7 +35,7 @@ TEST_RUN = 'test_run'
 
 LOGGER = UI(quiet=True, assume_yes=True)
 BASH = Bash(logger=LOGGER)
-TABLE = Table(DB_PATH, LOGGER)
+DB = DataBase(DB_PATH, LOGGER)
 
 
 def sessions():
@@ -140,26 +140,26 @@ def check_tmux(path):
 
 
 def check_db(path, flags):
-    with TABLE as table:
+    with DB as db:
         # check known values
         assert_in(DESCRIPTION, lookup.string(
-            table,
+            db,
             path,
             'description',
         ))
         assert_in(COMMAND, lookup.string(
-            table,
+            db,
             path,
             'input_command',
         ))
         assert_in(path, lookup.string(
-            table,
+            db,
             path,
             'path',
         ))
         for flag in flags:
             assert_in(flag, lookup.string(
-                table,
+                db,
                 path,
                 'full_command',
             ))
@@ -176,8 +176,8 @@ def check_tmux_killed(path):
 
 
 def check_del_entry(path):
-    with TABLE as table:
-        assert_not_in(path, ls.strings(path, table))
+    with DB as db:
+        assert_not_in(path, ls.strings(path, db))
 
 
 def check_rm_files(path):
@@ -187,14 +187,14 @@ def check_rm_files(path):
 
 
 def check_list_happy(pattern):
-    with TABLE as table:
-        string = ls.string(pattern, table)
+    with DB as db:
+        string = ls.string(pattern, db)
         assert_in('test_run', string)
 
 
 def check_list_sad(pattern):
-    with TABLE as table:
-        string = ls.string(pattern, table, porcelain=False)
+    with DB as db:
+        string = ls.string(pattern, db, porcelain=False)
         eq_(string, '.')
 
 
@@ -243,25 +243,25 @@ def test_list():
 
 
 def test_table():
-    with _setup(TEST_RUN), TABLE as table:
-        string = runs.commands.table.string(table, None, None, 100)
+    with _setup(TEST_RUN), DB as db:
+        string = runs.commands.table.string(db, None, None, 100)
         yield check_table, string
 
 
 def test_lookup():
-    with _setup(TEST_RUN), TABLE as table:
+    with _setup(TEST_RUN), DB as db:
         for key, value in dict(
                 path=TEST_RUN, description=DESCRIPTION, input_command=COMMAND).items():
-            assert_in(value, lookup.string(table, TEST_RUN, key))
+            assert_in(value, lookup.string(db, TEST_RUN, key))
         with assert_raises(SystemExit):
             run_main('lookup', TEST_RUN, 'x')
 
 
 def test_chdesc():
-    with _setup(TEST_RUN), TABLE as table:
+    with _setup(TEST_RUN), DB as db:
         description = 'new description'
         run_main(CHDESCRIPTION, TEST_RUN, description)
-        assert_in(description, lookup.string(table, TEST_RUN, 'description'))
+        assert_in(description, lookup.string(db, TEST_RUN, 'description'))
 
 
 def test_move():
@@ -334,8 +334,8 @@ def test_move_dirs():
         move('test_run1', 'test_run2')
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'
-        with TABLE as table:
-            assert_in('--run1', lookup.string(table, 'test_run2', 'full_command'))
+        with DB as db:
+            assert_in('--run1', lookup.string(db, 'test_run2', 'full_command'))
 
     with _setup('test_run1'), _setup('test_run2'), _setup('not_a_dir'):
         # src is multi, dest is run -> exits with no change

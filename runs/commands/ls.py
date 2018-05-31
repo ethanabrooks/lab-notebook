@@ -1,8 +1,8 @@
 from collections import defaultdict
+from itertools import zip_longest
 from pathlib import PurePath
-from pprint import pprint
 
-from runs.database import Table
+from runs.database import DataBase
 from runs.logger import Logger
 from runs.util import LIST, PATTERN, nonempty_string
 
@@ -25,17 +25,17 @@ def add_subparser(subparsers):
 
 
 @Logger.wrapper
-@Table.wrapper
-def cli(pattern, table, porcelain, *args, **kwargs):
-    table.logger.print(string(pattern=pattern, table=table, porcelain=porcelain))
+@DataBase.wrapper
+def cli(pattern, db, porcelain, *args, **kwargs):
+    db.logger.print(string(pattern=pattern, db=db, porcelain=porcelain))
 
 
-def string(pattern, table, porcelain=True):
-    return '\n'.join(strings(pattern, table, porcelain))
+def string(pattern, db, porcelain=True):
+    return '\n'.join(strings(pattern, db, porcelain))
 
 
-def strings(pattern, table, porcelain=True):
-    entries = table[pattern] if pattern else table.all()
+def strings(pattern, db, porcelain=True):
+    entries = db[pattern] if pattern else db.all()
     paths = [e.path for e in entries]
     return paths if porcelain else tree_strings(build_tree(paths))
 
@@ -54,16 +54,15 @@ def build_tree(paths):
 def tree_strings(tree, prefix='', root_prefix='', root='.'):
     yield prefix + root_prefix + root
     if root_prefix == '├── ':
-        prefix += "│   "
+        prefix += '│   '
     if root_prefix == '└── ':
-        prefix += "    "
+        prefix += '    '
     if tree:
-        *rest, last = tree.items()
-        for root, tree in rest:
-            for string in tree_strings(
-                    tree=tree, prefix=prefix, root_prefix='├── ', root=root):
-                yield string
-        root, tree = last
-        for string in tree_strings(
-                tree=tree, prefix=prefix, root_prefix='└── ', root=root):
-            yield string
+        items = _, *tail = tree.items()
+        for (root, tree), _next in zip_longest(items, tail):
+            for s in tree_strings(
+                    tree=tree,
+                    prefix=prefix,
+                    root_prefix='├── ' if _next else '└── ',
+                    root=root):
+                    yield s

@@ -1,4 +1,4 @@
-from runs.database import Table
+from runs.database import DataBase
 from runs.logger import Logger
 from runs.util import CHDESCRIPTION, PATH, nonempty_string, string_from_vim
 
@@ -19,9 +19,9 @@ def add_subparser(subparsers):
 
 
 @Logger.wrapper
-@Table.wrapper
-def cli(path, description, table, *args, **kwargs):
-    entry = table.entry(path)
+@DataBase.wrapper
+def cli(path, description, db, *args, **kwargs):
+    entry = db.entry(path)
     if description is None:
         description = string_from_vim('Edit description', entry.description)
-    table.update(path, description=description)
+    db.update(path, description=description)

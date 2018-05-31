@@ -1,5 +1,5 @@
 import runs
-from runs.database import RunEntry, Table
+from runs.database import RunEntry, DataBase
 from runs.logger import Logger
 from runs.util import nonempty_string
 
@@ -18,23 +18,23 @@ def add_subparser(subparsers):
 
 
 @Logger.wrapper
-@Table.wrapper
-def cli(pattern, key, table, porcelain, *args, **kwargs):
-    logger = table.logger
+@DataBase.wrapper
+def cli(pattern, key, db, porcelain, *args, **kwargs):
+    logger = db.logger
     try:
-        logger.print(string(table=table, pattern=pattern, key=key, porcelain=porcelain))
+        logger.print(string(db=db, pattern=pattern, key=key, porcelain=porcelain))
     except RunEntry.KeyError:
         logger.exit(
             f"{key} is not a valid key. Valid keys are:", RunEntry.fields(), sep='\n')
 
 
-def string(table, pattern, key, porcelain=True):
-    return '\n'.join(strings(table, pattern, key, porcelain))
+def string(db, pattern, key, porcelain=True):
+    return '\n'.join(strings(db, pattern, key, porcelain))
 
 
-def strings(table, pattern, key, porcelain):
+def strings(db, pattern, key, porcelain):
     if key:
-        attr_dict = get_dict(table, pattern, key)
+        attr_dict = get_dict(db, pattern, key)
         if porcelain:
             for value in attr_dict.values():
                 yield str(value)
@@ -43,11 +43,11 @@ def strings(table, pattern, key, porcelain):
                 yield f'{path}.{key} = {attr}'
     else:
         if porcelain:
-            for entry in table[pattern]:
+            for entry in db[pattern]:
                 yield str(entry)
         else:
-            yield runs.commands.table.string(table, pattern)
+            yield runs.commands.table.string(db, pattern)
 
 
-def get_dict(table, path, key):
-    return {entry.path: entry.get(key) for entry in (table[path])}
+def get_dict(db, path, key):
+    return {entry.path: entry.get(key) for entry in (db[path])}

@@ -1,5 +1,8 @@
 from functools import wraps
 
+import runs
+
+
 
 class Logger:
     exists = False
@@ -28,10 +31,9 @@ class Logger:
         self.print(*msg, **kwargs)
         exit()
 
-    def exit_no_match(self, pattern):
-        self.exit(f'No runs match pattern "{pattern}". Recorded runs:\n')
-        # TODO
-        # f'{tree_string(table["%"])}')
+    def exit_no_match(self, db, pattern):
+        self.exit(f'No runs match pattern "{pattern}". Recorded runs:\n'
+                  f'{runs.commands.table.string(db)}')
 
 
 class UI(Logger):

@@ -1,4 +1,4 @@
-from runs.database import Table
+from runs.database import DataBase
 from runs.file_system import FileSystem
 from runs.logger import UI
 from runs.shell import Bash
@@ -7,21 +7,21 @@ from runs.util import PATTERN, REMOVE, nonempty_string
 
 
 @UI.wrapper
-@Table.wrapper
-def cli(pattern, root, dir_names, table, *args, **kwargs):
-    entries = table[pattern]
-    logger = table.logger
+@DataBase.wrapper
+def cli(pattern, root, dir_names, db, *args, **kwargs):
+    entries = db[pattern]
+    logger = db.logger
     logger.check_permission('\n'.join(
         ["Runs to be removed:", *[str(e.path) for e in entries], "Continue?"]))
     file_system = FileSystem(root=root, dir_names=dir_names)
-    for entry in table[pattern]:
-        remove(path=entry.path, table=table, file_system=file_system, logger=logger)
+    for entry in db[pattern]:
+        remove(path=entry.path, db=db, file_system=file_system, logger=logger)
 
 
-def remove(path, table, logger, file_system):
+def remove(path, db, logger, file_system):
     TMUXSession(path, bash=Bash(logger=logger)).kill()
     file_system.rmdirs(path)
-    del table[path]
+    del db[path]
 
 
 def add_subparser(subparsers):

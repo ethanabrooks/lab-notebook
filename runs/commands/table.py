@@ -1,4 +1,4 @@
-from runs.database import RunEntry, Table
+from runs.database import RunEntry, DataBase
 from runs.logger import Logger
 from runs.util import PATTERN, TABLE, nonempty_string
 from tabulate import tabulate
@@ -25,16 +25,14 @@ def add_subparser(subparsers):
 
 
 @Logger.wrapper
-@Table.wrapper
-def cli(pattern, table, hidden_columns, column_width, *args, **kwargs):
-    table.logger.print(string(table, pattern, hidden_columns, column_width))
+@DataBase.wrapper
+def cli(pattern, db, hidden_columns, column_width, *args, **kwargs):
+    db.logger.print(string(db, pattern, hidden_columns, column_width))
 
 
-def string(table, pattern, hidden_columns=None, column_width=100):
-    if pattern is None:
-        pattern = '%'
+def string(db, pattern=None, hidden_columns=None, column_width=100):
     if hidden_columns is None:
-        hidden_columns = []
+        hidden_columns = ['full_command']
     assert isinstance(column_width, int)
 
     def get_values(entry, key):
@@ -47,6 +45,7 @@ def string(table, pattern, hidden_columns=None, column_width=100):
             return '_'
 
     headers = sorted(set(RunEntry.fields()) - set(hidden_columns))
-    table = [[e.path] + [get_values(e, key) for key in headers]
-             for e in sorted(table[pattern], key=lambda e: e.path)]
-    return tabulate(table, headers=headers)
+    entries = db[pattern] if pattern else db.all()
+    db = [[e.path] + [get_values(e, key) for key in headers]
+          for e in sorted(entries, key=lambda e: e.path)]
+    return tabulate(db, headers=headers)
