@@ -6,15 +6,25 @@ from importlib import import_module
 from pathlib import Path
 from pprint import pprint
 
-from runs.commands.change_description import add_chdesc_parser
-from runs.commands.killall import add_killall_parser
-from runs.commands.lookup import add_lookup_parser
-from runs.commands.ls import add_list_parser
-from runs.commands.mv import add_move_parser
-from runs.commands.new import add_new_parser
-from runs.commands.reproduce import add_reproduce_parser
-from runs.commands.rm import add_remove_parser
-from runs.commands.table import add_table_parser
+from runs import commands
+from runs.commands import change_description
+from runs.commands import killall
+from runs.commands import lookup
+from runs.commands import ls
+from runs.commands import mv
+from runs.commands import new
+from runs.commands import reproduce
+from runs.commands import rm
+from runs.commands import table
+from runs.commands.change_description import add_subparser
+from runs.commands.killall import add_subparser
+from runs.commands.lookup import add_subparser
+from runs.commands.ls import add_subparser
+from runs.commands.mv import add_subparser
+from runs.commands.new import add_subparser
+from runs.commands.reproduce import add_subparser
+from runs.commands.rm import add_subparser
+from runs.commands.table import add_subparser
 from runs.util import DEFAULT, MAIN, find_up, nonempty_string
 
 
@@ -35,18 +45,6 @@ def main(argv=sys.argv[1:]):
             prefix='',
         )
         config['flags'] = dict()
-
-    # TODO can we improve this?
-    def set_defaults(parser: argparse.ArgumentParser, config_section=None):
-        assert isinstance(parser, argparse.ArgumentParser)
-        if config_section is None:
-            config_section = parser.prog.split()[-1]
-        assert isinstance(config_section, str)
-        parser.set_defaults(**config[DEFAULT])
-        parser.set_defaults(**config[MAIN])
-        if config_section in config:
-            parser.set_defaults(**config[config_section])
-            parser.set_defaults(**config['flags'])
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -70,40 +68,29 @@ def main(argv=sys.argv[1:]):
         '-y',
         action='store_true',
         help='Don\'t ask permission before performing operations.')
-    set_defaults(parser)
 
     subparsers = parser.add_subparsers(dest='dest')
-    path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
 
-    # TODO: tighten this
-    new_parser = add_new_parser(subparsers)
-    set_defaults(new_parser)
-    set_defaults(new_parser, config_section='flags')
-
-    remove_parser = add_remove_parser(subparsers)
-    set_defaults(remove_parser)
-
-    move_parser = add_move_parser(path_clarification, subparsers)
-    set_defaults(move_parser)
-
-    pattern_help = 'Only display paths matching this pattern.'
-
-    list_parser = add_list_parser(pattern_help, subparsers)
-    set_defaults(list_parser)
-
-    table_parser = add_table_parser(pattern_help, subparsers)
-    set_defaults(table_parser)
-
-    lookup_parser = add_lookup_parser(subparsers)
-    set_defaults(lookup_parser)
-
-    chdesc_parser = add_chdesc_parser(subparsers)
-    set_defaults(chdesc_parser)
-
-    reproduce_parser = add_reproduce_parser(subparsers)
-    set_defaults(reproduce_parser)
-    killall_parser = add_killall_parser(subparsers)
-    set_defaults(killall_parser)
+    for subparser in [parser] + [adder(subparsers)
+                                 for adder in [
+                                     new.add_subparser,
+                                     rm.add_subparser,
+                                     mv.add_subparser,
+                                     ls.add_subparser,
+                                     table.add_subparser,
+                                     lookup.add_subparser,
+                                     change_description.add_subparser,
+                                     reproduce.add_subparser,
+                                     killall.add_subparser,
+                                 ]]:
+        assert isinstance(subparser, argparse.ArgumentParser)
+        config_section = subparser.prog.split()[-1]
+        assert isinstance(config_section, str)
+        subparser.set_defaults(**config[DEFAULT])
+        subparser.set_defaults(**config[MAIN])
+        if config_section in config:
+            subparser.set_defaults(**config[config_section])
+            subparser.set_defaults(**config['flags'])
 
     args = parser.parse_args(args=argv)
 

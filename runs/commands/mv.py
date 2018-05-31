@@ -10,7 +10,8 @@ from runs.tmux_session import TMUXSession
 from runs.util import MOVE, ROOT_PATH, SEP, nonempty_string
 
 
-def add_move_parser(path_clarification, subparsers):
+path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
+def add_subparser(subparsers):
     parser = subparsers.add_parser(
         MOVE,
         help='Move a run from OLD to NEW. '

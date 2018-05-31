@@ -28,7 +28,7 @@ def remove(path, table, logger, file_system):
     del table[path]
 
 
-def add_remove_parser(subparsers):
+def add_subparser(subparsers):
     remove_parser = subparsers.add_parser(
         REMOVE,
         help="Delete runs from the database (and all associated tensorboard "

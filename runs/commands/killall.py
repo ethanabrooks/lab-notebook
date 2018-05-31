@@ -5,7 +5,7 @@ from runs.logger import UI
 from runs.util import nonempty_string
 
 
-def add_killall_parser(subparsers):
+def add_subparser(subparsers):
     parser = subparsers.add_parser('killall', help='Destroy all runs.')
     parser.add_argument(
         '--assume-yes',

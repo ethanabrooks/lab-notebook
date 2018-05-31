@@ -11,7 +11,7 @@ from runs.tmux_session import TMUXSession
 from runs.util import PATH, highlight, nonempty_string
 
 
-def add_new_parser(subparsers):
+def add_subparser(subparsers):
     parser = subparsers.add_parser('new', help='Start a new run.')
     parser.add_argument(
         PATH,

@@ -3,7 +3,7 @@ from runs.logger import Logger
 from runs.util import CHDESCRIPTION, PATH, nonempty_string, string_from_vim
 
 
-def add_chdesc_parser(subparsers):
+def add_subparser(subparsers):
     chdesc_parser = subparsers.add_parser(
         CHDESCRIPTION, help='Edit description of run.')
     chdesc_parser.add_argument(

@@ -4,7 +4,7 @@ from runs.logger import Logger
 from runs.util import nonempty_string
 
 
-def add_lookup_parser(subparsers):
+def add_subparser(subparsers):
     lookup_parser = subparsers.add_parser(
         'lookup', help='Lookup specific value associated with database entry')
     lookup_parser.add_argument(

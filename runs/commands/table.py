@@ -4,15 +4,17 @@ from runs.database import Table, RunEntry
 from runs.logger import Logger
 from runs.util import PATTERN, TABLE, nonempty_string
 
+help = 'Only display paths matching this pattern.'
 
-def add_table_parser(pattern_help, subparsers):
+
+def add_subparser(subparsers):
     table_parser = subparsers.add_parser(
         TABLE, help='Display contents of run database as a table.')
     table_parser.add_argument(
         PATTERN,
         nargs='?',
         default=None,
-        help=pattern_help,
+        help=help,
         type=nonempty_string)
     table_parser.add_argument(
         '--hidden-columns',

@@ -2,12 +2,14 @@ from runs.database import Table
 from runs.logger import Logger
 from runs.util import LIST, PATTERN, nonempty_string
 
+help = 'Only display paths matching this pattern.'
 
-def add_list_parser(pattern_help, subparsers):
+
+def add_subparser(subparsers):
     list_parser = subparsers.add_parser(
         LIST, help='List all names in run database.')
     list_parser.add_argument(
-        PATTERN, nargs='?', help=pattern_help, type=nonempty_string)
+        PATTERN, nargs='?', help=help, type=nonempty_string)
     list_parser.add_argument(
         '--show-attrs',
         action='store_true',
@@ -16,7 +18,7 @@ def add_list_parser(pattern_help, subparsers):
         '--porcelain',
         action='store_true',
         help='Print list of path names without tree '
-        'formatting.')
+             'formatting.')
     return list_parser
 
 

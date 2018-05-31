@@ -20,7 +20,7 @@ def string(path, table):
     ])
 
 
-def add_reproduce_parser(subparsers):
+def add_subparser(subparsers):
     reproduce_parser = subparsers.add_parser(
         REPRODUCE,
         help='Print commands to reproduce a run. This command '
