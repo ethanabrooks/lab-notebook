@@ -107,7 +107,7 @@ def build_command(command, path, prefix, flags):
         flag = interpolate_keywords(path, flag)
         command += ' ' + flag
     if prefix:
-        return f'{prefix} {full_command}'
+        return f'{prefix} {command}'
     return command
 
 
@@ -117,14 +117,7 @@ def new(path: str, prefix: str, command: str, description: str, flags: list, bas
     for dir_path in file_system.dir_paths(PurePath(path)):
         dir_path.mkdir(exist_ok=True, parents=True)
 
-    # process info
-    full_command = command
-    for flag in flags:
-        flag = interpolate_keywords(path, flag)
-        full_command += ' ' + flag
-    if prefix:
-        full_command = f'{prefix} {full_command}'
-
+    full_command = build_command(command, path, prefix, flags)
     # prompt = 'Edit the description of this run: (Do not edit the line or above.)'
     # if description is None:
     #     description = string_from_vim(prompt, description)
