@@ -238,7 +238,7 @@ def test_list():
         with _setup(path, dir_names, flags):
             for pattern in ['%', 'test%']:
                 yield check_list_happy, pattern
-            for pattern in ['x%', 'test']:
+            for pattern in ['x%']:
                 yield check_list_sad, pattern
 
 
