@@ -102,7 +102,7 @@ class DataBase:
         self.conn.execute(f"""
         INSERT INTO {self.table_name} ({self.fields})
         VALUES ({','.join('?' for _ in run)})
-        """, run)
+        """, tuple(str(x) for x in run))
         return self
 
     def all(self):
