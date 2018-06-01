@@ -67,18 +67,16 @@ def cli(path: str, prefix: str, command: str, description: str, flags: str,
             flag_variants.append([flag])
 
     runs = list(generate_runs(path, flag_variants))
+    if bash.dirty_repo():
+        ui.check_permission("Repo is dirty. You should commit before run. Run anyway?")
     if len(runs) > 1:
         ui.check_permission('\n'.join(["Generating the following runs:"] +
                                       [f"{p}: {build_command(command, p, prefix, f)}"
                                        for p, f in runs] +
                                       ["Continue?"]))
 
-    if bash.dirty_repo():
-        ui.check_permission("Repo is dirty. You should commit before run. Run anyway?")
-    for path, flags in runs:
-        # Check if repo is dirty
-        if path in db:
-            rm.remove(path=path, db=db, logger=ui, file_system=file_system)
+    rm.remove_with_check(*[path for path, _ in runs],
+                         db=db, logger=ui, file_system=file_system)
 
     for path, flags in runs:
         new(

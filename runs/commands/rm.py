@@ -5,6 +5,7 @@ from runs.shell import Bash
 from runs.tmux_session import TMUXSession
 from runs.util import PATTERN, REMOVE, nonempty_string
 
+
 def add_subparser(subparsers):
     remove_parser = subparsers.add_parser(
         REMOVE,
@@ -20,11 +21,16 @@ def add_subparser(subparsers):
         type=nonempty_string)
     return remove_parser
 
+
 @UI.wrapper
 @DataBase.wrapper
 def cli(patterns, root, dir_names, db, *args, **kwargs):
     logger = db.logger
     file_system = FileSystem(root=root, dir_names=dir_names)
+    remove_with_check(*patterns, db=db, logger=logger, file_system=file_system)
+
+
+def remove_with_check(*patterns, db, logger, file_system):
     entries = [entry for pattern in patterns
                for entry in db[pattern + '%']]
     logger.check_permission('\n'.join(
@@ -37,5 +43,3 @@ def remove(path, db, logger, file_system):
     TMUXSession(path, bash=Bash(logger=logger)).kill()
     file_system.rmdirs(path)
     del db[path]
-
-
