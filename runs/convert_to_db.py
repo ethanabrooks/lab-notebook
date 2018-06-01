@@ -46,7 +46,7 @@ def main():
         for run in yaml_to_run_entry(data):
             db.append(run)
 
-        print(table.string(db))
+        print(table.string(db=db))
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ from runs.util import prune_empty
 
 
 class FileSystem:
-    def __init__(self, root: PurePath, dir_names: List[PurePath]):
+    def __init__(self, root: PurePath, dir_names: List[str]):
         self.root = root
         self.dir_names = dir_names
 

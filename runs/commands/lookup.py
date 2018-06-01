@@ -44,11 +44,11 @@ def strings(pattern: PurePath, db: DataBase, key: str, porcelain: bool) -> List[
                 yield highlight(path, ": ", sep='') + str(attr)
     else:
         if porcelain:
-            for entry in db[pattern]:
+            for entry in db[pattern, ]:
                 yield str(entry)
         else:
-            yield table.string(pattern=pattern, db=db)
+            yield table.string(pattern, db=db)
 
 
 def get_dict(db: DataBase, path: PurePath, key: str) -> Dict[PurePath, str]:
-    return {entry.path: entry.get(key) for entry in (db[path])}
+    return {entry.path: entry.get(key) for entry in (db[path, ])}

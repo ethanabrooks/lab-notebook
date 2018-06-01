@@ -1,7 +1,7 @@
 import sqlite3
 from functools import wraps
 from pathlib import Path, PurePath
-from typing import List, Tuple, Union
+from typing import List, Sequence, Union
 
 from runs.logger import Logger
 from runs.run_entry import RunEntry
@@ -41,17 +41,17 @@ class DataBase:
         """)
         return self
 
-    def execute(self, command: str, patterns: Tuple[PathLike]) -> sqlite3.Cursor:
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.conn.commit()
+        self.conn.close()
+
+    def execute(self, command: str, patterns: Sequence[PathLike]) -> sqlite3.Cursor:
         condition = ' OR '.join([f'{self.key} LIKE ?'] * len(patterns))
         values = tuple(map(str, patterns))
         return self.conn.execute(
             f"""
-                {command} WHERE {condition}
-                """, values)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.conn.commit()
-        self.conn.close()
+                    {command} WHERE {condition}
+                    """, values)
 
     def __contains__(self, *patterns: PathLike) -> bool:
         return bool(
@@ -59,7 +59,7 @@ class DataBase:
         SELECT COUNT (*) FROM {self.table_name}
         """, patterns).fetchone()[0])
 
-    def __getitem__(self, *patterns: PathLike) -> List[RunEntry]:
+    def __getitem__(self, patterns: Sequence[PathLike]) -> List[RunEntry]:
         return [
             RunEntry(*e) for e in self.execute(
                 f"""
@@ -69,7 +69,7 @@ class DataBase:
 
     def descendants(self, *patterns: PathLike):
         patterns = [f'{pattern}%' for pattern in patterns]
-        return self.__getitem__(*patterns)
+        return self[patterns]
 
     def __delitem__(self, *patterns: PathLike):
         self.execute(f'DELETE FROM {self.table_name}', patterns)
@@ -108,7 +108,7 @@ class DataBase:
         """)
 
     def entry(self, path: PathLike):
-        entries = self[path]
+        entries = self[path, ]
         if len(entries) == 0:
             self.logger.exit(
                 f"Found no entries for {path}. Current entries:",

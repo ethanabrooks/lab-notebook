@@ -1,8 +1,7 @@
 from pathlib import PurePath
+from typing import Optional
 
-from runs.database import DataBase
-from runs.logger import Logger
-from runs.util import string_from_vim
+from runs.transaction import DescriptionChange, Transaction
 
 
 def add_subparser(subparsers):
@@ -19,14 +18,13 @@ def add_subparser(subparsers):
     return chdesc_parser
 
 
-@Logger.wrapper
-@DataBase.wrapper
-def cli(path: PurePath, description: str, db: DataBase, *args, **kwargs):
-    entry = db.entry(path)
-    if description is None:
-        prompt = f"""
-Edit description for {entry.path}.
-Command: {entry.full_command}
-"""
-        description = string_from_vim(prompt, entry.description)
-    db.update(entry.path, description=description)
+@Transaction.wrapper
+def cli(transaction: Transaction, path: PurePath, description: Optional[str], *args,
+        **kwargs):
+    entry = transaction.db.entry(path)
+    transaction.description_changes.add(
+        DescriptionChange(
+            path=entry.path,
+            full_command=entry.full_command,
+            old_description=entry.description,
+            new_description=description))

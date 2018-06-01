@@ -31,13 +31,13 @@ def cli(patterns: List[PurePath], db: DataBase, porcelain: bool, *args, **kwargs
 
 
 def string(*patterns, db: DataBase, porcelain: bool = True) -> str:
-    return '\n'.join(strings(*patterns, db=db, porcelain=porcelain))
+    return '\n'.join(map(str, paths(*patterns, db=db, porcelain=porcelain)))
 
 
-def strings(*patterns, db: DataBase, porcelain: bool = True) -> List[str]:
+def paths(*patterns, db: DataBase, porcelain: bool = True) -> List[str]:
     entries = db.descendants(*patterns) if patterns else db.all()
-    paths = [e.path for e in entries]
-    return paths if porcelain else tree_strings(build_tree(paths))
+    _paths = [e.path for e in entries]
+    return _paths if porcelain else tree_strings(build_tree(_paths))
 
 
 def build_tree(paths):
@@ -47,7 +47,10 @@ def build_tree(paths):
             head, *tail = PurePath(path).parts
         except ValueError:
             return dict()
+        if tail:
+            head += '/'
         aggregator[head].append(PurePath(*tail))
+
     return {k: build_tree(v) for k, v in aggregator.items()}
 
 
@@ -65,4 +68,4 @@ def tree_strings(tree, prefix='', root_prefix='', root='.'):
                     prefix=prefix,
                     root_prefix='├── ' if _next else '└── ',
                     root=root):
-                yield s
+                yield PurePath(s)

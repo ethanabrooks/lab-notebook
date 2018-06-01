@@ -177,7 +177,7 @@ def check_tmux_killed(path):
 
 def check_del_entry(path):
     with DB as db:
-        assert_not_in(path, ls.strings(path, db=db))
+        assert_not_in(path, ls.paths(path, db=db))
 
 
 def check_rm_files(path):
@@ -244,7 +244,7 @@ def test_list():
 
 def test_table():
     with _setup(TEST_RUN), DB as db:
-        string = table.string(pattern=None, db=db)
+        string = table.string(db=db)
         yield check_table, string
 
 
@@ -342,11 +342,9 @@ def test_move_dirs():
         # move into self; this is a problem for movedir
         yield check_move, 'test', 'test/test2'
 
-    with _setup('test_run1'), _setup('test_run2'), _setup('not_a_dir'):
-        # src is multi, dest is run -> exits with no change
-        with assert_raises(SystemExit):
-            move('test_run%', 'not_a_dir')
-        for path in ['test_run1', 'test_run2', 'not_a_dir']:
-            yield check_tmux, path
-            yield check_db, path, []
-            yield check_files, path, []
+    with _setup('test_run1'), _setup('test_run2'):
+        # src is multi, dest is run -> create dir with same name as dest
+        #                              and move into dir
+        move('test_run%', 'test_run2')
+        yield check_move, 'test_run1', 'test_run2/test_run1'
+        yield check_move, 'test_run2', 'test_run2/test_run2'

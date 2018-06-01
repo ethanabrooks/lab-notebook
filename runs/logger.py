@@ -36,24 +36,14 @@ class Logger:
 
 
 class UI(Logger):
-    @staticmethod
-    def wrapper(func):
-        @wraps(func)
-        def ui_wrapper(assume_yes, quiet, *args, **kwargs):
-            return func(*args, **kwargs, logger=UI(assume_yes=assume_yes, quiet=quiet))
-
-        return ui_wrapper
-
     def __init__(self, assume_yes: bool, quiet):
         super().__init__(quiet=quiet)
         self.assume_yes = assume_yes
 
-    def get_permission(self, *question):
+    def get_permission(self, *question, sep):
         if self.assume_yes:
             return True
-        question = ' '.join(question)
-        if not question.endswith((' ', '\n')):
-            question += ' '
+        question = sep.join(map(str, question)).rstrip(sep) + sep
         response = input(question)
         while True:
             response = response.lower()
@@ -64,6 +54,6 @@ class UI(Logger):
             else:
                 response = input('Please enter y[es]|n[o]')
 
-    def check_permission(self, *question):
-        if not self.get_permission(*question):
+    def check_permission(self, *question, sep='\n'):
+        if not self.get_permission(*question, "Continue?", sep=sep):
             self.exit()

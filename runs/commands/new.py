@@ -4,14 +4,9 @@ from datetime import datetime
 from pathlib import PurePath
 from typing import List
 
-from runs.commands import rm
-from runs.database import DataBase
-from runs.file_system import FileSystem
-from runs.logger import UI
 from runs.run_entry import RunEntry
-from runs.shell import Bash
-from runs.tmux_session import TMUXSession
-from runs.util import flag_list, highlight, nonempty_string_type
+from runs.transaction import Transaction
+from runs.util import flag_list, nonempty_string_type
 
 
 def add_subparser(subparsers):
@@ -41,26 +36,10 @@ def add_subparser(subparsers):
     #     help='Path where Tensorflow summary of run is to be written.')
 
 
-@UI.wrapper
-@DataBase.wrapper
+@Transaction.wrapper
 def cli(path: PurePath, prefix: str, command: str, description: str,
-        flags: List[List[str]], root: PurePath, dir_names: List[PurePath], db: DataBase,
-        *args, **kwargs):
-    ui = db.logger
-    bash = Bash(logger=ui)
-    file_system = FileSystem(root=root, dir_names=dir_names)
-
+        flags: List[List[str]], transaction: Transaction, *args, **kwargs):
     runs = list(generate_runs(path, flags))
-    if bash.dirty_repo():
-        ui.check_permission("Repo is dirty. You should commit before run. Run anyway?")
-    if len(runs) > 1:
-        ui.check_permission(
-            '\n'.join(["Generating the following runs:"] +
-                      [f"{p}: {build_command(command, p, prefix, f)}"
-                       for p, f in runs] + ["Continue?"]))
-
-    rm.remove_with_check(
-        *[path for path, _ in runs], db=db, logger=ui, file_system=file_system)
 
     for path, flags in runs:
         new(path=path,
@@ -68,11 +47,7 @@ def cli(path: PurePath, prefix: str, command: str, description: str,
             command=command,
             description=description,
             flags=flags,
-            bash=bash,
-            ui=ui,
-            db=db,
-            tmux=TMUXSession(path=path, bash=Bash(logger=ui)),
-            file_system=file_system)
+            transaction=transaction)
 
 
 def generate_runs(path: PurePath, flags: List[List[str]]):
@@ -94,25 +69,18 @@ def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -
 
 
 def new(path: PurePath, prefix: str, command: str, description: str, flags: List[str],
-        bash: Bash, ui: UI, db: DataBase, tmux: TMUXSession, file_system: FileSystem):
-    # create directories
-    for dir_path in file_system.dir_paths(PurePath(path)):
-        dir_path.mkdir(exist_ok=True, parents=True)
-
+        transaction: Transaction):
+    bash = transaction.bash
     full_command = build_command(command, path, prefix, flags)
-    # prompt = 'Edit the description of this run: (Do not edit the line or above.)'
-    # if description is None:
-    #     description = string_from_vim(prompt, description)
     if description is None:
         description = ''
     if description == 'commit-message':
         description = bash.cmd('git log -1 --pretty=%B'.split())
 
-    # tmux
-    tmux.new(description, full_command)
+    if path in transaction.db:
+        transaction.removals.add(path)
 
-    # new db entry
-    db.append(
+    transaction.new_runs.add(
         RunEntry(
             path=path,
             full_command=full_command,
@@ -120,18 +88,6 @@ def new(path: PurePath, prefix: str, command: str, description: str, flags: List
             datetime=datetime.now().isoformat(),
             description=description,
             input_command=command))
-
-    # print result
-    ui.print(
-        highlight('Description:'),
-        description,
-        highlight('Command sent to session:'),
-        full_command,
-        highlight('List active:'),
-        'tmux list-session',
-        highlight('Attach:'),
-        f'tmux attach -t {tmux}',
-        sep='\n')
 
 
 def interpolate_keywords(path, string):

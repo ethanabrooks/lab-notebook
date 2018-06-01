@@ -1,10 +1,6 @@
-import shutil
 from pathlib import Path
 
-from runs.database import DataBase
-from runs.logger import UI
-from runs.shell import Bash
-from runs.tmux_session import TMUXSession
+from runs.transaction import Transaction
 
 
 def add_subparser(subparsers):
@@ -17,15 +13,7 @@ def add_subparser(subparsers):
     return parser
 
 
-@UI.wrapper
-@DataBase.wrapper
-def cli(db: DataBase, root: Path, *args, **kwargs):
-    runs = [e.path for e in db.all()]
-    db.logger.check_permission('\n'.join(
-        map(str, ["Runs to be removed:", *runs, "Continue?"])))
-    bash = Bash(logger=db.logger)
-    for run in db.all():
-        TMUXSession(run.path, bash).kill()
-    db.delete()
-    db.path.unlink()
-    shutil.rmtree(str(root), ignore_errors=True)
+@Transaction.wrapper
+def cli(transaction: Transaction, *args, **kwargs):
+    for entry in transaction.db.all():
+        transaction.removals.add(entry.path)
