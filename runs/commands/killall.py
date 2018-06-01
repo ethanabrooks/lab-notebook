@@ -2,6 +2,8 @@ import shutil
 
 from runs.database import DataBase
 from runs.logger import UI
+from runs.shell import Bash
+from runs.tmux_session import TMUXSession
 from runs.util import nonempty_string
 
 
@@ -26,6 +28,9 @@ def cli(db, root, *args, **kwargs):
     runs = [e.path for e in db.all()]
     db.logger.check_permission('\n'.join(
         map(str, ["Runs to be removed:", *runs, "Continue?"])))
+    bash = Bash(logger=db.logger)
+    for run in db.all():
+        TMUXSession(run.path, bash).kill()
     db.delete()
     db.path.unlink()
     shutil.rmtree(str(root), ignore_errors=True)

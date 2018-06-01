@@ -57,8 +57,8 @@ class DataBase:
         values = tuple(map(str, patterns))
         return self.conn.execute(
             f"""
-        {command} WHERE {self.key} LIKE {placeholders}
-        """, values)
+            {command} WHERE {self.key} LIKE {placeholders}
+            """, values)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.conn.commit()
@@ -77,6 +77,11 @@ class DataBase:
         SELECT * FROM {self.table_name}
         """, patterns).fetchall()
         ]
+
+
+    def descendants(self, *patterns):
+        patterns = [f'{pattern}%' for pattern in patterns]
+        return self.__getitem__(*patterns)
 
     def __delitem__(self, *patterns: PathLike):
         self.execute(f'DELETE FROM {self.table_name}', patterns)
