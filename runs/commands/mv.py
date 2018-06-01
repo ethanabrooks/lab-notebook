@@ -16,10 +16,10 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         MOVE,
         help='Move a run from OLD to NEW. '
-             'Functionality is identical to `mkdir -p` except that non-existent dirs'
-             'are created and empty dirs are removed automatically'
-             'The program will show you planned '
-             'moves and ask permission before changing anything.')
+        'Functionality is identical to `mkdir -p` except that non-existent dirs'
+        'are created and empty dirs are removed automatically'
+        'The program will show you planned '
+        'moves and ask permission before changing anything.')
     parser.add_argument(
         'source',
         help='Name of run to rename.' + path_clarification,
@@ -39,13 +39,14 @@ def add_subparser(subparsers):
 @DataBase.wrapper
 def cli(source, destination, kill_tmux, db, root, dir_names, *args, **kwargs):
     logger = db.logger
-    move(db=db,
-         src_pattern=source,
-         dest_path=destination,
-         tmux=TMUXSession(source, bash=Bash(logger=logger)),
-         kill_tmux=kill_tmux,
-         ui=logger,
-         file_system=FileSystem(root=root, dir_names=dir_names))
+    move(
+        db=db,
+        src_pattern=source,
+        dest_path=destination,
+        tmux=TMUXSession(source, bash=Bash(logger=logger)),
+        kill_tmux=kill_tmux,
+        ui=logger,
+        file_system=FileSystem(root=root, dir_names=dir_names))
 
 
 def move(db: DataBase, src_pattern: str, dest_path: str, tmux: TMUXSession,
@@ -72,7 +73,7 @@ def move(db: DataBase, src_pattern: str, dest_path: str, tmux: TMUXSession,
                     dest_path, *[
                         p for p, from_old in zip_longest(src_parts, old_parts)
                         if not from_old
-                        ])
+                    ])
             else:
                 return PurePath(dest_path, PurePath(src_path).stem)
         else:

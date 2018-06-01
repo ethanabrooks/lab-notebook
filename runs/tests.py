@@ -5,9 +5,10 @@ from contextlib import contextmanager
 from fnmatch import fnmatch
 from pathlib import Path
 
-import runs
 from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, eq_, ok_)
+
+import runs
 from runs import main
 from runs.commands import lookup, ls
 from runs.database import DataBase

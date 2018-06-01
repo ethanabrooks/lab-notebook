@@ -1,8 +1,9 @@
-from runs.database import DataBase
-from runs.run_entry import RunEntry
-from runs.logger import Logger
-from runs.util import PATTERN, TABLE, nonempty_string
 from tabulate import tabulate
+
+from runs.database import DataBase
+from runs.logger import Logger
+from runs.run_entry import RunEntry
+from runs.util import PATTERN, TABLE, nonempty_string
 
 help = 'Only display paths matching this pattern.'
 

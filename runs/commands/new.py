@@ -1,15 +1,14 @@
 import codecs
+import itertools
 import re
 from datetime import datetime
 from pathlib import PurePath
 
-import itertools
-
 from runs.commands import rm
 from runs.database import DataBase
-from runs.run_entry import RunEntry
 from runs.file_system import FileSystem
 from runs.logger import UI
+from runs.run_entry import RunEntry
 from runs.shell import Bash
 from runs.tmux_session import TMUXSession
 from runs.util import PATH, highlight, nonempty_string
@@ -26,8 +25,8 @@ def add_subparser(subparsers):
     parser.add_argument(
         '--description',
         help='Description of this run. Explain what this run was all about or '
-             'just write whatever your heart desires. If this argument is `commit-message`,'
-             'it will simply use the last commit message.')
+        'just write whatever your heart desires. If this argument is `commit-message`,'
+        'it will simply use the last commit message.')
     parser.add_argument(
         '--prefix',
         type=str,
@@ -45,8 +44,8 @@ def add_subparser(subparsers):
 
 @UI.wrapper
 @DataBase.wrapper
-def cli(path: str, prefix: str, command: str, description: str, flags: str,
-        root: str, dir_names: str, db: DataBase, *args, **kwargs):
+def cli(path: str, prefix: str, command: str, description: str, flags: str, root: str,
+        dir_names: str, db: DataBase, *args, **kwargs):
     ui = db.logger
     bash = Bash(logger=ui)
     file_system = FileSystem(root=root, dir_names=dir_names)
@@ -70,17 +69,16 @@ def cli(path: str, prefix: str, command: str, description: str, flags: str,
     if bash.dirty_repo():
         ui.check_permission("Repo is dirty. You should commit before run. Run anyway?")
     if len(runs) > 1:
-        ui.check_permission('\n'.join(["Generating the following runs:"] +
-                                      [f"{p}: {build_command(command, p, prefix, f)}"
-                                       for p, f in runs] +
-                                      ["Continue?"]))
+        ui.check_permission(
+            '\n'.join(["Generating the following runs:"] +
+                      [f"{p}: {build_command(command, p, prefix, f)}"
+                       for p, f in runs] + ["Continue?"]))
 
-    rm.remove_with_check(*[path for path, _ in runs],
-                         db=db, logger=ui, file_system=file_system)
+    rm.remove_with_check(
+        *[path for path, _ in runs], db=db, logger=ui, file_system=file_system)
 
     for path, flags in runs:
-        new(
-            path=path,
+        new(path=path,
             prefix=prefix,
             command=command,
             description=description,
@@ -129,13 +127,14 @@ def new(path: str, prefix: str, command: str, description: str, flags: list, bas
     tmux.new(description, full_command)
 
     # new db entry
-    db.append(RunEntry(
-        path=path,
-        full_command=full_command,
-        commit=bash.last_commit(),
-        datetime=datetime.now().isoformat(),
-        description=description,
-        input_command=command))
+    db.append(
+        RunEntry(
+            path=path,
+            full_command=full_command,
+            commit=bash.last_commit(),
+            datetime=datetime.now().isoformat(),
+            description=description,
+            input_command=command))
 
     # print result
     ui.print(

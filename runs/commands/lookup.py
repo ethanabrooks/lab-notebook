@@ -1,9 +1,8 @@
 import runs
 from runs.database import DataBase
-from runs.run_entry import RunEntry
 from runs.logger import Logger
-from runs.util import highlight
-from runs.util import nonempty_string
+from runs.run_entry import RunEntry
+from runs.util import highlight, nonempty_string
 
 
 def add_subparser(subparsers):

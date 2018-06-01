@@ -65,4 +65,4 @@ def tree_strings(tree, prefix='', root_prefix='', root='.'):
                     prefix=prefix,
                     root_prefix='├── ' if _next else '└── ',
                     root=root):
-                    yield s
+                yield s

@@ -3,9 +3,9 @@ from typing import Tuple
 
 
 class RunEntry(
-    namedtuple('RunEntry', [
-        'path', 'full_command', 'commit', 'datetime', 'description', 'input_command'
-    ])):
+        namedtuple('RunEntry', [
+            'path', 'full_command', 'commit', 'datetime', 'description', 'input_command'
+        ])):
     __slots__ = ()
 
     class KeyError(KeyError):

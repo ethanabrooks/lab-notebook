@@ -1,7 +1,7 @@
 import sqlite3
 from functools import wraps
 from pathlib import Path, PurePath
-from typing import List, Union, Tuple, NamedTuple
+from typing import List, NamedTuple, Tuple, Union
 
 from runs.logger import Logger
 from runs.run_entry import RunEntry
@@ -15,28 +15,9 @@ class Substitutions(NamedTuple):
 
     @staticmethod
     def get(patterns: tuple):
-        return Substitutions(placeholders=','.join('?' for _ in patterns),
-                             values=tuple(map(str, patterns)))
-
-
-class Conn:
-    def __init__(self, conn):
-        self.conn = conn
-
-    def execute(self, command, values=None):
-        print(command)
-        if values:
-            print(values)
-            return self.conn.execute(command, values)
-        else:
-            return self.conn.execute(command)
-        print()
-
-    def commit(self):
-        self.conn.commit()
-
-    def close(self):
-        self.conn.close()
+        return Substitutions(
+            placeholders=','.join('?' for _ in patterns),
+            values=tuple(map(str, patterns)))
 
 
 class DataBase:
@@ -62,7 +43,7 @@ class DataBase:
         """
 
     def __enter__(self):
-        self.conn = Conn(sqlite3.connect(str(self.path)))
+        self.conn = sqlite3.connect(str(self.path))
         # noinspection PyUnresolvedReferences
         fields = [f"'{f}' text NOT NULL" for f in self.fields]
         fields[0] += ' PRIMARY KEY'
@@ -74,7 +55,8 @@ class DataBase:
     def execute(self, command: str, patterns: Tuple[PathLike]) -> sqlite3.Cursor:
         placeholders = ','.join('?' for _ in patterns)
         values = tuple(map(str, patterns))
-        return self.conn.execute(f"""
+        return self.conn.execute(
+            f"""
         {command} WHERE {self.key} LIKE {placeholders}
         """, values)
 
@@ -83,21 +65,26 @@ class DataBase:
         self.conn.close()
 
     def __contains__(self, *patterns: PathLike) -> bool:
-        return bool(self.execute(f"""
+        return bool(
+            self.execute(f"""
         SELECT COUNT (*) FROM {self.table_name}
         """, patterns).fetchone()[0])
 
     def __getitem__(self, *patterns: PathLike) -> List[RunEntry]:
-        return [RunEntry(*e) for e in self.execute(f"""
+        return [
+            RunEntry(*e) for e in self.execute(
+                f"""
         SELECT * FROM {self.table_name}
-        """, patterns).fetchall()]
+        """, patterns).fetchall()
+        ]
 
     def __delitem__(self, *patterns: PathLike):
         self.execute(f'DELETE FROM {self.table_name}', patterns)
 
     def append(self, run: RunEntry):
         placeholders = ','.join('?' for _ in run)
-        self.conn.execute(f"""
+        self.conn.execute(
+            f"""
         INSERT INTO {self.table_name} ({self.fields}) VALUES ({placeholders})
         """, [str(x) for x in run])
 
@@ -106,20 +93,21 @@ class DataBase:
             RunEntry(*e) for e in self.conn.execute(f"""
             SELECT * FROM {self.table_name}
             """).fetchall()
-            ]
+        ]
 
     def update(self, *patterns: PathLike, **kwargs):
         update_placeholders = ','.join([f'{k} = ?' for k in kwargs])
         pattern_placeholders = ','.join(['?'] * len(patterns))
-        self.conn.execute(f"""
+        self.conn.execute(
+            f"""
         UPDATE {self.table_name} SET {update_placeholders}
         WHERE {self.key} LIKE {pattern_placeholders}
-        """, tuple(
-            # updates:
-            [str(v) for v in kwargs.values()] +
-            # patterns:
-            [str(p) for p in patterns]
-        ))
+        """,
+            tuple(
+                # updates:
+                [str(v) for v in kwargs.values()] +
+                # patterns:
+                [str(p) for p in patterns]))
 
     def delete(self):
         self.conn.execute(f"""
@@ -136,25 +124,3 @@ class DataBase:
         if len(entries) > 1:
             self.logger.exit(f"Found multiple entries for {path}:", *entries, sep='\n')
         return entries[0]
-
-
-def tree_string(tree, print_attrs=True):
-    string = ''
-    # TODO
-    # for pre, fill, node in RenderTree(tree):
-    #     public_attrs = {
-    #         k: v
-    #         for k, v in vars(node).items()
-    #         if not k.startswith('_') and not k == 'name'
-    #     }
-    #     if public_attrs:
-    #         pass
-    #         # pnode = yaml.dump(
-    #         #     public_attrs, default_flow_style=False).split('\n')
-    #     else:
-    #         pnode = ''
-    #     string += "{}{}\n".format(pre, node.name)
-    #     if print_attrs:
-    #         for line in pnode:
-    #             string += "{}{}\n".format(fill, line)
-    return string

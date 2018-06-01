@@ -10,8 +10,8 @@ def add_subparser(subparsers):
     remove_parser = subparsers.add_parser(
         REMOVE,
         help="Delete runs from the database (and all associated tensorboard "
-             "and checkpoint files). Don't worry, the script will ask for "
-             "confirmation before deleting anything.")
+        "and checkpoint files). Don't worry, the script will ask for "
+        "confirmation before deleting anything.")
     remove_parser.add_argument(
         'patterns',
         nargs='*',
@@ -31,8 +31,7 @@ def cli(patterns, root, dir_names, db, *args, **kwargs):
 
 
 def remove_with_check(*patterns, db, logger, file_system):
-    entries = [entry for pattern in patterns
-               for entry in db[pattern + '%']]
+    entries = [entry for pattern in patterns for entry in db[pattern + '%']]
     if entries:
         logger.check_permission('\n'.join(
             ["Runs to be removed:", *[str(e.path) for e in entries], "Continue?"]))

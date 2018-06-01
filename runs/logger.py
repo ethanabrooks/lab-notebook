@@ -3,7 +3,6 @@ from functools import wraps
 import runs
 
 
-
 class Logger:
     exists = False
 

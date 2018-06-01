@@ -1,36 +1,37 @@
 import argparse
+import pickle
+from pathlib import Path, PurePath
 from pprint import pprint
 
-import yaml
-from pathlib import Path, PurePath
-import pickle
-
 import runs
+import yaml
 from runs.commands import table
 from runs.database import DataBase
-from runs.run_entry import RunEntry
 from runs.logger import Logger
+from runs.run_entry import RunEntry
 
 
 def yaml_to_run_entry(node, *parts):
-    parts += (node['name'],)
+    parts += (node['name'], )
     try:
         for child in node['children']:
             for run in yaml_to_run_entry(child, *parts):
                 yield run
     except KeyError:
-        yield RunEntry(path=PurePath(*parts),
-                       full_command=node['full_command'],
-                       commit=node['commit'],
-                       datetime=node['datetime'],
-                       description=node['description'],
-                       input_command=node['_input_command'])
+        yield RunEntry(
+            path=PurePath(*parts),
+            full_command=node['full_command'],
+            commit=node['commit'],
+            datetime=node['datetime'],
+            description=node['description'],
+            input_command=node['_input_command'])
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('yaml_file', help='input file', type=str)
-    parser.add_argument('db_file', nargs='?', default='runs.db',
-                        help='output file', type=str)
+    parser.add_argument(
+        'db_file', nargs='?', default='runs.db', help='output file', type=str)
     parser.add_argument('--column-width', default=100, help='output file', type=int)
 
     args = parser.parse_args()
@@ -48,6 +49,7 @@ def main():
             db.append(run)
 
         print(table.string(db))
+
 
 if __name__ == '__main__':
     main()
