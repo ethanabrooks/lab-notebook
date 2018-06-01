@@ -1,8 +1,10 @@
+from pathlib import PurePath
+
 from runs.shell import Bash
 
 
 class TMUXSession:
-    def __init__(self, path: str, bash: Bash):
+    def __init__(self, path: PurePath, bash: Bash):
         self.name = str(path).replace('.', ',').replace(':', ';')
         self.cmd = bash.cmd
 

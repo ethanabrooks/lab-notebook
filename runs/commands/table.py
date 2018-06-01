@@ -1,21 +1,24 @@
+from pathlib import PurePath
+from typing import List
+
 from tabulate import tabulate
 
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.util import PATTERN, TABLE, nonempty_string
+from runs.util import space_sep_list
 
 help = 'Only display paths matching this pattern.'
 
 
 def add_subparser(subparsers):
     table_parser = subparsers.add_parser(
-        TABLE, help='Display contents of run database as a table.')
-    table_parser.add_argument(
-        PATTERN, nargs='?', default=None, help=help, type=nonempty_string)
+        'table', help='Display contents of run database as a table.')
+    table_parser.add_argument('pattern', nargs='*', help=help, type=PurePath)
     table_parser.add_argument(
         '--hidden-columns',
-        default=None,
+        type=space_sep_list,
+        default='full_command,path',
         help='Comma-separated list of columns to not display in table.')
     table_parser.add_argument(
         '--column-width',
@@ -28,15 +31,15 @@ def add_subparser(subparsers):
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(pattern, db, hidden_columns, column_width, *args, **kwargs):
-    db.logger.print(string(db, pattern, hidden_columns, column_width))
+def cli(pattern: List[PurePath], db: DataBase, hidden_columns: List[str],
+        column_width: int, *args, **kwargs):
+    db.logger.print(
+        string(*pattern, db=db, hidden_columns=hidden_columns, column_width=column_width))
 
 
-def string(db, pattern=None, hidden_columns=None, column_width=100):
+def string(pattern, db: DataBase, hidden_columns=None, column_width: int = 100):
     if hidden_columns is None:
-        hidden_columns = ['full_command', 'path']
-    else:
-        hidden_columns = hidden_columns.split(',')
+        hidden_columns = []
     assert isinstance(column_width, int)
 
     def get_values(entry, key):

@@ -1,14 +1,15 @@
+from pathlib import PurePath
+
 from runs.database import DataBase
 from runs.logger import Logger
-from runs.util import CHDESCRIPTION, PATH, nonempty_string, string_from_vim
+from runs.util import string_from_vim
 
 
 def add_subparser(subparsers):
-    chdesc_parser = subparsers.add_parser(CHDESCRIPTION, help='Edit description of run.')
+    chdesc_parser = subparsers.add_parser(
+        'change-description', help='Edit description of run.')
     chdesc_parser.add_argument(
-        'path',
-        help='Name of run whose description you want to edit.',
-        type=nonempty_string)
+        'path', help='Name of run whose description you want to edit.', type=PurePath)
     chdesc_parser.add_argument(
         'description',
         nargs='?',
@@ -20,7 +21,7 @@ def add_subparser(subparsers):
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(path, description, db, *args, **kwargs):
+def cli(path: PurePath, description: str, db: DataBase, *args, **kwargs):
     entry = db.entry(path)
     if description is None:
         prompt = f"""

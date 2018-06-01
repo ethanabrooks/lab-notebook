@@ -3,27 +3,24 @@ import argparse
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
 from importlib import import_module
-from pathlib import Path
-from pprint import pprint
+from pathlib import Path, PurePath
 
-from runs import commands
 from runs.commands import (change_description, killall, lookup, ls, mv, new,
                            reproduce, rm, table)
-from runs.commands.change_description import add_subparser
-from runs.commands.killall import add_subparser
-from runs.commands.lookup import add_subparser
-from runs.commands.ls import add_subparser
-from runs.commands.mv import add_subparser
-from runs.commands.new import add_subparser
-from runs.commands.reproduce import add_subparser
-from runs.commands.rm import add_subparser
-from runs.commands.table import add_subparser
-from runs.util import DEFAULT, MAIN, find_up, nonempty_string
+from runs.util import find_up, flag_list, pure_path_list
 
+MAIN = 'main'
 
 def main(argv=sys.argv[1:]):
     config = ConfigParser(
-        delimiters=[':'], allow_no_value=True, interpolation=ExtendedInterpolation())
+        delimiters=[':'],
+        allow_no_value=True,
+        interpolation=ExtendedInterpolation(),
+        converters=dict(
+            _path=Path,
+            _pure_path=PurePath,
+            _pure_path_list=pure_path_list,
+            _flag_list=flag_list))
     config_filename = '.runsrc'
     config_path = find_up(config_filename)
     if config_path:
@@ -32,9 +29,9 @@ def main(argv=sys.argv[1:]):
         config[MAIN] = dict(
             root=Path('.runs').absolute(),
             db_path=Path('runs.db').absolute(),
-            dir_names='',
+            dir_names=[],
             prefix='',
-            flags='',
+            flags=[],
         )
 
     parser = argparse.ArgumentParser()
@@ -48,10 +45,10 @@ def main(argv=sys.argv[1:]):
         '--root',
         help='Custom path to directory where config directories (if any) are automatically '
         'created',
-        type=nonempty_string)
+        type=Path)
     parser.add_argument(
         '--dir-names',
-        type=str,
+        type=pure_path_list,
         help="directories to create and sync automatically with each run")
     parser.add_argument(
         '--assume-yes',
@@ -60,6 +57,13 @@ def main(argv=sys.argv[1:]):
         help='Don\'t ask permission before performing operations.')
 
     subparsers = parser.add_subparsers(dest='dest')
+
+    main_config = dict(config[MAIN])
+    main_config.update(
+        root=config[MAIN].get_path('root'),
+        db_path=config[MAIN].get_path('db_path'),
+        dir_names=config[MAIN].get_pure_path_list('dir_names'),
+        flags=config[MAIN].get_flag_list('flags'))
 
     for subparser in [parser] + [
             adder(subparsers) for adder in [
@@ -77,14 +81,13 @@ def main(argv=sys.argv[1:]):
         assert isinstance(subparser, argparse.ArgumentParser)
         config_section = subparser.prog.split()[-1]
         assert isinstance(config_section, str)
-        subparser.set_defaults(**config[DEFAULT])
+        subparser.set_defaults(**config['DEFAULT'])
         subparser.set_defaults(**config[MAIN])
         if config_section in config:
             subparser.set_defaults(**config[config_section])
 
     args = parser.parse_args(args=argv)
-    if args.flags != config[MAIN]['flags']:
-        args.flags += '\n' + config[MAIN]['flags']
+    args.flags = tuple(set(args.flags) | set(main_config['flags']))
 
     # TODO: use Logger
     def _print(*s):

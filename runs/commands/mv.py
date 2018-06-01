@@ -1,6 +1,5 @@
 from itertools import zip_longest
 from pathlib import PurePath
-from typing import Tuple
 
 from runs.commands import rm
 from runs.database import DataBase
@@ -8,14 +7,13 @@ from runs.file_system import FileSystem
 from runs.logger import UI
 from runs.shell import Bash
 from runs.tmux_session import TMUXSession
-from runs.util import MOVE, ROOT_PATH, SEP, nonempty_string
 
 path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        MOVE,
+        'mv',
         help='Move a run from OLD to NEW. '
         'Functionality is identical to `mkdir -p` except that non-existent dirs'
         'are created and empty dirs are removed automatically'
@@ -25,11 +23,9 @@ def add_subparser(subparsers):
         'source',
         nargs='+',
         help='Name of run to rename.' + path_clarification,
-        type=nonempty_string)
+        type=PurePath)
     parser.add_argument(
-        'destination',
-        help='New name for run.' + path_clarification,
-        type=nonempty_string)
+        'destination', help='New name for run.' + path_clarification, type=PurePath)
     parser.add_argument(
         '--kill-tmux',
         action='store_true',
@@ -42,16 +38,16 @@ def add_subparser(subparsers):
 def cli(source, destination, kill_tmux, db, root, dir_names, *args, **kwargs):
     logger = db.logger
     move(
+        *source,
         db=db,
-        src_patterns=source,
         dest_path=destination,
         kill_tmux=kill_tmux,
         ui=logger,
         file_system=FileSystem(root=root, dir_names=dir_names))
 
 
-def move(db: DataBase, src_patterns: Tuple[str], dest_path: str,
-         kill_tmux: bool, ui: UI, file_system: FileSystem):
+def move(*src_patterns, db: DataBase, dest_path: str, kill_tmux: bool, ui: UI,
+         file_system: FileSystem):
     moves = dict()
     for src_pattern in src_patterns:
         src_entries = db.descendants(src_pattern)
@@ -65,9 +61,9 @@ def move(db: DataBase, src_patterns: Tuple[str], dest_path: str,
                 sep='\n')
 
         def is_dir(pattern):
-            return pattern == ROOT_PATH or f'{pattern.rstrip(SEP)}{SEP}%' in db
+            return pattern == PurePath('.') or f'{pattern}/%' in db
 
-        def get_dest(src_path) -> PurePath:
+        def get_dest(src_path: PurePath) -> PurePath:
             if is_dir(src_pattern):
                 if is_dir(dest_path) or len(src_entries) > 1:
                     old_parts = PurePath(src_pattern).parent.parts
@@ -86,11 +82,11 @@ def move(db: DataBase, src_patterns: Tuple[str], dest_path: str,
                     return PurePath(dest_path)
 
         for entry in src_entries:
-            moves[entry.path] = get_dest(entry.path)
+            moves[entry.path] = get_dest(PurePath(entry.path))
 
     # check before moving
-    ui.check_permission('\n'.join(["Planned moves:", *[f"{s} -> {d}" for s, d in moves.items()],
-                        'Continue?']))
+    ui.check_permission('\n'.join(
+        ["Planned moves:", *[f"{s} -> {d}" for s, d in moves.items()], 'Continue?']))
 
     # check for conflicts with existing runs
 

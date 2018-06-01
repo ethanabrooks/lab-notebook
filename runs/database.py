@@ -1,23 +1,12 @@
 import sqlite3
 from functools import wraps
 from pathlib import Path, PurePath
-from typing import List, NamedTuple, Tuple, Union
+from typing import List, Tuple, Union
 
 from runs.logger import Logger
 from runs.run_entry import RunEntry
 
 PathLike = Union[str, PurePath, Path]
-
-
-class Substitutions(NamedTuple):
-    placeholders: str
-    values: Tuple[str]
-
-    @staticmethod
-    def get(patterns: tuple):
-        return Substitutions(
-            placeholders=','.join('?' for _ in patterns),
-            values=tuple(map(str, patterns)))
 
 
 class DataBase:
@@ -53,12 +42,12 @@ class DataBase:
         return self
 
     def execute(self, command: str, patterns: Tuple[PathLike]) -> sqlite3.Cursor:
-        placeholders = ','.join('?' for _ in patterns)
+        condition = ' OR '.join([f'{self.key} LIKE ?'] * len(patterns))
         values = tuple(map(str, patterns))
         return self.conn.execute(
             f"""
-            {command} WHERE {self.key} LIKE {placeholders}
-            """, values)
+                {command} WHERE {condition}
+                """, values)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.conn.commit()
@@ -78,8 +67,7 @@ class DataBase:
         """, patterns).fetchall()
         ]
 
-
-    def descendants(self, *patterns):
+    def descendants(self, *patterns: PathLike):
         patterns = [f'{pattern}%' for pattern in patterns]
         return self.__getitem__(*patterns)
 

@@ -1,8 +1,8 @@
-import codecs
 import itertools
 import re
 from datetime import datetime
 from pathlib import PurePath
+from typing import List
 
 from runs.commands import rm
 from runs.database import DataBase
@@ -11,17 +11,16 @@ from runs.logger import UI
 from runs.run_entry import RunEntry
 from runs.shell import Bash
 from runs.tmux_session import TMUXSession
-from runs.util import PATH, highlight, nonempty_string
+from runs.util import flag_list, highlight, nonempty_string_type
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('new', help='Start a new run.')
     parser.add_argument(
-        PATH,
+        'path',
         help='Unique path assigned to new run. "\\"-delimited.',
-        type=nonempty_string)
-    parser.add_argument(
-        'command', help='Command that will be run in tmux.', type=nonempty_string)
+        type=nonempty_string_type)
+    parser.add_argument('command', help='Command that will be run in tmux.', type=str)
     parser.add_argument(
         '--description',
         help='Description of this run. Explain what this run was all about or '
@@ -34,7 +33,7 @@ def add_subparser(subparsers):
     )
     parser.add_argument(
         '--flags',
-        type=str,
+        type=flag_list,
         help="directories to create and sync automatically with each run")
     return parser
     # new_parser.add_argument(
@@ -44,28 +43,14 @@ def add_subparser(subparsers):
 
 @UI.wrapper
 @DataBase.wrapper
-def cli(path: str, prefix: str, command: str, description: str, flags: str, root: str,
-        dir_names: str, db: DataBase, *args, **kwargs):
+def cli(path: PurePath, prefix: str, command: str, description: str,
+        flags: List[List[str]], root: PurePath, dir_names: List[PurePath], db: DataBase,
+        *args, **kwargs):
     ui = db.logger
     bash = Bash(logger=ui)
     file_system = FileSystem(root=root, dir_names=dir_names)
 
-    if flags:
-        flags = codecs.decode(flags, encoding='unicode_escape').strip('\n').split('\n')
-    else:
-        flags = []
-    flag_variants = []
-    for flag in flags:
-        if re.match('--[^=]*=.*', flag):
-            key, values = flag.split('=')
-            flag_variants.append([key + '=' + value for value in values.split('|')])
-        elif re.match('--[^=]* .*', flag):
-            key, values = flag.split(' ')
-            flag_variants.append([key + ' ' + value for value in values.split('|')])
-        else:
-            flag_variants.append([flag])
-
-    runs = list(generate_runs(path, flag_variants))
+    runs = list(generate_runs(path, flags))
     if bash.dirty_repo():
         ui.check_permission("Repo is dirty. You should commit before run. Run anyway?")
     if len(runs) > 1:
@@ -90,7 +75,7 @@ def cli(path: str, prefix: str, command: str, description: str, flags: str, root
             file_system=file_system)
 
 
-def generate_runs(path: str, flags):
+def generate_runs(path: PurePath, flags: List[List[str]]):
     flag_combinations = list(itertools.product(*flags))
     for i, flags in enumerate(flag_combinations):
         new_path = path
@@ -99,17 +84,18 @@ def generate_runs(path: str, flags):
         yield new_path, flags
 
 
-def build_command(command, path, prefix, flags):
-    for flag in flags:
-        flag = interpolate_keywords(path, flag)
-        command += ' ' + flag
+def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -> str:
     if prefix:
         return f'{prefix} {command}'
+    flags = ' '.join(interpolate_keywords(path, f) for f in flags)
+    if flags:
+        command = f"{command} {flags}"
     return command
 
 
-def new(path: str, prefix: str, command: str, description: str, flags: list, bash: Bash,
-        ui: UI, db: DataBase, tmux: TMUXSession, file_system: FileSystem):
+def new(path: PurePath, prefix: str, command: str, description: str,
+        flags: List[str], bash: Bash, ui: UI, db: DataBase, tmux: TMUXSession,
+        file_system: FileSystem):
     # create directories
     for dir_path in file_system.dir_paths(PurePath(path)):
         dir_path.mkdir(exist_ok=True, parents=True)

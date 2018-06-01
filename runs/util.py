@@ -1,34 +1,24 @@
 import argparse
-import itertools
-import shutil
 import subprocess
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import List
 
-from termcolor import colored
+import codecs
+import re
+import shutil
+
+RED = "\033[1;31m"
+BLUE = "\033[1;34m"
+CYAN = "\033[1;36m"
+GREEN = "\033[0;32m"
+RESET = "\033[0;0m"
+BOLD = "\033[;1m"
+REVERSE = "\033[;7m"
 
 
-def get_permission(self, *question):
-    if self.assume_yes:
-        return True
-    question = ' '.join(question)
-    if not question.endswith((' ', '\n')):
-        question += ' '
-    response = input(question)
-    while True:
-        response = response.lower()
-        if response in ['y', 'yes']:
-            return True
-        if response in ['n', 'no']:
-            return False
-        else:
-            response = input('Please enter y[es]|n[o]')
-
-
-def highlight(*args):
-    string = ' '.join(map(str, args))
-    return colored(string, color='blue', attrs=['bold'])
+def highlight(*args, sep=' '):
+    return GREEN + sep.join(map(str, args)) + RESET
 
 
 def find_up(filename):
@@ -72,39 +62,38 @@ def string_from_vim(prompt: str, string=None):
     return string
 
 
-def generate_runs(path: str, flags: List[str]):
-    flag_combinations = list(itertools.product(*flags))
-    for flags in flag_combinations:
-        if len(flag_combinations) > 1:
-            path += '_' + '_'.join(f.lstrip('-') for f in flags)
-        yield path, flags
-    if not flag_combinations:
-        yield path, []
-
-
-PATH = 'path'
-ROOT_PATH = '.'
-SEP = '/'
-MAIN = 'main'
-DEFAULT = 'DEFAULT'
-NAME = 'name'
-PATTERN = 'pattern'
-NEW = 'new'
-REMOVE = 'rm'
-MOVE = 'mv'
-LOOKUP = 'lookup'
-LIST = 'ls'
-FLAGS = 'flags'
-TABLE = 'table'
-REPRODUCE = 'reproduce'
-COMMAND = 'command'
-COMMIT = 'commit'
-DESCRIPTION = 'description'
-CHDESCRIPTION = 'change-description'
-KILLALL = 'killall'
-
-
-def nonempty_string(value):
+def nonempty_string_type(value):
     if value == '' or not isinstance(value, str):
         raise argparse.ArgumentTypeError("Value must be a nonempty string.")
     return value
+
+
+def pure_path_list(paths: str) -> List[PurePath]:
+    return [PurePath(path) for path in paths.split()]
+
+
+def comma_sep_list(string: str) -> List[str]:
+    return string.split(',')
+
+
+def space_sep_list(string: str) -> List[str]:
+    return string.split()
+
+
+def flag_list(flags_string: str) -> List[List[str]]:
+    if flags_string:
+        flags = codecs.decode(
+            flags_string, encoding='unicode_escape').strip('\n').split('\n')
+    else:
+        flags = []
+    flag_list = []
+    for flag in flags:
+        if re.match('--[^=]*=.*', flag):
+            key, values = flag.split('=')
+            flag_list.append(tuple((key + '=' + value for value in values.split('|'))))
+        elif re.match('--[^=]* .*', flag):
+            key, values = flag.split(' ')
+            flag_list.append(tuple((key + ' ' + value for value in values.split('|'))))
+        else:
+            flag_list.append((flag,))
+    return flag_list

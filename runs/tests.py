@@ -1,20 +1,19 @@
-import os
-import shutil
 import subprocess
 from contextlib import contextmanager
-from fnmatch import fnmatch
-from pathlib import Path
+from pathlib import Path, PurePath
 
+import os
+import shutil
+from fnmatch import fnmatch
 from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, eq_, ok_)
 
-import runs
 from runs import main
 from runs.commands import lookup, ls
+from runs.commands import table
 from runs.database import DataBase
 from runs.logger import UI
 from runs.shell import Bash
-from runs.util import CHDESCRIPTION
 
 # TODO: sad path
 
@@ -144,25 +143,25 @@ def check_db(path, flags):
     with DB as db:
         # check known values
         assert_in(DESCRIPTION, lookup.string(
-            db,
-            path,
-            'description',
+            pattern=path + '%',
+            db=db,
+            key='description',
         ))
         assert_in(COMMAND, lookup.string(
-            db,
-            path,
-            'input_command',
+            pattern=path + '%',
+            db=db,
+            key='input_command',
         ))
         assert_in(path, lookup.string(
-            db,
-            path,
-            'path',
+            pattern=path + '%',
+            db=db,
+            key='path',
         ))
         for flag in flags:
             assert_in(flag, lookup.string(
-                db,
-                path,
-                'full_command',
+                pattern=path + '%',
+                db=db,
+                key='full_command',
             ))
 
 
@@ -178,7 +177,7 @@ def check_tmux_killed(path):
 
 def check_del_entry(path):
     with DB as db:
-        assert_not_in(path, ls.strings(path, db))
+        assert_not_in(path, ls.strings(path, db=db))
 
 
 def check_rm_files(path):
@@ -189,14 +188,14 @@ def check_rm_files(path):
 
 def check_list_happy(pattern):
     with DB as db:
-        string = ls.string(pattern, db)
+        string = ls.string(pattern, db=db)
         assert_in('test_run', string)
 
 
 def check_list_sad(pattern):
     with DB as db:
-        string = ls.string(pattern, db, porcelain=False)
-        eq_(string, '.')
+        string = ls.string(pattern, db=db, porcelain=True)
+        eq_(string, '')
 
 
 def check_table(table):
@@ -239,13 +238,13 @@ def test_list():
         with _setup(path, dir_names, flags):
             for pattern in ['%', 'test%']:
                 yield check_list_happy, pattern
-            for pattern in ['x%']:
+            for pattern in ['x%', 'x']:
                 yield check_list_sad, pattern
 
 
 def test_table():
     with _setup(TEST_RUN), DB as db:
-        string = runs.commands.table.string(db, None, None, 100)
+        string = table.string(pattern=None, db=db)
         yield check_table, string
 
 
@@ -253,7 +252,7 @@ def test_lookup():
     with _setup(TEST_RUN), DB as db:
         for key, value in dict(
                 path=TEST_RUN, description=DESCRIPTION, input_command=COMMAND).items():
-            assert_in(value, lookup.string(db, TEST_RUN, key))
+            assert_in(value, lookup.string(db=db, key=key, pattern=PurePath(TEST_RUN)))
         with assert_raises(SystemExit):
             run_main('lookup', TEST_RUN, 'x')
 
@@ -261,8 +260,9 @@ def test_lookup():
 def test_chdesc():
     with _setup(TEST_RUN), DB as db:
         description = 'new description'
-        run_main(CHDESCRIPTION, TEST_RUN, description)
-        assert_in(description, lookup.string(db, TEST_RUN, 'description'))
+        run_main('change-description', TEST_RUN, description)
+        assert_in(description,
+                  lookup.string(db=db, key='description', pattern=PurePath(TEST_RUN)))
 
 
 def test_move():
@@ -276,8 +276,6 @@ def test_move():
                     yield check_tmux, new_path
 
 
-#
-#
 def move(src, dest):
     run_main('mv', src, dest)
 
@@ -308,7 +306,6 @@ def test_move_dirs():
         # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/sub1/test_run', 'sub1/test_run'
 
-    # here
     with _setup('sub/test_run1'), _setup('sub/test_run2'):
         move('sub/%', 'new')
         # src is multi -> for each node match, move head into dest
@@ -336,7 +333,9 @@ def test_move_dirs():
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'
         with DB as db:
-            assert_in('--run1', lookup.string(db, 'test_run2', 'full_command'))
+            assert_in(
+                '--run1',
+                lookup.string(db=db, key='full_command', pattern=PurePath('test_run2')))
 
     with _setup('test'):
         move('test', 'test/test2')

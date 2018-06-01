@@ -1,17 +1,17 @@
 from collections import defaultdict
 from itertools import zip_longest
 from pathlib import PurePath
+from typing import List
 
 from runs.database import DataBase
 from runs.logger import Logger
-from runs.util import LIST, PATTERN, nonempty_string
 
 help = 'Only display paths matching this pattern.'
 
 
 def add_subparser(subparsers):
-    list_parser = subparsers.add_parser(LIST, help='List all names in run database.')
-    list_parser.add_argument(PATTERN, nargs='?', help=help, type=nonempty_string)
+    list_parser = subparsers.add_parser('ls', help='List all names in run database.')
+    list_parser.add_argument('patterns', nargs='*', help=help, type=PurePath)
     list_parser.add_argument(
         '--show-attrs',
         action='store_true',
@@ -26,16 +26,16 @@ def add_subparser(subparsers):
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(pattern, db, porcelain, *args, **kwargs):
-    db.logger.print(string(pattern=pattern, db=db, porcelain=porcelain))
+def cli(patterns: List[PurePath], db: DataBase, porcelain: bool, *args, **kwargs):
+    db.logger.print(string(*patterns, db=db, porcelain=porcelain))
 
 
-def string(pattern, db, porcelain=True):
-    return '\n'.join(strings(pattern, db, porcelain))
+def string(*patterns, db: DataBase, porcelain: bool = True) -> str:
+    return '\n'.join(strings(*patterns, db=db, porcelain=porcelain))
 
 
-def strings(pattern, db, porcelain=True):
-    entries = db[pattern + '%'] if pattern else db.all()
+def strings(*patterns, db: DataBase, porcelain: bool = True) -> List[str]:
+    entries = db.descendants(*patterns) if patterns else db.all()
     paths = [e.path for e in entries]
     return paths if porcelain else tree_strings(build_tree(paths))
 

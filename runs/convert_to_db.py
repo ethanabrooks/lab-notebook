@@ -1,9 +1,7 @@
 import argparse
 import pickle
 from pathlib import Path, PurePath
-from pprint import pprint
 
-import runs
 import yaml
 from runs.commands import table
 from runs.database import DataBase

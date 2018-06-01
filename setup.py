@@ -32,7 +32,6 @@ setup(
     },
     scripts=['runs-git'],
     install_requires=[
-        'termcolor==1.1.0',
         'tabulate==0.8.1',
         'nose==1.3.7',
     ])
