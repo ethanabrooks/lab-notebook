@@ -103,7 +103,6 @@ class DataBase:
         INSERT INTO {self.table_name} ({self.fields})
         VALUES ({','.join('?' for _ in run)})
         """, tuple(str(x) for x in run))
-        return self
 
     def all(self):
         return [

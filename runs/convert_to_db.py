@@ -7,7 +7,8 @@ import pickle
 
 import runs
 from runs.commands import table
-from runs.database import RunEntry, DataBase
+from runs.database import DataBase
+from runs.run_entry import RunEntry
 from runs.logger import Logger
 
 

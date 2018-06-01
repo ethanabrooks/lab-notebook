@@ -1,4 +1,5 @@
-from runs.database import RunEntry, DataBase
+from runs.database import DataBase
+from runs.run_entry import RunEntry
 from runs.logger import Logger
 from runs.util import PATTERN, TABLE, nonempty_string
 from tabulate import tabulate
