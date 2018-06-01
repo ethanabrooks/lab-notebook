@@ -33,10 +33,11 @@ def cli(patterns, root, dir_names, db, *args, **kwargs):
 def remove_with_check(*patterns, db, logger, file_system):
     entries = [entry for pattern in patterns
                for entry in db[pattern + '%']]
-    logger.check_permission('\n'.join(
-        ["Runs to be removed:", *[str(e.path) for e in entries], "Continue?"]))
-    for entry in entries:
-        remove(path=entry.path, db=db, file_system=file_system, logger=logger)
+    if entries:
+        logger.check_permission('\n'.join(
+            ["Runs to be removed:", *[str(e.path) for e in entries], "Continue?"]))
+        for entry in entries:
+            remove(path=entry.path, db=db, file_system=file_system, logger=logger)
 
 
 def remove(path, db, logger, file_system):
