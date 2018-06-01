@@ -9,8 +9,7 @@ with codecs.open('README.rst', encoding='utf-8') as f:
 setup(
     name='lab-notebook',
     version='3.2.1',
-    description=
-    'A utility for tracking, documenting, and reproducing software runs.',
+    description='A utility for tracking, documenting, and reproducing software runs.',
     long_description=long_description,
     url='https://github.com/lobachevzky/lab-notebook',
     author='Ethan Brooks',
@@ -21,7 +20,6 @@ setup(
         'Intended Audience :: Developers',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
     keywords='tensorflow utilities development',
@@ -29,14 +27,12 @@ setup(
     entry_points={
         'console_scripts': [
             'runs = runs.main:main',
+            'convert-to-db = runs.convert_to_db:main',
         ],
     },
     scripts=['runs-git'],
     install_requires=[
-        'anytree==2.4.3',
         'termcolor==1.1.0',
-        'PyYAML==3.12',
         'tabulate==0.8.1',
         'nose==1.3.7',
-        'nose-progressive==1.5.1',
     ])
