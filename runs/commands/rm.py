@@ -9,12 +9,12 @@ from runs.util import PATTERN, REMOVE, nonempty_string
 @UI.wrapper
 @DataBase.wrapper
 def cli(pattern, root, dir_names, db, *args, **kwargs):
-    entries = db[pattern]
     logger = db.logger
+    entries = db[pattern + '%']
     logger.check_permission('\n'.join(
         ["Runs to be removed:", *[str(e.path) for e in entries], "Continue?"]))
     file_system = FileSystem(root=root, dir_names=dir_names)
-    for entry in db[pattern]:
+    for entry in entries:
         remove(path=entry.path, db=db, file_system=file_system, logger=logger)
 
 

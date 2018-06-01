@@ -35,7 +35,7 @@ def string(pattern, db, porcelain=True):
 
 
 def strings(pattern, db, porcelain=True):
-    entries = db[pattern] if pattern else db.all()
+    entries = db[pattern + '%'] if pattern else db.all()
     paths = [e.path for e in entries]
     return paths if porcelain else tree_strings(build_tree(paths))
 
