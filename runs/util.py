@@ -53,11 +53,12 @@ def prune_empty(path):
         prune_empty(path.parent)
 
 
-def string_from_vim(prompt, string=None):
+def string_from_vim(prompt: str, string=None):
     if string is None:
         string = ' '
     path = Path('/', 'tmp', datetime.now().strftime('%s') + '.txt')
-    delimiter = '\n' + '-' * len(prompt.split('\n')[-1]) + '\n'
+    prompt = prompt.strip('\n')
+    delimiter = '\n' + '=' * len(prompt.split('\n')[-1])
     with path.open('w') as f:
         f.write(prompt + delimiter + string)
     start_line = 3 + prompt.count('\n')

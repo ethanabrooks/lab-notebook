@@ -6,7 +6,7 @@ from runs.util import CHDESCRIPTION, PATH, nonempty_string, string_from_vim
 def add_subparser(subparsers):
     chdesc_parser = subparsers.add_parser(CHDESCRIPTION, help='Edit description of run.')
     chdesc_parser.add_argument(
-        PATH,
+        'path',
         help='Name of run whose description you want to edit.',
         type=nonempty_string)
     chdesc_parser.add_argument(
@@ -23,5 +23,9 @@ def add_subparser(subparsers):
 def cli(path, description, db, *args, **kwargs):
     entry = db.entry(path)
     if description is None:
-        description = string_from_vim('Edit description', entry.description)
-    db.update(path, description=description)
+        prompt = f"""
+Edit description for {entry.path}.
+Command: {entry.full_command}
+"""
+        description = string_from_vim(prompt, entry.description)
+    db.update(entry.path, description=description)

@@ -6,7 +6,8 @@ from pathlib import PurePath
 import itertools
 
 from runs.commands import rm
-from runs.database import RunEntry, DataBase
+from runs.database import DataBase
+from runs.run_entry import RunEntry
 from runs.file_system import FileSystem
 from runs.logger import UI
 from runs.shell import Bash

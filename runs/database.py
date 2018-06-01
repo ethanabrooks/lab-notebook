@@ -1,42 +1,10 @@
 import sqlite3
-from collections import namedtuple
 from functools import wraps
 from pathlib import Path, PurePath
-from typing import List, Tuple, Union
+from typing import List, Union
 
 from runs.logger import Logger
-
-
-# noinspection PyClassHasNoInit
-class RunEntry(
-    namedtuple('RunEntry', [
-        'path', 'full_command', 'commit', 'datetime', 'description', 'input_command'
-    ])):
-    __slots__ = ()
-
-    class KeyError(KeyError):
-        pass
-
-    def __str__(self):
-        # noinspection PyUnresolvedReferences
-        return ','.join([f"'{x}'" for x in self])
-
-    def replace(self, **kwargs):
-        return super()._replace(**kwargs)
-
-    @staticmethod
-    def fields() -> Tuple[str]:
-        return RunEntry(*RunEntry._fields)
-
-    def asdict(self) -> dict:
-        return self._asdict()
-
-    def get(self, key):
-        try:
-            return getattr(self, key)
-        except AttributeError:
-            raise RunEntry.KeyError
-
+from runs.run_entry import RunEntry
 
 PathLike = Union[str, PurePath, Path]
 
@@ -103,7 +71,6 @@ class DataBase:
         INSERT INTO {self.table_name} ({self.fields})
         VALUES ({','.join('?' for _ in run)})
         """, tuple(str(x) for x in run))
-        return self
 
     def all(self):
         return [

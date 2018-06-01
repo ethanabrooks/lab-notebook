@@ -34,8 +34,8 @@ def main(argv=sys.argv[1:]):
             db_path=Path('runs.db').absolute(),
             dir_names='',
             prefix='',
+            flags='',
         )
-        config['flags'] = dict()
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -81,9 +81,10 @@ def main(argv=sys.argv[1:]):
         subparser.set_defaults(**config[MAIN])
         if config_section in config:
             subparser.set_defaults(**config[config_section])
-            subparser.set_defaults(**config['flags'])
 
     args = parser.parse_args(args=argv)
+    if args.flags != config[MAIN]['flags']:
+        args.flags += '\n' + config[MAIN]['flags']
 
     # TODO: use Logger
     def _print(*s):
