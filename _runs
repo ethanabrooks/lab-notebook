@@ -4,7 +4,7 @@ local run_path
 local run_paths=("${(@f)$(runs ls --porcelain)}")
 local formatted_paths=()
 for run_path in $run_paths; do
-  formatted_paths+=${run_path[3, -1]}
+  formatted_paths+=${run_path}
 done
 
 compadd -a -- formatted_paths
