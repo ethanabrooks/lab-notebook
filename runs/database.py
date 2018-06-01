@@ -1,12 +1,42 @@
 import sqlite3
 from functools import wraps
 from pathlib import Path, PurePath
-from typing import List, Union
+from typing import List, Union, Tuple, NamedTuple
 
 from runs.logger import Logger
 from runs.run_entry import RunEntry
 
 PathLike = Union[str, PurePath, Path]
+
+
+class Substitutions(NamedTuple):
+    placeholders: str
+    values: Tuple[str]
+
+    @staticmethod
+    def get(patterns: tuple):
+        return Substitutions(placeholders=','.join('?' for _ in patterns),
+                             values=tuple(map(str, patterns)))
+
+
+class Conn:
+    def __init__(self, conn):
+        self.conn = conn
+
+    def execute(self, command, values=None):
+        print(command)
+        if values:
+            print(values)
+            return self.conn.execute(command, values)
+        else:
+            return self.conn.execute(command)
+        print()
+
+    def commit(self):
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
 
 
 class DataBase:
@@ -27,9 +57,12 @@ class DataBase:
         self.columns = set(RunEntry.fields())
         self.key = 'path'
         self.fields = RunEntry.fields()
+        self.condition = f"""
+        FROM {self.table_name} WHERE {self.key} LIKE
+        """
 
     def __enter__(self):
-        self.conn = sqlite3.connect(str(self.path))
+        self.conn = Conn(sqlite3.connect(str(self.path)))
         # noinspection PyUnresolvedReferences
         fields = [f"'{f}' text NOT NULL" for f in self.fields]
         fields[0] += ' PRIMARY KEY'
@@ -38,39 +71,35 @@ class DataBase:
         """)
         return self
 
+    def execute(self, command: str, patterns: Tuple[PathLike]) -> sqlite3.Cursor:
+        placeholders = ','.join('?' for _ in patterns)
+        values = tuple(map(str, patterns))
+        return self.conn.execute(f"""
+        {command} WHERE {self.key} LIKE {placeholders}
+        """, values)
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.conn.commit()
         self.conn.close()
 
-    # noinspection PyMethodMayBeStatic
-    def condition(self) -> str:
-        return f"""
-        FROM {self.table_name} WHERE {self.key} LIKE ?
-        """
+    def __contains__(self, *patterns: PathLike) -> bool:
+        return bool(self.execute(f"""
+        SELECT COUNT (*) FROM {self.table_name}
+        """, patterns).fetchone()[0])
 
-    def __contains__(self, pattern: PathLike) -> bool:
-        return bool(
-            self.conn.execute(f"""
-            SELECT COUNT(*) {self.condition()}
-            """, (str(pattern),)).fetchone()[0])
+    def __getitem__(self, *patterns: PathLike) -> List[RunEntry]:
+        return [RunEntry(*e) for e in self.execute(f"""
+        SELECT * FROM {self.table_name}
+        """, patterns).fetchall()]
 
-    def __getitem__(self, pattern: PathLike) -> List[RunEntry]:
-        return [
-            RunEntry(*e) for e in self.conn.execute(f"""
-        SELECT * {self.condition()}
-        """, (str(pattern),)).fetchall()
-            ]
-
-    def __delitem__(self, pattern: PathLike):
-        self.conn.execute(f"""
-        DELETE {self.condition()}
-        """, (str(pattern),))
+    def __delitem__(self, *patterns: PathLike):
+        self.execute(f'DELETE FROM {self.table_name}', patterns)
 
     def append(self, run: RunEntry):
+        placeholders = ','.join('?' for _ in run)
         self.conn.execute(f"""
-        INSERT INTO {self.table_name} ({self.fields})
-        VALUES ({','.join('?' for _ in run)})
-        """, tuple(str(x) for x in run))
+        INSERT INTO {self.table_name} ({self.fields}) VALUES ({placeholders})
+        """, [str(x) for x in run])
 
     def all(self):
         return [
@@ -79,11 +108,18 @@ class DataBase:
             """).fetchall()
             ]
 
-    def update(self, pattern: PathLike, **kwargs):
-        updates = ','.join(f"'{k}' = '{v}'" for k, v in kwargs.items())
+    def update(self, *patterns: PathLike, **kwargs):
+        update_placeholders = ','.join([f'{k} = ?' for k in kwargs])
+        pattern_placeholders = ','.join(['?'] * len(patterns))
         self.conn.execute(f"""
-        UPDATE {self.table_name} SET {updates} WHERE {self.key} LIKE ?
-        """, (str(pattern),))
+        UPDATE {self.table_name} SET {update_placeholders}
+        WHERE {self.key} LIKE {pattern_placeholders}
+        """, tuple(
+            # updates:
+            [str(v) for v in kwargs.values()] +
+            # patterns:
+            [str(p) for p in patterns]
+        ))
 
     def delete(self):
         self.conn.execute(f"""
