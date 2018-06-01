@@ -1,12 +1,11 @@
 import argparse
+import codecs
+import re
+import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path, PurePath
 from typing import List
-
-import codecs
-import re
-import shutil
 
 RED = "\033[1;31m"
 BLUE = "\033[1;34m"
@@ -95,5 +94,5 @@ def flag_list(flags_string: str) -> List[List[str]]:
             key, values = flag.split(' ')
             flag_list.append(tuple((key + ' ' + value for value in values.split('|'))))
         else:
-            flag_list.append((flag,))
+            flag_list.append((flag, ))
     return flag_list

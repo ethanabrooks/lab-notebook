@@ -1,16 +1,15 @@
-import subprocess
-from contextlib import contextmanager
-from pathlib import Path, PurePath
-
 import os
 import shutil
+import subprocess
+from contextlib import contextmanager
 from fnmatch import fnmatch
+from pathlib import Path, PurePath
+
 from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, eq_, ok_)
 
 from runs import main
-from runs.commands import lookup, ls
-from runs.commands import table
+from runs.commands import lookup, ls, table
 from runs.database import DataBase
 from runs.logger import UI
 from runs.shell import Bash
@@ -142,11 +141,12 @@ def check_tmux(path):
 def check_db(path, flags):
     with DB as db:
         # check known values
-        assert_in(DESCRIPTION, lookup.string(
-            pattern=path + '%',
-            db=db,
-            key='description',
-        ))
+        assert_in(DESCRIPTION,
+                  lookup.string(
+                      pattern=path + '%',
+                      db=db,
+                      key='description',
+                  ))
         assert_in(COMMAND, lookup.string(
             pattern=path + '%',
             db=db,

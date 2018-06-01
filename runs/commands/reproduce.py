@@ -37,9 +37,7 @@ def cli(patterns: List[PurePath], db: DataBase, *args, **kwargs):
 def string(*patterns, db: DataBase):
     for entry in db.descendants(*patterns):
         return '\n'.join([
-            'To reproduce:',
-            highlight(f'git checkout {entry.commit}\n'),
-            highlight(
-                f"runs new {entry.path} '{entry.input_command}' --description='Reproduce {entry.path}. "
-                f"Original description: {entry.description}'")
+            highlight('To reproduce:'), f'git checkout {entry.commit}\n',
+            f"runs new {entry.path} '{entry.input_command}' --description='Reproduce {entry.path}. "
+            f"Original description: {entry.description}'"
         ])

@@ -11,6 +11,7 @@ from runs.util import find_up, flag_list, pure_path_list
 
 MAIN = 'main'
 
+
 def main(argv=sys.argv[1:]):
     config = ConfigParser(
         delimiters=[':'],

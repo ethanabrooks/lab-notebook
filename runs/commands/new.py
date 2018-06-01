@@ -93,9 +93,8 @@ def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -
     return command
 
 
-def new(path: PurePath, prefix: str, command: str, description: str,
-        flags: List[str], bash: Bash, ui: UI, db: DataBase, tmux: TMUXSession,
-        file_system: FileSystem):
+def new(path: PurePath, prefix: str, command: str, description: str, flags: List[str],
+        bash: Bash, ui: UI, db: DataBase, tmux: TMUXSession, file_system: FileSystem):
     # create directories
     for dir_path in file_system.dir_paths(PurePath(path)):
         dir_path.mkdir(exist_ok=True, parents=True)
