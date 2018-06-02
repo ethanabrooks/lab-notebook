@@ -4,7 +4,7 @@ positional=()
   while [[ $# -gt 0 ]]; do
     arg=$1
     if [[ ${1[1,1]} == '+' ]]; then
-      arg=$(runs lookup commit ${1[2,-1]})
+      arg=$(runs lookup ${1[2,-1]} commit --porcelain)
       if [[ $arg =~ 'No runs match pattern.*' ]]; then
         runs ls
         exit
