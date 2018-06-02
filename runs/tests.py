@@ -143,23 +143,23 @@ def check_db(path, flags):
         # check known values
         assert_in(DESCRIPTION,
                   lookup.string(
-                      pattern=path + '%',
+                      path + '%',
                       db=db,
                       key='description',
                   ))
         assert_in(COMMAND, lookup.string(
-            pattern=path + '%',
+            path + '%',
             db=db,
             key='input_command',
         ))
         assert_in(path, lookup.string(
-            pattern=path + '%',
+            path + '%',
             db=db,
             key='path',
         ))
         for flag in flags:
             assert_in(flag, lookup.string(
-                pattern=path + '%',
+                path + '%',
                 db=db,
                 key='full_command',
             ))
@@ -252,7 +252,7 @@ def test_lookup():
     with _setup(TEST_RUN), DB as db:
         for key, value in dict(
                 path=TEST_RUN, description=DESCRIPTION, input_command=COMMAND).items():
-            assert_in(value, lookup.string(db=db, key=key, pattern=PurePath(TEST_RUN)))
+            assert_in(value, lookup.string(PurePath(TEST_RUN), db=db, key=key))
         with assert_raises(SystemExit):
             run_main('lookup', TEST_RUN, 'x')
 
@@ -262,7 +262,7 @@ def test_chdesc():
         description = 'new description'
         run_main('change-description', TEST_RUN, description)
         assert_in(description,
-                  lookup.string(db=db, key='description', pattern=PurePath(TEST_RUN)))
+                  lookup.string(PurePath(TEST_RUN), db=db, key='description'))
 
 
 def test_move():
@@ -335,7 +335,7 @@ def test_move_dirs():
         with DB as db:
             assert_in(
                 '--run1',
-                lookup.string(db=db, key='full_command', pattern=PurePath('test_run2')))
+                lookup.string(PurePath('test_run2'), db=db, key='full_command'))
 
     with _setup('test'):
         move('test', 'test/test2')

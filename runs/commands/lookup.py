@@ -12,12 +12,12 @@ def add_subparser(subparsers):
     lookup_parser = subparsers.add_parser(
         'lookup', help='Lookup specific value associated with database entry')
     lookup_parser.add_argument(
-        'pattern', help='Pattern of runs for which to retrieve key.', type=PurePath)
+        'patterns', help='Pattern of runs for which to retrieve key.', type=PurePath,
+        nargs='*'
+    )
     lookup_parser.add_argument(
         'key',
-        choices=RunEntry.fields(),
-        default=None,
-        nargs='?',
+        choices=RunEntry.fields() + ('all',),
         help='Key that value is associated with.')
     lookup_parser.add_argument('--porcelain', action='store_true')
     return lookup_parser
@@ -25,17 +25,17 @@ def add_subparser(subparsers):
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(pattern: PurePath, key: str, db: DataBase, porcelain: bool, *args, **kwargs):
-    db.logger.print(string(pattern=pattern, db=db, key=key, porcelain=porcelain))
+def cli(patterns: List[PurePath], key: str, db: DataBase, porcelain: bool, *args, **kwargs):
+    db.logger.print(string(*patterns, db=db, key=key, porcelain=porcelain))
 
 
-def string(pattern: PurePath, db: DataBase, key: str, porcelain: bool = True) -> str:
-    return '\n'.join(strings(pattern=pattern, db=db, key=key, porcelain=porcelain))
+def string(*patterns, db: DataBase, key: str, porcelain: bool = True) -> str:
+    return '\n'.join(strings(*patterns, db=db, key=key, porcelain=porcelain))
 
 
-def strings(pattern: PurePath, db: DataBase, key: str, porcelain: bool) -> List[str]:
+def strings(*patterns, db: DataBase, key: str, porcelain: bool) -> List[str]:
     if key:
-        attr_dict = get_dict(db=db, path=pattern, key=key)
+        attr_dict = get_dict(*patterns, db=db, key=key)
         if porcelain:
             for value in attr_dict.values():
                 yield str(value)
@@ -44,11 +44,11 @@ def strings(pattern: PurePath, db: DataBase, key: str, porcelain: bool) -> List[
                 yield highlight(path, ": ", sep='') + str(attr)
     else:
         if porcelain:
-            for entry in db[pattern, ]:
+            for entry in db[patterns,]:
                 yield str(entry)
         else:
-            yield table.string(pattern, db=db)
+            yield table.string(patterns, db=db)
 
 
-def get_dict(db: DataBase, path: PurePath, key: str) -> Dict[PurePath, str]:
-    return {entry.path: entry.get(key) for entry in (db[path, ])}
+def get_dict(*pattern, db: DataBase, key: str) -> Dict[PurePath, str]:
+    return {entry.path: entry.get(key) for entry in (db[pattern])}
