@@ -61,7 +61,7 @@ def generate_runs(path: PurePath, flags: List[List[str]]):
 
 def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -> str:
     if prefix:
-        return f'{prefix} {command}'
+        command = f'{prefix} {command}'
     flags = ' '.join(interpolate_keywords(path, f) for f in flags)
     if flags:
         command = f"{command} {flags}"
