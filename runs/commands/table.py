@@ -6,7 +6,7 @@ from tabulate import tabulate
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.util import space_sep_list
+from runs.util import comma_sep_list
 
 help = 'Only display paths matching this pattern.'
 
@@ -17,7 +17,7 @@ def add_subparser(subparsers):
     table_parser.add_argument('pattern', nargs='*', help=help, type=PurePath)
     table_parser.add_argument(
         '--hidden-columns',
-        type=space_sep_list,
+        type=comma_sep_list,
         default='full_command,path',
         help='Comma-separated list of columns to not display in table.')
     table_parser.add_argument(

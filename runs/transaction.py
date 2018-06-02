@@ -89,6 +89,7 @@ class Transaction:
         Edit description for {path}.
         Command: {full_command}
         """, change.old_description)
+            # noinspection PyProtectedMember
             return change._replace(new_description=new_description)
 
         self.description_changes = {
