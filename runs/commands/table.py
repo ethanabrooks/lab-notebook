@@ -37,7 +37,7 @@ def cli(pattern: List[PurePath], db: DataBase, hidden_columns: List[str],
         string(*pattern, db=db, hidden_columns=hidden_columns, column_width=column_width))
 
 
-def string(*pattern, db: DataBase, hidden_columns=None, column_width: int = 100):
+def string(*patterns, db: DataBase, hidden_columns=None, column_width: int = 100):
     if hidden_columns is None:
         hidden_columns = []
     assert isinstance(column_width, int)
@@ -52,7 +52,7 @@ def string(*pattern, db: DataBase, hidden_columns=None, column_width: int = 100)
             return '_'
 
     headers = sorted(set(RunEntry.fields()) - set(hidden_columns))
-    entries = db[pattern, ] if pattern else db.all()
+    entries = db.descendants(*patterns) if patterns else db.all()
     db = [[e.path] + [get_values(e, key) for key in headers]
           for e in sorted(entries, key=lambda e: e.path)]
     return tabulate(db, headers=headers)

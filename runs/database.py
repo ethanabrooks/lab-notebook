@@ -48,24 +48,19 @@ class DataBase:
     def execute(self, command: str, patterns: Sequence[PathLike]) -> sqlite3.Cursor:
         condition = ' OR '.join([f'{self.key} LIKE ?'] * len(patterns))
         values = tuple(map(str, patterns))
-        return self.conn.execute(
-            f"""
-                    {command} WHERE {condition}
-                    """, values)
+        return self.conn.execute(f"""
+        {command} WHERE {condition}
+        """, values)
 
     def __contains__(self, *patterns: PathLike) -> bool:
-        return bool(
-            self.execute(f"""
+        return bool(self.execute(f"""
         SELECT COUNT (*) FROM {self.table_name}
         """, patterns).fetchone()[0])
 
     def __getitem__(self, patterns: Sequence[PathLike]) -> List[RunEntry]:
-        return [
-            RunEntry(*e) for e in self.execute(
-                f"""
+        return [RunEntry(*e) for e in self.execute(f"""
         SELECT * FROM {self.table_name}
-        """, patterns).fetchall()
-        ]
+        """, patterns).fetchall()]
 
     def descendants(self, *patterns: PathLike):
         patterns = [f'{pattern}%' for pattern in patterns]
@@ -76,8 +71,7 @@ class DataBase:
 
     def append(self, run: RunEntry):
         placeholders = ','.join('?' for _ in run)
-        self.conn.execute(
-            f"""
+        self.conn.execute(f"""
         INSERT INTO {self.table_name} ({self.fields}) VALUES ({placeholders})
         """, [str(x) for x in run])
 
@@ -86,21 +80,18 @@ class DataBase:
             RunEntry(*e) for e in self.conn.execute(f"""
             SELECT * FROM {self.table_name}
             """).fetchall()
-        ]
+            ]
 
     def update(self, *patterns: PathLike, **kwargs):
         update_placeholders = ','.join([f'{k} = ?' for k in kwargs])
         pattern_placeholders = ','.join(['?'] * len(patterns))
-        self.conn.execute(
-            f"""
+        self.conn.execute(f"""
         UPDATE {self.table_name} SET {update_placeholders}
         WHERE {self.key} LIKE {pattern_placeholders}
-        """,
-            tuple(
-                # updates:
-                [str(v) for v in kwargs.values()] +
-                # patterns:
-                [str(p) for p in patterns]))
+        """, tuple(  # updates:
+            [str(v) for v in kwargs.values()] +
+            # patterns:
+            [str(p) for p in patterns]))
 
     def delete(self):
         self.conn.execute(f"""
@@ -108,7 +99,7 @@ class DataBase:
         """)
 
     def entry(self, path: PathLike):
-        entries = self[path, ]
+        entries = self[path,]
         if len(entries) == 0:
             self.logger.exit(
                 f"Found no entries for {path}. Current entries:",
