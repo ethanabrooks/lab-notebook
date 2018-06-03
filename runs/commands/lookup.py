@@ -12,13 +12,13 @@ def add_subparser(subparsers):
     lookup_parser = subparsers.add_parser(
         'lookup', help='Lookup specific value associated with database entry')
     lookup_parser.add_argument(
-        'patterns', help='Pattern of runs for which to retrieve key.', type=PurePath,
-        nargs='*'
-    )
-    lookup_parser.add_argument(
         'key',
         choices=RunEntry.fields() + ('all',),
         help='Key that value is associated with.')
+    lookup_parser.add_argument(
+        'patterns', help='Pattern of runs for which to retrieve key.', type=PurePath,
+        nargs='*'
+    )
     lookup_parser.add_argument('--porcelain', action='store_true')
     return lookup_parser
 
@@ -34,7 +34,13 @@ def string(*patterns, db: DataBase, key: str, porcelain: bool = True) -> str:
 
 
 def strings(*patterns, db: DataBase, key: str, porcelain: bool) -> List[str]:
-    if key:
+    if key == 'all':
+        if porcelain:
+            for entry in db[patterns,]:
+                yield str(entry)
+        else:
+            yield table.string(*patterns, db=db)
+    else:
         attr_dict = get_dict(*patterns, db=db, key=key)
         if porcelain:
             for value in attr_dict.values():
@@ -42,12 +48,6 @@ def strings(*patterns, db: DataBase, key: str, porcelain: bool) -> List[str]:
         else:
             for path, attr in attr_dict.items():
                 yield highlight(path, ": ", sep='') + str(attr)
-    else:
-        if porcelain:
-            for entry in db[patterns,]:
-                yield str(entry)
-        else:
-            yield table.string(patterns, db=db)
 
 
 def get_dict(*pattern, db: DataBase, key: str) -> Dict[PurePath, str]:

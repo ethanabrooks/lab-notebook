@@ -254,7 +254,7 @@ def test_lookup():
                 path=TEST_RUN, description=DESCRIPTION, input_command=COMMAND).items():
             assert_in(value, lookup.string(PurePath(TEST_RUN), db=db, key=key))
         with assert_raises(SystemExit):
-            run_main('lookup', TEST_RUN, 'x')
+            run_main('lookup', 'x', TEST_RUN)
 
 
 def test_chdesc():
