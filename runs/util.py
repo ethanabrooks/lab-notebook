@@ -41,15 +41,19 @@ def prune_empty(path):
         shutil.rmtree(str(path), ignore_errors=True)
         prune_empty(path.parent)
 
+def chunks(it, size):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(it), size):
+        yield it[i:i + size]
 
-def string_from_vim(prompt: str, string=None):
+def string_from_vim(prompt: str, string=None, line_length=100):
     if string is None:
         string = ' '
     path = Path('/', 'tmp', datetime.now().strftime('%s') + '.txt')
-    prompt = prompt.strip('\n')
-    delimiter = '\n' + '=' * len(prompt.split('\n')[-1])
+    prompt = '\n'.join(chunks(prompt.strip('\n '), line_length))
+    delimiter = '\n' + '=' * line_length
     with path.open('w') as f:
-        f.write(prompt + delimiter + string)
+        f.write(prompt + delimiter + '\n' + string.lstrip('\n'))
     start_line = 3 + prompt.count('\n')
     subprocess.call('vim +{} {}'.format(start_line, path), shell=True)
     with path.open() as f:

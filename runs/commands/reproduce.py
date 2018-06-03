@@ -1,5 +1,6 @@
 from pathlib import PurePath
 from typing import List
+import re
 
 from runs.database import DataBase
 from runs.logger import Logger
@@ -36,8 +37,16 @@ def cli(patterns: List[PurePath], db: DataBase, *args, **kwargs):
 
 def string(*patterns, db: DataBase):
     for entry in db.descendants(*patterns):
+        new_path = entry.path
+        pattern = re.compile('(.*\.)(\d*)')
+        matches = pattern.match(entry.path)
+        if matches:
+            trailing_number = int(matches[2]) + 1
+            new_path = matches[1] + str(trailing_number)
+        else:
+            new_path += '.1'
         return '\n'.join([
             highlight('To reproduce:'), f'git checkout {entry.commit}\n',
-            f"runs new {entry.path} '{entry.input_command}' --description='Reproduce {entry.path}. "
+            f"runs new {new_path} '{entry.input_command}' --description='Reproduce {new_path}. "
             f"Original description: {entry.description}'"
         ])
