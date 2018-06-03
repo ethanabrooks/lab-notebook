@@ -41,6 +41,7 @@ class Transaction:
         self.new_runs = set()  # type: Set[RunEntry]
         self.moves = set()  # type: Set[Move]
         self.removals = set()  # type: Set[PurePath]
+        self.interrupts = set()  # type: Set[PurePath]
         self.description_changes = set()  # type: Set[DescriptionChange]
 
     def __enter__(self):
@@ -53,9 +54,6 @@ class Transaction:
 
     def tmux(self, path):
         return TMUXSession(path=path, bash=self.bash)
-
-    def change_description(self, path: PurePath, new_description: Optional[str]):
-        self.db.update(path, description=new_description)
 
     def execute_removal(self, path: PurePath):
         TMUXSession(path, bash=self.bash).kill()
@@ -97,6 +95,12 @@ class Transaction:
         }
 
         # removals
+        if self.interrupts:
+            self.ui.check_permission(
+                "Sending interrupt signals to the following runs:"
+                , *self.interrupts)
+
+        # removals
         if self.removals:
             self.ui.check_permission("Runs to be removed:", *self.removals)
 
@@ -135,8 +139,11 @@ class Transaction:
         # description changes
         for change in self.description_changes:
             # noinspection PyProtectedMember
-            self.change_description(
-                path=change.path, new_description=change.new_description)
+            self.db.update(change.path, description=change.new_description)
+
+        # kills
+        for path in self.interrupts:
+            self.tmux(path).interrupt()
 
         # removals
         for path in self.removals:
@@ -161,3 +168,4 @@ class Transaction:
                 f'tmux attach -t {tmux}',
                 '',
                 sep='\n')
+
