@@ -83,11 +83,10 @@ class Transaction:
 
         # description changes
         def get_description(change):
-            # noinspection PyProtectedMember
             new_description = string_from_vim(
                 f"""
-        Edit description for {path}.
-        Command: {full_command}
+        Edit description for {change.path}.
+        Command: {change.full_command}
         """, change.old_description)
             # noinspection PyProtectedMember
             return change._replace(new_description=new_description)
