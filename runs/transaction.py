@@ -78,6 +78,11 @@ class Transaction:
         self.db.append(run)
 
     def validate(self):
+        self.new_runs = sorted(self.new_runs)
+        self.moves = sorted(self.moves)
+        self.removals = sorted(self.removals)
+        self.interrupts = sorted(self.interrupts)
+        self.description_changes = sorted(self.description_changes)
 
         # description changes
         def get_description(change):
