@@ -92,8 +92,6 @@ def new(path: PurePath, prefix: str, command: str, description: str, flags: List
 
 def interpolate_keywords(path, string):
     keywords = dict(path=path, name=PurePath(path).stem)
-    for match in re.findall('.*<(.*)>', string):
-        assert match in keywords
     for word, replacement in keywords.items():
         string = string.replace(f'<{word}>', str(replacement))
     return string
