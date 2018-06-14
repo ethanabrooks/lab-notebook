@@ -1,3 +1,5 @@
 * more advanced tab-completion
 * refactor Transaction
-* always sort transactions
+* make reproduce consider current .runsrc
+* add --except option to all search based commands
+

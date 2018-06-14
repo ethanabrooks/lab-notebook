@@ -21,21 +21,27 @@ def add_subparser(subparsers):
         action='store_true',
         help='Print list of path names without tree '
         'formatting.')
+    list_parser.add_argument(
+        '--unless',
+        nargs='*',
+        type=PurePath,
+        help='Print list of path names without tree '
+             'formatting.')
     return list_parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[PurePath], db: DataBase, porcelain: bool, *args, **kwargs):
-    db.logger.print(string(*patterns, db=db, porcelain=porcelain))
+def cli(patterns: List[PurePath], db: DataBase, porcelain: bool, unless: List[PurePath], *args, **kwargs):
+    db.logger.print(string(*patterns, db=db, porcelain=porcelain, unless=unless))
 
 
-def string(*patterns, db: DataBase, porcelain: bool = True) -> str:
-    return '\n'.join(map(str, paths(*patterns, db=db, porcelain=porcelain)))
+def string(*patterns, db: DataBase, porcelain: bool = True, unless: List[PurePath]) -> str:
+    return '\n'.join(map(str, paths(*patterns, db=db, porcelain=porcelain, unless=unless)))
 
 
-def paths(*patterns, db: DataBase, porcelain: bool = True) -> List[str]:
-    entries = db.descendants(*patterns) if patterns else db.all()
+def paths(*patterns, db: DataBase, porcelain: bool = True, unless: List[PurePath]) -> List[str]:
+    entries = db.descendants(*patterns, unless=unless) if patterns else db.all(unless=unless)
     _paths = [e.path for e in entries]
     return _paths if porcelain else tree_strings(build_tree(_paths))
 

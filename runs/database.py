@@ -45,9 +45,20 @@ class DataBase:
         self.conn.commit()
         self.conn.close()
 
-    def execute(self, command: str, patterns: Sequence[PathLike]) -> sqlite3.Cursor:
+    # def sql_command(self):
+    #     string = f"""
+    #     {command} {pattern} FROM {self.table_name}
+    #     """
+    #     if condition:
+    #         string += 'WHERE ' + ' OR '.join([])
+
+    def execute(self, command: str, patterns: Sequence[PathLike], unless=None) -> sqlite3.Cursor:
         condition = ' OR '.join([f'{self.key} LIKE ?'] * len(patterns))
         values = tuple(map(str, patterns))
+        if unless:
+            condition += f" EXCEPT SELECT * FROM {self.table_name} WHERE " + \
+                         ' OR '.join([f"{self.key} LIKE ?"] * len(unless))
+            values += tuple(map(str, unless))
         return self.conn.execute(f"""
         {command} WHERE {condition}
         """, values)
@@ -57,14 +68,20 @@ class DataBase:
         SELECT COUNT (*) FROM {self.table_name}
         """, patterns).fetchone()[0])
 
+    def get(self, patterns: Sequence[PathLike], unless=None) -> List[RunEntry]:
+        return [RunEntry(*e) for e in
+                self.execute(f"""
+                SELECT * FROM {self.table_name}
+                """, patterns, unless=unless).fetchall()]
+
     def __getitem__(self, patterns: Sequence[PathLike]) -> List[RunEntry]:
         return [RunEntry(*e) for e in self.execute(f"""
         SELECT * FROM {self.table_name}
         """, patterns).fetchall()]
 
-    def descendants(self, *patterns: PathLike):
+    def descendants(self, *patterns: PathLike, unless=None):
         patterns = [f'{pattern}%' for pattern in patterns]
-        return self[patterns]
+        return self.get(patterns, unless=unless)
 
     def __delitem__(self, *patterns: PathLike):
         self.execute(f'DELETE FROM {self.table_name}', patterns)
@@ -75,11 +92,17 @@ class DataBase:
         INSERT INTO {self.table_name} ({self.fields}) VALUES ({placeholders})
         """, [str(x) for x in run])
 
-    def all(self):
+    def all(self, unless=None):
+        command = f"""
+        SELECT * FROM {self.table_name}
+        """
+        values = tuple()
+        if unless:
+            command += f' EXCEPT SELECT * FROM {self.table_name} WHERE ' + \
+                       ' OR '.join([f"{self.key} LIKE ?"] * len(unless))
+            values += tuple(map(str, unless))
         return [
-            RunEntry(*e) for e in self.conn.execute(f"""
-            SELECT * FROM {self.table_name}
-            """).fetchall()
+            RunEntry(*e) for e in self.conn.execute(command, values).fetchall()
             ]
 
     def update(self, *patterns: PathLike, **kwargs):
