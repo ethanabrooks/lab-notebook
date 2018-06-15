@@ -46,8 +46,8 @@ def get_flags(command: str) -> List[str]:
     return findall
 
 
-def correlations(*patterns, db: DataBase, unless: List[PurePath],
-                 path_to_value: Path) -> Dict[str, float]:
+def correlations(*patterns, db: DataBase, path_to_value: Path,
+                 unless: List[PurePath] = None) -> Dict[str, float]:
     runs = db.get(patterns, unless=unless)
 
     def mean(f: Callable) -> float:
