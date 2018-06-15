@@ -62,7 +62,8 @@ class DataBase:
             string += f' EXCEPT {self.select(like=unless)}'
         return string
 
-    def execute(self, command: str,
+    def execute(self,
+                command: str,
                 patterns: Sequence[PathLike] = None,
                 unless: Sequence[PathLike] = None) -> sqlite3.Cursor:
         if patterns is None:
@@ -78,12 +79,16 @@ class DataBase:
         return bool(self.execute(self.select(like=patterns), patterns).fetchone())
 
     def get(self, patterns: Sequence[PathLike], unless=None) -> List[RunEntry]:
-        return [RunEntry(*e) for e in self.execute(
-            self.select(like=patterns, unless=unless), patterns).fetchall()]
+        return [
+            RunEntry(*e) for e in self.execute(
+                self.select(like=patterns, unless=unless), patterns).fetchall()
+        ]
 
     def __getitem__(self, patterns: Sequence[PathLike]) -> List[RunEntry]:
-        return [RunEntry(*e) for e in self.execute(
-            self.select(like=patterns), patterns).fetchall()]
+        return [
+            RunEntry(*e)
+            for e in self.execute(self.select(like=patterns), patterns).fetchall()
+        ]
 
     def descendants(self, *patterns: PathLike, unless=None):
         patterns = [f'{pattern}%' for pattern in patterns]
@@ -94,21 +99,24 @@ class DataBase:
 
     def append(self, run: RunEntry):
         placeholders = ','.join('?' for _ in run)
-        self.conn.execute(f"""
+        self.conn.execute(
+            f"""
         INSERT INTO {self.table_name} ({self.fields}) VALUES ({placeholders})
         """, [str(x) for x in run])
 
     def all(self, unless=None):
         return [
-            RunEntry(*e) for e in self.execute(
-                self.select(unless=unless), unless).fetchall()
-            ]
+            RunEntry(*e)
+            for e in self.execute(self.select(unless=unless), unless).fetchall()
+        ]
 
     def update(self, *patterns: PathLike, **kwargs):
         update_placeholders = ','.join([f'{k} = ?' for k in kwargs])
-        self.execute(f"""
+        self.execute(
+            f"""
         UPDATE {self.table_name} SET {update_placeholders} {self.where(patterns)}
-        """, list(kwargs.values()) + list(patterns))
+        """,
+            list(kwargs.values()) + list(patterns))
 
     def delete(self):
         self.conn.execute(f"""
@@ -116,7 +124,7 @@ class DataBase:
         """)
 
     def entry(self, path: PathLike):
-        entries = self[path,]
+        entries = self[path, ]
         if len(entries) == 0:
             self.logger.exit(
                 f"Found no entries for {path}. Current entries:",

@@ -1,6 +1,6 @@
+import re
 from pathlib import PurePath
 from typing import List
-import re
 
 from runs.database import DataBase
 from runs.logger import Logger

@@ -26,7 +26,7 @@ def add_subparser(subparsers):
         nargs='*',
         type=PurePath,
         help='Print list of path names without tree '
-             'formatting.')
+        'formatting.')
     return list_parser
 
 
@@ -37,12 +37,16 @@ def cli(patterns: List[PurePath], db: DataBase, porcelain: bool, unless: List[Pu
     db.logger.print(string(*patterns, db=db, porcelain=porcelain, unless=unless))
 
 
-def string(*patterns, db: DataBase, porcelain: bool = True, unless: List[PurePath] = None) -> str:
-    return '\n'.join(map(str, paths(*patterns, db=db, porcelain=porcelain, unless=unless)))
+def string(*patterns, db: DataBase, porcelain: bool = True,
+           unless: List[PurePath] = None) -> str:
+    return '\n'.join(
+        map(str, paths(*patterns, db=db, porcelain=porcelain, unless=unless)))
 
 
-def paths(*patterns, db: DataBase, porcelain: bool = True, unless: List[PurePath] = None) -> List[str]:
-    entries = db.descendants(*patterns, unless=unless) if patterns else db.all(unless=unless)
+def paths(*patterns, db: DataBase, porcelain: bool = True,
+          unless: List[PurePath] = None) -> List[str]:
+    entries = db.descendants(
+        *patterns, unless=unless) if patterns else db.all(unless=unless)
     _paths = [e.path for e in entries]
     return _paths if porcelain else tree_strings(build_tree(_paths))
 

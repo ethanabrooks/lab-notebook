@@ -1,7 +1,7 @@
 import math
-from pathlib import PurePath, Path
-from typing import List, Callable, Dict
 import re
+from pathlib import Path, PurePath
+from typing import Callable, Dict, List
 
 from runs.database import DataBase
 from runs.logger import Logger
@@ -10,15 +10,17 @@ from runs.run_entry import RunEntry
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('correlation', help='Rank flags by correlation.')
-    parser.add_argument('patterns', nargs='*',
-                        help='Analyze the flags associated with these runs',
-                        type=PurePath)
+    parser.add_argument(
+        'patterns',
+        nargs='*',
+        help='Analyze the flags associated with these runs',
+        type=PurePath)
     parser.add_argument(
         'path_to_value',
         type=Path,
         help='The command will look for a file at this path containing'
-             'a scalar value. It will assess the correlation between flags and this value.'
-             'The keyword <path> will be replaced by the path of the run.')
+        'a scalar value. It will assess the correlation between flags and this value.'
+        'The keyword <path> will be replaced by the path of the run.')
     parser.add_argument(
         '--unless',
         nargs='*',
@@ -31,8 +33,8 @@ def add_subparser(subparsers):
 @DataBase.wrapper
 def cli(patterns: List[PurePath], db: DataBase, unless: List[PurePath],
         path_to_value: Path, *args, **kwargs):
-    db.logger.print(*strings(*patterns, db=db, unless=unless, path_to_value=path_to_value),
-                    sep='\n')
+    db.logger.print(
+        *strings(*patterns, db=db, unless=unless, path_to_value=path_to_value), sep='\n')
 
 
 def strings(*args, **kwargs):
@@ -46,7 +48,9 @@ def get_flags(command: str) -> List[str]:
     return findall
 
 
-def correlations(*patterns, db: DataBase, path_to_value: Path,
+def correlations(*patterns,
+                 db: DataBase,
+                 path_to_value: Path,
                  unless: List[PurePath] = None) -> Dict[str, float]:
     runs = db.get(patterns, unless=unless)
 
@@ -58,7 +62,7 @@ def correlations(*patterns, db: DataBase, path_to_value: Path,
             return float(f.read())
 
     value_mean = mean(lambda run: get_value(run.path))
-    value_std_dev = math.sqrt(mean(lambda run: (get_value(run.path) - value_mean) ** 2))
+    value_std_dev = math.sqrt(mean(lambda run: (get_value(run.path) - value_mean)**2))
 
     def get_correlation(flag: str) -> float:
         def contains_flag(run: RunEntry) -> float:
@@ -66,11 +70,11 @@ def correlations(*patterns, db: DataBase, path_to_value: Path,
 
         flag_mean = mean(contains_flag)
 
-        covariance = mean(lambda run:
-                          (contains_flag(run) - flag_mean) *
-                          (get_value(run.path) - value_mean))
+        covariance = mean(
+            lambda run: (contains_flag(run) - flag_mean) * (get_value(run.path) - value_mean)
+        )
 
-        std_dev = math.sqrt(mean(lambda run: (contains_flag(run) - flag_mean) ** 2))
+        std_dev = math.sqrt(mean(lambda run: (contains_flag(run) - flag_mean)**2))
 
         # return covariance
         denominator = std_dev * value_std_dev
@@ -80,5 +84,7 @@ def correlations(*patterns, db: DataBase, path_to_value: Path,
             return math.inf
 
     flags = {flag for run in runs for flag in get_flags(run.full_command)}
-    return {flag: get_correlation(flag) for flag in flags
-            if get_correlation(flag) < math.inf}
+    return {
+        flag: get_correlation(flag)
+        for flag in flags if get_correlation(flag) < math.inf
+    }

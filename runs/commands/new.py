@@ -1,5 +1,4 @@
 import itertools
-import re
 from datetime import datetime
 from pathlib import PurePath
 from typing import List

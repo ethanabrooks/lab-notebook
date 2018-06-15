@@ -5,10 +5,8 @@ from configparser import ConfigParser, ExtendedInterpolation
 from importlib import import_module
 from pathlib import Path, PurePath
 
-from runs.commands import (change_description, lookup, ls, mv, new,
-                           reproduce, rm, table)
-from runs.commands import correlation
-from runs.commands import interrupt
+from runs.commands import (change_description, correlation, interrupt, lookup,
+                           ls, mv, new, reproduce, rm, table)
 from runs.util import find_up, flag_list, pure_path_list
 
 MAIN = 'main'
