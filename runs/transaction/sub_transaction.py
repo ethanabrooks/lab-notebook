@@ -27,5 +27,6 @@ class SubTransaction:
         pass
 
     @abc.abstractmethod
-    def execute(self):
+    def process(self, queue_element):
         pass
+    

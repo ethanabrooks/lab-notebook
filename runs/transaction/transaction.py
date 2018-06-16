@@ -83,7 +83,7 @@ class Transaction:
 
         def execute(st: SubTransaction):
             for x in st.queue:
-                st.execute(x)
+                st.process(x)
 
         for process in [sort, validate, execute]:
             for sub_transaction in self.sub_transactions:

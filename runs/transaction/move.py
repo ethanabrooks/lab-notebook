@@ -33,7 +33,7 @@ class MoveTransaction(SubTransaction):
         validate_move(kill_tmux=True)
         validate_move(kill_tmux=False)
 
-    def execute(self, move: Move):
+    def process(self, move: Move):
         if move.src != move.dest:
             self.file_system.mvdirs(move.src, move.dest)
             tmux = self.tmux(move.src)

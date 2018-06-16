@@ -21,7 +21,7 @@ class NewRunTransaction(SubTransaction):
                 "Generating the following runs:",
                 *[f"{run.path}: {run.full_command}" for run in self.queue])
 
-    def execute(self, run: RunEntry):
+    def process(self, run: RunEntry):
         tmux = self.tmux(run.path)
         for dir_path in self.file_system.dir_paths(run.path):
             dir_path.mkdir(exist_ok=True, parents=True)

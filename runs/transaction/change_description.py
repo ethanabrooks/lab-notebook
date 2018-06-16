@@ -25,6 +25,6 @@ class ChangeDescriptionTransaction(SubTransaction):
         self.queue = {c if c.new_description else get_description(c)
                       for c in self.queue}
 
-    def execute(self, change: DescriptionChange):
+    def process(self, change: DescriptionChange):
         self.db.update(change.path,
                        description=change.new_description)

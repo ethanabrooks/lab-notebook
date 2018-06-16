@@ -8,5 +8,5 @@ class InterruptTransaction(SubTransaction):
         self.ui.check_permission(
             "Sending interrupt signals to the following runs:", *self.queue)
 
-    def execute(self, path: PurePath):
+    def process(self, path: PurePath):
         self.tmux(path).interrupt()
