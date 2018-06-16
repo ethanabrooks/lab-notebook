@@ -73,7 +73,7 @@ class DataBase:
         values = tuple(map(str, patterns))
         if unless:
             values += tuple(map(str, unless))
-        return self.conn._execute(command, values)
+        return self.conn.execute(command, values)
 
     def __contains__(self, *patterns: PathLike) -> bool:
         return bool(self.execute(self.select(like=patterns), patterns).fetchone())
@@ -99,7 +99,7 @@ class DataBase:
 
     def append(self, run: RunEntry):
         placeholders = ','.join('?' for _ in run)
-        self.conn._execute(
+        self.conn.execute(
             f"""
         INSERT INTO {self.table_name} ({self.fields}) VALUES ({placeholders})
         """, [str(x) for x in run])
@@ -119,7 +119,7 @@ class DataBase:
             list(kwargs.values()) + list(patterns))
 
     def delete(self):
-        self.conn._execute(f"""
+        self.conn.execute(f"""
         DROP TABLE IF EXISTS {self.table_name}
         """)
 
