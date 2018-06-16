@@ -1,7 +1,7 @@
 import math
 import re
 from pathlib import Path, PurePath
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 
 from runs.database import DataBase
 from runs.logger import Logger
@@ -57,10 +57,14 @@ def correlations(*patterns,
     def mean(f: Callable) -> float:
         return sum(map(f, runs)) / float(len(runs))
 
-    def get_value(path: PurePath) -> float:
-        with Path(str(path_to_value).replace('<path>', str(path))).open() as f:
-            return float(f.read())
+    def get_value(path: PurePath) -> Optional[float]:
+        try:
+            with Path(str(path_to_value).replace('<path>', str(path))).open() as f:
+                return float(f.read())
+        except (ValueError, FileNotFoundError):
+            return
 
+    runs = [r for r in runs if get_value(r.path) is not None]
     value_mean = mean(lambda run: get_value(run.path))
     value_std_dev = math.sqrt(mean(lambda run: (get_value(run.path) - value_mean)**2))
 
