@@ -1,11 +1,9 @@
 from pathlib import PurePath
 from typing import List
 
-from tabulate import tabulate
-
 from runs.database import DataBase
 from runs.logger import Logger
-from runs.util import comma_sep_list
+from tabulate import tabulate
 
 DEFAULT_COLUMNS = ['commit', 'datetime', 'description', 'input_command']
 
@@ -17,7 +15,7 @@ def add_subparser(subparsers):
     table_parser.add_argument('pattern', nargs='*', help=help, type=PurePath)
     table_parser.add_argument(
         '--columns',
-        type=comma_sep_list,
+        nargs='*',
         default=None,
         help='Comma-separated list of columns to display in table. Default is {}'.format(
             ' '.join(DEFAULT_COLUMNS)))

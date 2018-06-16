@@ -129,7 +129,7 @@ class Transaction:
             description_change={
                 c if c.new_description else get_description(c)
                 for c in self.sets.description_change
-                })
+            })
 
         # removals
         if self.sets.interrupt:

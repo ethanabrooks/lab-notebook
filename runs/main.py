@@ -2,14 +2,36 @@
 import argparse
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
-from importlib import import_module
 from pathlib import Path, PurePath
+from typing import List
+
+import codecs
+from importlib import import_module
 
 from runs.commands import (change_description, correlate, interrupt, lookup,
                            ls, mv, new, reproduce, rm, table)
-from runs.util import find_up, flag_list, pure_path_list
 
 MAIN = 'main'
+
+
+def find_up(filename):
+    dirpath = Path('.').resolve()
+    while not dirpath.match(dirpath.root):
+        filepath = Path(dirpath, filename)
+        if filepath.exists():
+            return filepath
+        dirpath = dirpath.parent
+
+
+def pure_path_list(paths: str) -> List[PurePath]:
+    return [PurePath(path) for path in paths.split()]
+
+
+def flag_list(flags_string: str) -> List[List[str]]:
+    if flags_string:
+        return codecs.decode(flags_string, encoding='unicode_escape').strip('\n').split('\n')
+    else:
+        return []
 
 
 def main(argv=sys.argv[1:]):
@@ -45,7 +67,7 @@ def main(argv=sys.argv[1:]):
     parser.add_argument(
         '--root',
         help='Custom path to directory where config directories (if any) are automatically '
-        'created',
+             'created',
         type=Path)
     parser.add_argument(
         '--dir-names',
@@ -63,34 +85,30 @@ def main(argv=sys.argv[1:]):
     main_config.update(
         root=config[MAIN].get_path('root'),
         db_path=config[MAIN].get_path('db_path'),
-        dir_names=config[MAIN].get_pure_path_list('dir_names'),
-        flags=config[MAIN].get_flag_list('flags'))
+        dir_names=config[MAIN].get_pure_path_list('dir_names', []),
+        flags=config[MAIN].get_flag_list('flags', []))
 
     for subparser in [parser] + [
-            adder(subparsers) for adder in [
-                new.add_subparser,
-                rm.add_subparser,
-                mv.add_subparser,
-                ls.add_subparser,
-                table.add_subparser,
-                lookup.add_subparser,
-                change_description.add_subparser,
-                interrupt.add_subparser,
-                reproduce.add_subparser,
-                correlate.add_subparser,
-            ]
-    ]:
+        adder(subparsers) for adder in [
+            new.add_subparser,
+            rm.add_subparser,
+            mv.add_subparser,
+            ls.add_subparser,
+            table.add_subparser,
+            lookup.add_subparser,
+            change_description.add_subparser,
+            interrupt.add_subparser,
+            reproduce.add_subparser,
+            correlate.add_subparser,]]:
         assert isinstance(subparser, argparse.ArgumentParser)
         config_section = subparser.prog.split()[-1]
         assert isinstance(config_section, str)
         subparser.set_defaults(**config['DEFAULT'])
-        subparser.set_defaults(**config[MAIN])
+        subparser.set_defaults(**main_config)
         if config_section in config:
             subparser.set_defaults(**config[config_section])
 
     args = parser.parse_args(args=argv)
-    args.flags = tuple(set(args.flags) | set(main_config['flags']))
-
     # TODO: use Logger
     def _print(*s):
         if not args.quiet:
@@ -111,6 +129,11 @@ def main(argv=sys.argv[1:]):
 
     module = import_module('runs.commands.' + args.dest.replace('-', '_'))
     kwargs = {k: v for k, v in vars(args).items()}
+    try:
+        # pluralize flags
+        kwargs['flags'] = tuple(set(args.flag) | set(main_config['flags']))
+    except AttributeError:
+        pass
     module.cli(**kwargs)
 
 

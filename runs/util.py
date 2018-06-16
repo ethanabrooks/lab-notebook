@@ -20,15 +20,6 @@ def highlight(*args, sep=' '):
     return GREEN + sep.join(map(str, args)) + RESET
 
 
-def find_up(filename):
-    dirpath = Path('.').resolve()
-    while not dirpath.match(dirpath.root):
-        filepath = Path(dirpath, filename)
-        if filepath.exists():
-            return filepath
-        dirpath = dirpath.parent
-
-
 def prune_empty(path):
     assert isinstance(path, Path)
 
@@ -73,32 +64,3 @@ def nonempty_string_type(value):
     return value
 
 
-def pure_path_list(paths: str) -> List[PurePath]:
-    return [PurePath(path) for path in paths.split()]
-
-
-def comma_sep_list(string: str) -> List[str]:
-    return string.split(',')
-
-
-def space_sep_list(string: str) -> List[str]:
-    return string.split()
-
-
-def flag_list(flags_string: str) -> List[List[str]]:
-    if flags_string:
-        flags = codecs.decode(
-            flags_string, encoding='unicode_escape').strip('\n').split('\n')
-    else:
-        flags = []
-    flag_list = []
-    for flag in flags:
-        if re.match('--[^=]*=.*', flag):
-            key, values = flag.split('=')
-            flag_list.append(tuple((key + '=' + value for value in values.split('|'))))
-        elif re.match('--[^=]* .*', flag):
-            key, values = flag.split(' ')
-            flag_list.append(tuple((key + ' ' + value for value in values.split('|'))))
-        else:
-            flag_list.append(tuple(flag.split('|')))
-    return flag_list

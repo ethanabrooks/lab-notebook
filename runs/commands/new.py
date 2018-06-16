@@ -1,10 +1,11 @@
 import itertools
+import re
 from datetime import datetime
 from pathlib import PurePath
 from typing import List
 
 from runs.transaction import Transaction
-from runs.util import flag_list, nonempty_string_type
+from runs.util import nonempty_string_type
 
 
 def add_subparser(subparsers):
@@ -25,8 +26,9 @@ def add_subparser(subparsers):
         help="String to preprend to all main commands, for example, sourcing a virtualenv"
     )
     parser.add_argument(
-        '--flags',
-        type=flag_list,
+        '--flag',
+        default=[],
+        action='append',
         help="directories to create and sync automatically with each run")
     return parser
     # new_parser.add_argument(
@@ -35,8 +37,8 @@ def add_subparser(subparsers):
 
 
 @Transaction.wrapper
-def cli(path: PurePath, prefix: str, command: str, description: str,
-        flags: List[List[str]], transaction: Transaction, *args, **kwargs):
+def cli(path: PurePath, prefix: str, command: str, description: str, flags: List[str],
+        transaction: Transaction, *args, **kwargs):
     runs = list(generate_runs(path, flags))
 
     for path, flags in runs:
@@ -48,7 +50,18 @@ def cli(path: PurePath, prefix: str, command: str, description: str,
             transaction=transaction)
 
 
-def generate_runs(path: PurePath, flags: List[List[str]]):
+def parse_flag(flag, delims='=| '):
+    pattern = f'([^{delims}]*)({delims})(.*)'
+    match = re.match(pattern, flag)
+    if match:
+        key, delim, values = match.groups()
+        return [f'{key}{delim}{value}' for value in values.split('|')]
+    else:
+        return flag.split('|')
+
+
+def generate_runs(path: PurePath, flags: List[str]):
+    flags = [parse_flag(flag) for flag in flags]
     flag_combinations = list(itertools.product(*flags))
     for i, flags in enumerate(flag_combinations):
         new_path = path
