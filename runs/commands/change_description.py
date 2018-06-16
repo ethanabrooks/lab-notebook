@@ -1,7 +1,7 @@
 from pathlib import PurePath
 from typing import Optional
 
-from runs.transaction import Transaction
+from runs.transaction.transaction import Transaction
 
 
 def add_subparser(subparsers):

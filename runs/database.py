@@ -86,8 +86,8 @@ class DataBase:
 
     def __getitem__(self, patterns: Sequence[PathLike]) -> List[RunEntry]:
         return [
-            RunEntry(*e)
-            for e in self.execute(self.select(like=patterns), patterns).fetchall()
+            RunEntry(PurePath(p), *e)
+            for p, *e in self.execute(self.select(like=patterns), patterns).fetchall()
         ]
 
     def descendants(self, *patterns: PathLike, unless=None):

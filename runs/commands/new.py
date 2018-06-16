@@ -1,11 +1,11 @@
 import itertools
-import re
 from datetime import datetime
 from pathlib import PurePath
 from typing import List
 
-from runs.transaction import Transaction
-from runs.util import nonempty_string_type
+import re
+
+from runs.transaction.transaction import Transaction
 
 
 def add_subparser(subparsers):
@@ -13,7 +13,7 @@ def add_subparser(subparsers):
     parser.add_argument(
         'path',
         help='Unique path assigned to new run. "\\"-delimited.',
-        type=nonempty_string_type)
+        type=PurePath)
     parser.add_argument('command', help='Command that will be run in tmux.', type=str)
     parser.add_argument(
         '--description',
@@ -66,7 +66,8 @@ def generate_runs(path: PurePath, flags: List[str]):
     for i, flags in enumerate(flag_combinations):
         new_path = path
         if len(flag_combinations) > 1:
-            new_path += str(i)
+            assert isinstance(new_path, PurePath)
+            new_path = new_path.with_name(new_path.stem + str(i))
         yield new_path, flags
 
 
