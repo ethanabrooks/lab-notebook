@@ -53,6 +53,7 @@ class Transaction:
         return self
 
     def __exit__(self, *args):
+        self.validate()
         self.execute()
         self.db.__exit__(*args)
 
@@ -150,7 +151,7 @@ class Transaction:
             if moves:
                 prompt = "About to perform the following moves"
                 if kill_tmux:
-                    prompt += "and kill the associated tmux sessions"
+                    prompt += " and kill the associated tmux sessions"
                 self.ui.check_permission(prompt + ':',
                                          *[f"{m.src} -> {m.dest}" for m in self.sets.move])
 
@@ -166,8 +167,6 @@ class Transaction:
                 *[f"{run.path}: {run.full_command}" for run in self.sets.new_run])
 
     def execute(self):
-        self.validate()
-
         # description changes
         for change in self.sets.description_change:
             # noinspection PyProtectedMember
