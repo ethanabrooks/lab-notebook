@@ -100,5 +100,5 @@ def flag_list(flags_string: str) -> List[List[str]]:
             key, values = flag.split(' ')
             flag_list.append(tuple((key + ' ' + value for value in values.split('|'))))
         else:
-            flag_list.append((flag, ))
+            flag_list.append(tuple(flag.split('|')))
     return flag_list
