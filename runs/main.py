@@ -10,8 +10,10 @@ from importlib import import_module
 
 from runs.commands import (change_description, correlate, interrupt, lookup,
                            ls, mv, new, reproduce, rm, table)
+from runs.logger import Logger
 
 MAIN = 'main'
+FLAGS = 'flags'
 
 
 def find_up(filename):
@@ -86,7 +88,7 @@ def main(argv=sys.argv[1:]):
         root=config[MAIN].get_path('root'),
         db_path=config[MAIN].get_path('db_path'),
         dir_names=config[MAIN].get_pure_path_list('dir_names', []),
-        flags=config[MAIN].get_flag_list('flags', []))
+        flags=config[MAIN].get_flag_list(FLAGS, []))
 
     for subparser in [parser] + [
         adder(subparsers) for adder in [
@@ -109,20 +111,17 @@ def main(argv=sys.argv[1:]):
             subparser.set_defaults(**config[config_section])
 
     args = parser.parse_args(args=argv)
-    # TODO: use Logger
-    def _print(*s):
-        if not args.quiet:
-            print(*s)
 
+    logger = Logger(quiet=args.quiet)
     if not config_path:
-        _print('Config file not found. Using default settings:\n')
+        logger.print('Config file not found. Using default settings:\n')
         for section in config.sections():
             for k, v in config[section].items():
-                _print('{:20}{}'.format(k + ':', v))
-        _print()
+                logger.print('{:20}{}'.format(k + ':', v))
+        logger.print()
         msg = 'Writing default settings to ' + config_filename
-        _print(msg)
-        _print('-' * len(msg))
+        logger.print(msg)
+        logger.print('-' * len(msg))
 
     with open(config_filename, 'w') as f:
         config.write(f)
@@ -131,7 +130,7 @@ def main(argv=sys.argv[1:]):
     kwargs = {k: v for k, v in vars(args).items()}
     try:
         # pluralize flags
-        kwargs['flags'] = tuple(set(args.flag) | set(main_config['flags']))
+        kwargs[FLAGS] = tuple(set(args.flag) | set(main_config[FLAGS]))
     except AttributeError:
         pass
     module.cli(**kwargs)
