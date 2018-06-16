@@ -141,12 +141,11 @@ def check_tmux(path):
 def check_db(path, flags):
     with DB as db:
         # check known values
-        assert_in(DESCRIPTION,
-                  lookup.string(
-                      path + '%',
-                      db=db,
-                      key='description',
-                  ))
+        assert_in(DESCRIPTION, lookup.string(
+            path + '%',
+            db=db,
+            key='description',
+        ))
         assert_in(COMMAND, lookup.string(
             path + '%',
             db=db,
@@ -261,8 +260,8 @@ def test_chdesc():
     with _setup(TEST_RUN), DB as db:
         description = 'new description'
         run_main('change-description', TEST_RUN, description)
-        assert_in(description,
-                  lookup.string(PurePath(TEST_RUN), db=db, key='description'))
+        assert_in(description, lookup.string(
+            PurePath(TEST_RUN), db=db, key='description'))
 
 
 def test_move():
@@ -333,9 +332,8 @@ def test_move_dirs():
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'
         with DB as db:
-            assert_in(
-                '--run1',
-                lookup.string(PurePath('test_run2'), db=db, key='full_command'))
+            assert_in('--run1',
+                      lookup.string(PurePath('test_run2'), db=db, key='full_command'))
 
     with _setup('test'):
         move('test', 'test/test2')

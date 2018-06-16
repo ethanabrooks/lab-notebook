@@ -26,16 +26,15 @@ def add_subparser(subparsers):
         type=int,
         default=100,
         help='Maximum width of table columns. Longer values will '
-             'be truncated and appended with "...".')
+        'be truncated and appended with "...".')
     return table_parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(pattern: List[PurePath], db: DataBase, columns: List[str],
-        column_width: int, *args, **kwargs):
-    db.logger.print(
-        string(*pattern, db=db, columns=columns, column_width=column_width))
+def cli(pattern: List[PurePath], db: DataBase, columns: List[str], column_width: int,
+        *args, **kwargs):
+    db.logger.print(string(*pattern, db=db, columns=columns, column_width=column_width))
 
 
 def string(*patterns, db: DataBase, columns=None, column_width: int = 100):

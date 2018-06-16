@@ -1,7 +1,7 @@
 from collections import namedtuple
 from functools import wraps
 from pathlib import Path, PurePath
-from typing import List, Optional
+from typing import List
 
 from runs.database import DataBase
 from runs.file_system import FileSystem
@@ -101,9 +101,8 @@ class Transaction:
 
         # removals
         if self.interrupts:
-            self.ui.check_permission(
-                "Sending interrupt signals to the following runs:"
-                , *self.interrupts)
+            self.ui.check_permission("Sending interrupt signals to the following runs:",
+                                     *self.interrupts)
 
         # removals
         if self.removals:
@@ -173,4 +172,3 @@ class Transaction:
                 f'tmux attach -t {tmux}',
                 '',
                 sep='\n')
-
