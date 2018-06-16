@@ -34,13 +34,14 @@ def add_subparser(subparsers):
 def cli(patterns: List[PurePath], db: DataBase, unless: List[PurePath],
         path_to_value: Path, *args, **kwargs):
     db.logger.print(
-        *strings(*patterns, db=db, unless=unless, path_to_value=path_to_value), sep='\n')
+        *strings('correlation, flag',
+                 *patterns, db=db, unless=unless, path_to_value=path_to_value), sep='\n')
 
 
 def strings(*args, **kwargs):
     cor = correlations(*args, **kwargs)
     keys = sorted(cor.keys(), key=lambda k: cor[k])
-    return [f'{k}: {cor[k]}' for k in keys]
+    return [f'{cor[k]}, {k}' for k in keys]
 
 
 def get_flags(command: str) -> List[str]:
