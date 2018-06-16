@@ -34,8 +34,13 @@ def add_subparser(subparsers):
 def cli(patterns: List[PurePath], db: DataBase, unless: List[PurePath],
         path_to_value: Path, *args, **kwargs):
     db.logger.print(
-        *strings('correlation, flag',
-                 *patterns, db=db, unless=unless, path_to_value=path_to_value), sep='\n')
+        *strings(
+            'correlation, flag',
+            *patterns,
+            db=db,
+            unless=unless,
+            path_to_value=path_to_value),
+        sep='\n')
 
 
 def strings(*args, **kwargs):
@@ -66,6 +71,8 @@ def correlations(*patterns,
             return
 
     runs = [r for r in runs if get_value(r.path) is not None]
+    if not runs:
+        return {}
     value_mean = mean(lambda run: get_value(run.path))
     value_std_dev = math.sqrt(mean(lambda run: (get_value(run.path) - value_mean)**2))
 

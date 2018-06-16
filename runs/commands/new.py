@@ -79,12 +79,12 @@ def new(path: PurePath, prefix: str, command: str, description: str, flags: List
         transaction.remove(path)
 
     transaction.add_run(
-            path=path,
-            full_command=full_command,
-            commit=bash.last_commit(),
-            datetime=datetime.now().isoformat(),
-            description=description,
-            input_command=command)
+        path=path,
+        full_command=full_command,
+        commit=bash.last_commit(),
+        datetime=datetime.now().isoformat(),
+        description=description,
+        input_command=command)
 
 
 def interpolate_keywords(path, string):

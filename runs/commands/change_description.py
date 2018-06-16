@@ -1,7 +1,7 @@
 from pathlib import PurePath
 from typing import Optional
 
-from runs.transaction import DescriptionChange, Transaction
+from runs.transaction import Transaction
 
 
 def add_subparser(subparsers):
@@ -23,7 +23,7 @@ def cli(transaction: Transaction, path: PurePath, description: Optional[str], *a
         **kwargs):
     entry = transaction.db.entry(path)
     transaction.change_description(
-            path=entry.path,
-            full_command=entry.full_command,
-            old_description=entry.description,
-            new_description=description)
+        path=entry.path,
+        full_command=entry.full_command,
+        old_description=entry.description,
+        new_description=description)

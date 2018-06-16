@@ -1,7 +1,7 @@
 from itertools import zip_longest
 from pathlib import PurePath
 
-from runs.transaction import Move, Transaction
+from runs.transaction import Transaction
 
 path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
 
