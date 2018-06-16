@@ -10,10 +10,18 @@ from runs.run_entry import RunEntry
 from runs.shell import Bash
 from runs.tmux_session import TMUXSession
 from runs.util import highlight, string_from_vim
+import re
 
 Move = namedtuple('Move', ['src', 'dest', 'kill_tmux'])
 DescriptionChange = namedtuple(
     'DescriptionChange', ['path', 'full_command', 'old_description', 'new_description'])
+TransactionType = namedtuple(
+    'TransactionType', ['new_run', 'move', 'removal', 'interrupt', 'description_change'])
+
+
+def natural_keys(text):
+    return [int(c) if c.isdigit() else c
+            for c in re.split('(\d+)', text)]
 
 
 class Transaction:
@@ -38,11 +46,7 @@ class Transaction:
         self.db = DataBase(path=db_path, logger=self.ui)
         self.bash = Bash(logger=self.ui)
         self.file_system = FileSystem(root=root, dir_names=dir_names)
-        self.new_runs = set()  # type: Set[RunEntry]
-        self.moves = set()  # type: Set[Move]
-        self.removals = set()  # type: Set[PurePath]
-        self.interrupts = set()  # type: Set[PurePath]
-        self.description_changes = set()  # type: Set[DescriptionChange]
+        self.sets = TransactionType(*(set() for _ in TransactionType._fields))
 
     def __enter__(self):
         self.db = self.db.__enter__()
@@ -54,6 +58,31 @@ class Transaction:
 
     def tmux(self, path):
         return TMUXSession(path=path, bash=self.bash)
+
+    def add_run(self, path: PurePath, full_command: str, commit: str,
+                datetime: str, description: str, input_command: str):
+        self.sets.new_run.add(RunEntry(path=path,
+                                       full_command=full_command,
+                                       commit=commit,
+                                       datetime=datetime,
+                                       description=description,
+                                       input_command=input_command))
+
+    def move(self, src: PurePath, dest: PurePath, kill_tmux: bool):
+        self.sets.move.add(Move(src=src, dest=dest, kill_tmux=kill_tmux))
+
+    def remove(self, path: PurePath):
+        self.sets.removal.add(path)
+
+    def interrupt(self, path: PurePath):
+        self.sets.interrupt.add(path)
+
+    def change_description(self, path: PurePath, full_command: str, old_description: str,
+                           new_description: str):
+        self.sets.description_change.add(DescriptionChange(path=path,
+                                                           full_command=full_command,
+                                                           old_description=old_description,
+                                                           new_description=new_description))
 
     def execute_removal(self, path: PurePath):
         TMUXSession(path, bash=self.bash).kill()
@@ -78,11 +107,9 @@ class Transaction:
         self.db.append(run)
 
     def validate(self):
-        self.new_runs = sorted(self.new_runs)
-        self.moves = sorted(self.moves)
-        self.removals = sorted(self.removals)
-        self.interrupts = sorted(self.interrupts)
-        self.description_changes = sorted(self.description_changes)
+        self.sets = TransactionType(*(
+            sorted(s, key=lambda x: natural_keys(str(x)))
+            for s in self.sets))
 
         # description changes
         def get_description(change):
@@ -94,23 +121,24 @@ class Transaction:
             # noinspection PyProtectedMember
             return change._replace(new_description=new_description)
 
-        self.description_changes = {
+        # noinspection PyProtectedMember
+        self.sets = self.sets._replace(description_change={
             c if c.new_description else get_description(c)
-            for c in self.description_changes
-        }
+            for c in self.sets.description_change
+            })
 
         # removals
-        if self.interrupts:
+        if self.sets.interrupt:
             self.ui.check_permission("Sending interrupt signals to the following runs:",
-                                     *self.interrupts)
+                                     *self.sets.interrupt)
 
         # removals
-        if self.removals:
-            self.ui.check_permission("Runs to be removed:", *self.removals)
+        if self.sets.removal:
+            self.ui.check_permission("Runs to be removed:", *self.sets.removal)
 
         # moves
-        destinations = [m.dest for m in self.moves]
-        collisions = set([m for m in self.moves if destinations.count(m.dest) > 1])
+        destinations = [m.dest for m in self.sets.move]
+        collisions = set([m for m in self.sets.move if destinations.count(m.dest) > 1])
         if collisions:
             self.ui.exit(
                 f"Cannot move multiple runs into the same path:",
@@ -118,47 +146,47 @@ class Transaction:
                 sep='\n')
 
         def validate_move(kill_tmux):
-            moves = [m for m in self.moves if m.kill_tmux == kill_tmux]
+            moves = [m for m in self.sets.move if m.kill_tmux == kill_tmux]
             if moves:
                 prompt = "About to perform the following moves"
                 if kill_tmux:
                     prompt += "and kill the associated tmux sessions"
                 self.ui.check_permission(prompt + ':',
-                                         *[f"{m.src} -> {m.dest}" for m in self.moves])
+                                         *[f"{m.src} -> {m.dest}" for m in self.sets.move])
 
         validate_move(kill_tmux=True)
         validate_move(kill_tmux=False)
 
-        if self.new_runs and self.bash.dirty_repo():
+        if self.sets.new_run and self.bash.dirty_repo():
             self.ui.check_permission(
                 "Repo is dirty. You should commit before run. Run anyway?")
-        if len(self.new_runs) > 1:
+        if len(self.sets.new_run) > 1:
             self.ui.check_permission(
                 "Generating the following runs:",
-                *[f"{run.path}: {run.full_command}" for run in self.new_runs])
+                *[f"{run.path}: {run.full_command}" for run in self.sets.new_run])
 
     def execute(self):
         self.validate()
 
         # description changes
-        for change in self.description_changes:
+        for change in self.sets.description_change:
             # noinspection PyProtectedMember
             self.db.update(change.path, description=change.new_description)
 
         # kills
-        for path in self.interrupts:
+        for path in self.sets.interrupt:
             self.tmux(path).interrupt()
 
         # removals
-        for path in self.removals:
+        for path in self.sets.removal:
             self.execute_removal(path)
 
         # moves
-        for move in self.moves:
+        for move in self.sets.move:
             self.execute_move(**move._asdict())
 
         # creations
-        for run in self.new_runs:
+        for run in self.sets.new_run:
             tmux = self.tmux(run.path)
             self.create_run(run=run, tmux=tmux)
             self.ui.print(

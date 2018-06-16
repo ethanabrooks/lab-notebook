@@ -22,9 +22,8 @@ def add_subparser(subparsers):
 def cli(transaction: Transaction, path: PurePath, description: Optional[str], *args,
         **kwargs):
     entry = transaction.db.entry(path)
-    transaction.description_changes.add(
-        DescriptionChange(
+    transaction.change_description(
             path=entry.path,
             full_command=entry.full_command,
             old_description=entry.description,
-            new_description=description))
+            new_description=description)

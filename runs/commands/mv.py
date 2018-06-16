@@ -60,6 +60,6 @@ def move(*src_patterns, dest_path: str, kill_tmux: bool, transaction: Transactio
                 else:
                     dest = PurePath(dest_path)
 
-            transaction.moves.add(Move(src=entry.path, dest=dest, kill_tmux=kill_tmux))
+            transaction.move(src=entry.path, dest=dest, kill_tmux=kill_tmux)
             if dest in db:
-                transaction.removals.add(dest)
+                transaction.remove(dest)

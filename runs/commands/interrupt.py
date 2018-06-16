@@ -22,4 +22,5 @@ def add_subparser(subparsers):
 
 @Transaction.wrapper
 def cli(patterns: List[PurePath], transaction, *args, **kwargs):
-    transaction.interrupts |= set(run.path for run in transaction.db[patterns])
+    for path in set(run.path for run in transaction.db[patterns]):
+        transaction.interrupt(path)

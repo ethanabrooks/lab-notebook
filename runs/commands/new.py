@@ -3,7 +3,6 @@ from datetime import datetime
 from pathlib import PurePath
 from typing import List
 
-from runs.run_entry import RunEntry
 from runs.transaction import Transaction
 from runs.util import flag_list, nonempty_string_type
 
@@ -77,16 +76,15 @@ def new(path: PurePath, prefix: str, command: str, description: str, flags: List
         description = bash.cmd('git log -1 --pretty=%B'.split())
 
     if path in transaction.db:
-        transaction.removals.add(path)
+        transaction.remove(path)
 
-    transaction.new_runs.add(
-        RunEntry(
+    transaction.add_run(
             path=path,
             full_command=full_command,
             commit=bash.last_commit(),
             datetime=datetime.now().isoformat(),
             description=description,
-            input_command=command))
+            input_command=command)
 
 
 def interpolate_keywords(path, string):
