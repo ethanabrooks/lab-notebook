@@ -5,7 +5,7 @@ from configparser import ConfigParser, ExtendedInterpolation
 from importlib import import_module
 from pathlib import Path, PurePath
 
-from runs.commands import (change_description, correlation, interrupt, lookup,
+from runs.commands import (change_description, correlate, interrupt, lookup,
                            ls, mv, new, reproduce, rm, table)
 from runs.util import find_up, flag_list, pure_path_list
 
@@ -77,7 +77,7 @@ def main(argv=sys.argv[1:]):
                 change_description.add_subparser,
                 interrupt.add_subparser,
                 reproduce.add_subparser,
-                correlation.add_subparser,
+                correlate.add_subparser,
             ]
     ]:
         assert isinstance(subparser, argparse.ArgumentParser)

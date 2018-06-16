@@ -9,7 +9,7 @@ from runs.run_entry import RunEntry
 
 
 def add_subparser(subparsers):
-    parser = subparsers.add_parser('correlation', help='Rank flags by correlation.')
+    parser = subparsers.add_parser('correlate', help='Rank flags by correlation.')
     parser.add_argument(
         'patterns',
         nargs='*',
