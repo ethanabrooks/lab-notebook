@@ -64,3 +64,22 @@ def nonempty_string_type(value):
     return value
 
 
+class RunPath(type(PurePath())):
+    """
+    Modify PurePath to preserve '/' at end of path.
+    """
+
+    @classmethod
+    def _from_parts(cls, args, init=True):
+        self = super()._from_parts(args, init=init)
+        if args:
+            self._is_dir = str(args[-1]).endswith('/')
+        else:
+            self._is_dir = False
+        return self
+
+    def __str__(self):
+        string = super().__str__()
+        if self._is_dir:
+            string += '/'
+        return string

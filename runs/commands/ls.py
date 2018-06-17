@@ -1,17 +1,18 @@
-from collections import defaultdict
 from itertools import zip_longest
-from pathlib import PurePath
 from typing import List
+
+from collections import defaultdict
 
 from runs.database import DataBase
 from runs.logger import Logger
+from runs.util import RunPath
 
 help = 'Only display paths matching this pattern.'
 
 
 def add_subparser(subparsers):
     list_parser = subparsers.add_parser('ls', help='List all names in run database.')
-    list_parser.add_argument('patterns', nargs='*', help=help, type=PurePath)
+    list_parser.add_argument('patterns', nargs='*', help=help, type=RunPath)
     list_parser.add_argument(
         '--show-attrs',
         action='store_true',
@@ -24,7 +25,7 @@ def add_subparser(subparsers):
     list_parser.add_argument(
         '--unless',
         nargs='*',
-        type=PurePath,
+        type=RunPath,
         help='Print list of path names without tree '
         'formatting.')
     return list_parser
@@ -32,19 +33,19 @@ def add_subparser(subparsers):
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[PurePath], db: DataBase, porcelain: bool, unless: List[PurePath],
+def cli(patterns: List[RunPath], db: DataBase, porcelain: bool, unless: List[RunPath],
         *args, **kwargs):
     db.logger.print(string(*patterns, db=db, porcelain=porcelain, unless=unless))
 
 
 def string(*patterns, db: DataBase, porcelain: bool = True,
-           unless: List[PurePath] = None) -> str:
+           unless: List[RunPath] = None) -> str:
     return '\n'.join(
         map(str, paths(*patterns, db=db, porcelain=porcelain, unless=unless)))
 
 
 def paths(*patterns, db: DataBase, porcelain: bool = True,
-          unless: List[PurePath] = None) -> List[str]:
+          unless: List[RunPath] = None) -> List[str]:
     entries = db.descendants(
         *patterns, unless=unless) if patterns else db.all(unless=unless)
     _paths = [e.path for e in entries]
@@ -55,12 +56,12 @@ def build_tree(paths):
     aggregator = defaultdict(list)
     for path in paths:
         try:
-            head, *tail = PurePath(path).parts
+            head, *tail = RunPath(path).parts
         except ValueError:
             return dict()
         if tail:
             head += '/'
-        aggregator[head].append(PurePath(*tail))
+        aggregator[head].append(RunPath(*tail))
 
     return {k: build_tree(v) for k, v in aggregator.items()}
 
@@ -79,4 +80,4 @@ def tree_strings(tree, prefix='', root_prefix='', root='.'):
                     prefix=prefix,
                     root_prefix='├── ' if _next else '└── ',
                     root=root):
-                yield PurePath(s)
+                yield RunPath(s)

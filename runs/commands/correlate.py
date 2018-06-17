@@ -1,11 +1,12 @@
 import math
 import re
-from pathlib import Path, PurePath
+from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
+from runs.util import RunPath
 
 
 def add_subparser(subparsers):
@@ -14,7 +15,7 @@ def add_subparser(subparsers):
         'patterns',
         nargs='*',
         help='Analyze the flags associated with these runs',
-        type=PurePath)
+        type=RunPath)
     parser.add_argument(
         'path_to_value',
         type=Path,
@@ -24,14 +25,14 @@ def add_subparser(subparsers):
     parser.add_argument(
         '--unless',
         nargs='*',
-        type=PurePath,
+        type=RunPath,
         help='Exclude these paths from the analysis.')
     return parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[PurePath], db: DataBase, unless: List[PurePath],
+def cli(patterns: List[RunPath], db: DataBase, unless: List[RunPath],
         path_to_value: Path, *args, **kwargs):
     db.logger.print(
         *strings(
@@ -57,13 +58,13 @@ def get_flags(command: str) -> List[str]:
 def correlations(*patterns,
                  db: DataBase,
                  path_to_value: Path,
-                 unless: List[PurePath] = None) -> Dict[str, float]:
+                 unless: List[RunPath] = None) -> Dict[str, float]:
     runs = db.get(patterns, unless=unless)
 
     def mean(f: Callable) -> float:
         return sum(map(f, runs)) / float(len(runs))
 
-    def get_value(path: PurePath) -> Optional[float]:
+    def get_value(path: RunPath) -> Optional[float]:
         try:
             with Path(str(path_to_value).replace('<path>', str(path))).open() as f:
                 return float(f.read())

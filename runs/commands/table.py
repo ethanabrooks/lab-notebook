@@ -1,9 +1,10 @@
-from pathlib import PurePath
 from typing import List
+
+from tabulate import tabulate
 
 from runs.database import DataBase
 from runs.logger import Logger
-from tabulate import tabulate
+from runs.util import RunPath
 
 DEFAULT_COLUMNS = ['commit', 'datetime', 'description', 'input_command']
 
@@ -12,7 +13,7 @@ def add_subparser(subparsers):
     help = 'Only display paths matching this pattern.'
     table_parser = subparsers.add_parser(
         'table', help='Display contents of run database as a table.')
-    table_parser.add_argument('pattern', nargs='*', help=help, type=PurePath)
+    table_parser.add_argument('pattern', nargs='*', help=help, type=RunPath)
     table_parser.add_argument(
         '--columns',
         nargs='*',
@@ -30,7 +31,7 @@ def add_subparser(subparsers):
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(pattern: List[PurePath], db: DataBase, columns: List[str], column_width: int,
+def cli(pattern: List[RunPath], db: DataBase, columns: List[str], column_width: int,
         *args, **kwargs):
     db.logger.print(string(*pattern, db=db, columns=columns, column_width=column_width))
 

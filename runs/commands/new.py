@@ -1,11 +1,11 @@
 import itertools
 from datetime import datetime
-from pathlib import PurePath
 from typing import List, Tuple
 
 import re
 
 from runs.transaction.transaction import Transaction
+from runs.util import RunPath
 
 
 def add_subparser(subparsers):
@@ -13,7 +13,7 @@ def add_subparser(subparsers):
     parser.add_argument(
         'path',
         help='Unique path assigned to new run.',
-        type=str)
+        type=RunPath)
     parser.add_argument('command', help='Command that will be run in tmux.', type=str)
     parser.add_argument(
         '--description',
@@ -37,7 +37,7 @@ def add_subparser(subparsers):
 
 
 @Transaction.wrapper
-def cli(path: str, prefix: str, command: str, description: str, flags: List[str],
+def cli(path: RunPath, prefix: str, command: str, description: str, flags: List[str],
         transaction: Transaction, *args, **kwargs):
     runs = list(generate_runs(path, flags))
 
@@ -60,18 +60,18 @@ def parse_flag(flag, delims='=| '):
         return flag.split('|')
 
 
-def generate_runs(path: str, flags: List[str]) -> Tuple[PurePath, List[str]]:
+def generate_runs(path: RunPath, flags: List[str]) -> Tuple[RunPath, List[str]]:
     flags = [parse_flag(flag) for flag in flags]
     flag_combinations = list(itertools.product(*flags))
     for i, flags in enumerate(flag_combinations):
         new_path = path
         if len(flag_combinations) > 1:
-            assert isinstance(new_path, str)
-            new_path = PurePath(new_path, str(i))
+            assert isinstance(new_path, RunPath)
+            new_path = RunPath(str(new_path), str(i))
         yield new_path, flags
 
 
-def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -> str:
+def build_command(command: str, path: RunPath, prefix: str, flags: List[str]) -> str:
     if prefix:
         command = f'{prefix} {command}'
     flags = ' '.join(interpolate_keywords(path, f) for f in flags)
@@ -80,7 +80,7 @@ def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -
     return command
 
 
-def new(path: PurePath, prefix: str, command: str, description: str, flags: List[str],
+def new(path: RunPath, prefix: str, command: str, description: str, flags: List[str],
         transaction: Transaction):
     bash = transaction.bash
     full_command = build_command(command, path, prefix, flags)
@@ -102,7 +102,7 @@ def new(path: PurePath, prefix: str, command: str, description: str, flags: List
 
 
 def interpolate_keywords(path, string):
-    keywords = dict(path=path, name=PurePath(path).stem)
+    keywords = dict(path=path, name=RunPath(path).stem)
     for word, replacement in keywords.items():
         string = string.replace(f'<{word}>', str(replacement))
     return string

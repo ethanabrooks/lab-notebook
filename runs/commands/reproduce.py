@@ -1,10 +1,10 @@
-import re
-from pathlib import PurePath
 from typing import List
+
+import re
 
 from runs.database import DataBase
 from runs.logger import Logger
-from runs.util import highlight
+from runs.util import highlight, RunPath
 
 
 def add_subparser(subparsers):
@@ -12,7 +12,7 @@ def add_subparser(subparsers):
         'reproduce',
         help='Print commands to reproduce a run. This command '
         'does not have side-effects (besides printing).')
-    reproduce_parser.add_argument('patterns', nargs='+', type=PurePath)
+    reproduce_parser.add_argument('patterns', nargs='+', type=RunPath)
     reproduce_parser.add_argument(
         '--description',
         type=str,
@@ -31,7 +31,7 @@ def add_subparser(subparsers):
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[PurePath], db: DataBase, *args, **kwargs):
+def cli(patterns: List[RunPath], db: DataBase, *args, **kwargs):
     db.logger.print(string(*patterns, db=db))
 
 

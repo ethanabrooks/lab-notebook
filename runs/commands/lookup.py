@@ -1,11 +1,10 @@
-from pathlib import PurePath
 from typing import Dict, List
 
 from runs.commands import table
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.util import highlight
+from runs.util import highlight, RunPath
 
 
 def add_subparser(subparsers):
@@ -18,7 +17,7 @@ def add_subparser(subparsers):
     lookup_parser.add_argument(
         'patterns',
         help='Pattern of runs for which to retrieve key.',
-        type=PurePath,
+        type=RunPath,
         nargs='*')
     lookup_parser.add_argument('--porcelain', action='store_true')
     return lookup_parser
@@ -26,7 +25,7 @@ def add_subparser(subparsers):
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[PurePath], key: str, db: DataBase, porcelain: bool, *args,
+def cli(patterns: List[RunPath], key: str, db: DataBase, porcelain: bool, *args,
         **kwargs):
     db.logger.print(string(*patterns, db=db, key=key, porcelain=porcelain))
 
@@ -52,5 +51,5 @@ def strings(*patterns, db: DataBase, key: str, porcelain: bool) -> List[str]:
                 yield highlight(path, ": ", sep='') + str(attr)
 
 
-def get_dict(*pattern, db: DataBase, key: str) -> Dict[PurePath, str]:
+def get_dict(*pattern, db: DataBase, key: str) -> Dict[RunPath, str]:
     return {entry.path: entry.get(key) for entry in (db[pattern])}
