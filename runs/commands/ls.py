@@ -1,7 +1,6 @@
+from collections import defaultdict
 from itertools import zip_longest
 from typing import List
-
-from collections import defaultdict
 
 from runs.database import DataBase
 from runs.logger import Logger

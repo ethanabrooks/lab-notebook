@@ -7,6 +7,7 @@ from pathlib import Path, PurePath
 
 from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, eq_, ok_)
+
 from runs import main
 from runs.commands import lookup, ls, table
 from runs.database import DataBase

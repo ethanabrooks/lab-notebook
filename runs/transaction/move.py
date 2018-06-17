@@ -12,8 +12,7 @@ class MoveTransaction(SubTransaction):
 
     def validate(self):
         destinations = [m.dest for m in self.queue]
-        collisions = set([m for m in self.queue if
-                          destinations.count(m.dest) > 1])
+        collisions = set([m for m in self.queue if destinations.count(m.dest) > 1])
         if collisions:
             self.ui.exit(
                 f"Cannot move multiple runs into the same path:",
@@ -26,9 +25,8 @@ class MoveTransaction(SubTransaction):
                 prompt = "About to perform the following moves"
                 if kill_tmux:
                     prompt += " and kill the associated tmux sessions"
-                self.ui.check_permission(
-                    prompt + ':', *[f"{m.src} -> {m.dest}"
-                                    for m in self.queue])
+                self.ui.check_permission(prompt + ':',
+                                         *[f"{m.src} -> {m.dest}" for m in self.queue])
 
         validate_move(kill_tmux=True)
         validate_move(kill_tmux=False)

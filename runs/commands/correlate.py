@@ -32,8 +32,8 @@ def add_subparser(subparsers):
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[RunPath], db: DataBase, unless: List[RunPath],
-        path_to_value: Path, *args, **kwargs):
+def cli(patterns: List[RunPath], db: DataBase, unless: List[RunPath], path_to_value: Path,
+        *args, **kwargs):
     db.logger.print(
         *strings(
             'correlation, flag',

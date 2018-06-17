@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 import argparse
+import codecs
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
+from importlib import import_module
 from pathlib import Path, PurePath
 from typing import List
-
-import codecs
-from importlib import import_module
 
 from runs.commands import (change_description, correlate, interrupt, lookup,
                            ls, mv, new, reproduce, rm, table)
@@ -31,7 +30,8 @@ def pure_path_list(paths: str) -> List[PurePath]:
 
 def flag_list(flags_string: str) -> List[List[str]]:
     if flags_string:
-        return codecs.decode(flags_string, encoding='unicode_escape').strip('\n').split('\n')
+        return codecs.decode(
+            flags_string, encoding='unicode_escape').strip('\n').split('\n')
     else:
         return []
 
@@ -69,7 +69,7 @@ def main(argv=sys.argv[1:]):
     parser.add_argument(
         '--root',
         help='Custom path to directory where config directories (if any) are automatically '
-             'created',
+        'created',
         type=Path)
     parser.add_argument(
         '--dir-names',
@@ -91,17 +91,19 @@ def main(argv=sys.argv[1:]):
         flags=config[MAIN].get_flag_list(FLAGS, []))
 
     for subparser in [parser] + [
-        adder(subparsers) for adder in [
-            new.add_subparser,
-            rm.add_subparser,
-            mv.add_subparser,
-            ls.add_subparser,
-            table.add_subparser,
-            lookup.add_subparser,
-            change_description.add_subparser,
-            interrupt.add_subparser,
-            reproduce.add_subparser,
-            correlate.add_subparser,]]:
+            adder(subparsers) for adder in [
+                new.add_subparser,
+                rm.add_subparser,
+                mv.add_subparser,
+                ls.add_subparser,
+                table.add_subparser,
+                lookup.add_subparser,
+                change_description.add_subparser,
+                interrupt.add_subparser,
+                reproduce.add_subparser,
+                correlate.add_subparser,
+            ]
+    ]:
         assert isinstance(subparser, argparse.ArgumentParser)
         config_section = subparser.prog.split()[-1]
         assert isinstance(config_section, str)

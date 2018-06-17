@@ -1,4 +1,3 @@
-from pathlib import PurePath
 from typing import Optional
 
 from runs.transaction.transaction import Transaction
@@ -9,8 +8,7 @@ def add_subparser(subparsers):
     chdesc_parser = subparsers.add_parser(
         'change-description', help='Edit description of run.')
     chdesc_parser.add_argument(
-        'path', help='Name of run whose description you want to edit.',
-        type=RunPath)
+        'path', help='Name of run whose description you want to edit.', type=RunPath)
     chdesc_parser.add_argument(
         'description',
         nargs='?',

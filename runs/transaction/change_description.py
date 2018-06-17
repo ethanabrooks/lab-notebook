@@ -22,9 +22,7 @@ class ChangeDescriptionTransaction(SubTransaction):
             # noinspection PyProtectedMember
             return change._replace(new_description=new_description)
 
-        self.queue = {c if c.new_description else get_description(c)
-                      for c in self.queue}
+        self.queue = {c if c.new_description else get_description(c) for c in self.queue}
 
     def process(self, change: DescriptionChange):
-        self.db.update(change.path,
-                       description=change.new_description)
+        self.db.update(change.path, description=change.new_description)

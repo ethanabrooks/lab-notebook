@@ -39,4 +39,3 @@ class NewRunTransaction(SubTransaction):
             f'tmux attach -t {tmux}',
             '',
             sep='\n')
-

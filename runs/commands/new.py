@@ -1,8 +1,8 @@
 import itertools
-from datetime import datetime
-from typing import List, Tuple
-
 import re
+from datetime import datetime
+from pathlib import PurePath
+from typing import List, Tuple
 
 from runs.transaction.transaction import Transaction
 from runs.util import RunPath
@@ -10,10 +10,7 @@ from runs.util import RunPath
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('new', help='Start a new run.')
-    parser.add_argument(
-        'path',
-        help='Unique path assigned to new run.',
-        type=RunPath)
+    parser.add_argument('path', help='Unique path assigned to new run.', type=RunPath)
     parser.add_argument('command', help='Command that will be run in tmux.', type=str)
     parser.add_argument(
         '--description',
@@ -26,7 +23,8 @@ def add_subparser(subparsers):
         help="String to preprend to all main commands, for example, sourcing a virtualenv"
     )
     parser.add_argument(
-        '--flag', '-f',
+        '--flag',
+        '-f',
         default=[],
         action='append',
         help="directories to create and sync automatically with each run")
@@ -93,7 +91,7 @@ def new(path: RunPath, prefix: str, command: str, description: str, flags: List[
         transaction.remove(path)
 
     transaction.add_run(
-        path=path,
+        path=PurePath(path),
         full_command=full_command,
         commit=bash.last_commit(),
         datetime=datetime.now().isoformat(),
@@ -102,7 +100,7 @@ def new(path: RunPath, prefix: str, command: str, description: str, flags: List[
 
 
 def interpolate_keywords(path, string):
-    keywords = dict(path=path, name=RunPath(path).stem)
+    keywords = dict(path=path, name=RunPath(path).name)
     for word, replacement in keywords.items():
         string = string.replace(f'<{word}>', str(replacement))
     return string

@@ -1,10 +1,9 @@
-from typing import List
-
 import re
+from typing import List
 
 from runs.database import DataBase
 from runs.logger import Logger
-from runs.util import highlight, RunPath
+from runs.util import RunPath, highlight
 
 
 def add_subparser(subparsers):

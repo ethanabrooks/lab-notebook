@@ -1,4 +1,5 @@
 from itertools import zip_longest
+from pathlib import PurePath
 
 from runs.transaction.transaction import Transaction
 from runs.util import RunPath
@@ -39,7 +40,8 @@ def move(*src_patterns, dest_path: str, kill_tmux: bool, transaction: Transactio
         src_entries = db.descendants(src_pattern)
 
         def is_dir(pattern):
-            return pattern == RunPath('.') or f'{pattern}/%' in db
+            return pattern == RunPath('.') or \
+                   f'{PurePath(pattern)}/%' in db
 
         for entry in src_entries:
             src_path = RunPath(entry.path)
@@ -47,18 +49,18 @@ def move(*src_patterns, dest_path: str, kill_tmux: bool, transaction: Transactio
                 if is_dir(dest_path) or len(src_entries) > 1:
                     old_parts = RunPath(src_pattern).parent.parts
                     src_parts = RunPath(src_path).parts
-                    dest = RunPath(
+                    dest = PurePath(
                         dest_path, *[
                             p for p, from_old in zip_longest(src_parts, old_parts)
                             if not from_old
                         ])
                 else:
-                    dest = RunPath(dest_path, RunPath(src_path).stem)
+                    dest = PurePath(dest_path, RunPath(src_path).name)
             else:
                 if is_dir(dest_path) or len(src_entries) > 1:
-                    dest = RunPath(dest_path, RunPath(src_path).stem)
+                    dest = PurePath(dest_path, RunPath(src_path).name)
                 else:
-                    dest = RunPath(dest_path)
+                    dest = PurePath(dest_path)
 
             transaction.move(src=entry.path, dest=dest, kill_tmux=kill_tmux)
             if dest in db:

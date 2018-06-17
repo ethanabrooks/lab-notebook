@@ -1,30 +1,29 @@
-from pathlib import Path, PurePath
-from typing import List
-
 import re
 from collections import namedtuple
 from functools import wraps
+from pathlib import Path, PurePath
+from typing import List
 
 from runs.database import DataBase
 from runs.file_system import FileSystem
 from runs.logger import UI
 from runs.run_entry import RunEntry
 from runs.shell import Bash
-from runs.transaction.change_description import DescriptionChange, ChangeDescriptionTransaction
+from runs.transaction.change_description import (ChangeDescriptionTransaction,
+                                                 DescriptionChange)
 from runs.transaction.interrupt import InterruptTransaction
 from runs.transaction.move import Move, MoveTransaction
 from runs.transaction.new import NewRunTransaction
 from runs.transaction.removal import RemovalTransaction
 from runs.transaction.sub_transaction import SubTransaction
 
-TransactionType = namedtuple(
-    'TransactionType', [
-        'description_change',
-        'interrupt',
-        'removal',
-        'move',
-        'new_run',
-    ])
+TransactionType = namedtuple('TransactionType', [
+    'description_change',
+    'interrupt',
+    'removal',
+    'move',
+    'new_run',
+])
 
 
 def natural_keys(text):
@@ -75,8 +74,7 @@ class Transaction:
 
     def __exit__(self, *args):
         def sort(st: SubTransaction):
-            st.queue = sorted(st.queue,
-                              key=lambda x: natural_keys(str(x)))
+            st.queue = sorted(st.queue, key=lambda x: natural_keys(str(x)))
 
         def validate(st: SubTransaction):
             st.validate()

@@ -1,6 +1,5 @@
-from pathlib import PurePath
-
 import abc
+from pathlib import PurePath
 
 from runs.database import DataBase
 from runs.file_system import FileSystem
@@ -29,4 +28,3 @@ class SubTransaction:
     @abc.abstractmethod
     def process(self, queue_element):
         pass
-    

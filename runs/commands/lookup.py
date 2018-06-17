@@ -4,7 +4,7 @@ from runs.commands import table
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.util import highlight, RunPath
+from runs.util import RunPath, highlight
 
 
 def add_subparser(subparsers):
