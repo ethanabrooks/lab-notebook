@@ -1,12 +1,11 @@
 import math
-import re
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.util import RunPath
+from runs.util import RunPath, get_flags
 
 
 def add_subparser(subparsers):
@@ -50,11 +49,6 @@ def strings(*args, **kwargs):
     return [f'{cor[k]}, {k}' for k in keys]
 
 
-def get_flags(command: str) -> List[str]:
-    findall = re.findall('(?:[A-Z]*=\S* )*\S* (\S*)', command)
-    return findall
-
-
 def correlations(*patterns,
                  db: DataBase,
                  path_to_value: Path,
@@ -79,7 +73,7 @@ def correlations(*patterns,
 
     def get_correlation(flag: str) -> float:
         def contains_flag(run: RunEntry) -> float:
-            return float(flag in get_flags(run.full_command))
+            return float(flag in get_flags(run.command))
 
         flag_mean = mean(contains_flag)
 
@@ -96,7 +90,7 @@ def correlations(*patterns,
         else:
             return math.inf
 
-    flags = {flag for run in runs for flag in get_flags(run.full_command)}
+    flags = {flag for run in runs for flag in get_flags(run.command)}
     return {
         flag: get_correlation(flag)
         for flag in flags if get_correlation(flag) < math.inf

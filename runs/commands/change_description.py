@@ -24,6 +24,6 @@ def cli(transaction: Transaction, path: RunPath, description: Optional[str], *ar
     entry = transaction.db.entry(path)
     transaction.change_description(
         path=entry.path,
-        full_command=entry.full_command,
+        command=entry.command,
         old_description=entry.description,
         new_description=description)

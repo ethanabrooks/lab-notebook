@@ -149,7 +149,7 @@ def check_db(path, flags):
         assert_in(COMMAND, lookup.string(
             path + '%',
             db=db,
-            key='input_command',
+            key='command',
         ))
         assert_in(path, lookup.string(
             path + '%',
@@ -160,7 +160,7 @@ def check_db(path, flags):
             assert_in(flag, lookup.string(
                 path + '%',
                 db=db,
-                key='full_command',
+                key='command',
             ))
 
 
@@ -250,7 +250,7 @@ def test_table():
 def test_lookup():
     with _setup(TEST_RUN), DB as db:
         for key, value in dict(
-                path=TEST_RUN, description=DESCRIPTION, input_command=COMMAND).items():
+                path=TEST_RUN, description=DESCRIPTION, command=COMMAND).items():
             assert_in(value, lookup.string(PurePath(TEST_RUN), db=db, key=key))
         with assert_raises(SystemExit):
             run_main('lookup', 'x', TEST_RUN)
@@ -333,7 +333,7 @@ def test_move_dirs():
         yield check_move, 'test_run1', 'test_run2'
         with DB as db:
             assert_in('--run1',
-                      lookup.string(PurePath('test_run2'), db=db, key='full_command'))
+                      lookup.string(PurePath('test_run2'), db=db, key='command'))
 
     with _setup('test'):
         move('test', 'test/test2')

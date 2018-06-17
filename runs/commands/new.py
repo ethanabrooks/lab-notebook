@@ -92,11 +92,10 @@ def new(path: RunPath, prefix: str, command: str, description: str, flags: List[
 
     transaction.add_run(
         path=PurePath(path),
-        full_command=full_command,
+        command=full_command,
         commit=bash.last_commit(),
         datetime=datetime.now().isoformat(),
-        description=description,
-        input_command=command)
+        description=description)
 
 
 def interpolate_keywords(path, string):

@@ -1,4 +1,7 @@
 import argparse
+from typing import List
+
+import re
 import shutil
 import subprocess
 from datetime import datetime
@@ -55,12 +58,11 @@ def string_from_vim(prompt: str, string=None, line_length=100):
     return string
 
 
-def nonempty_string_type(value):
-    if value == '' or not isinstance(value, str):
-        raise argparse.ArgumentTypeError("Value must be a nonempty string.")
-    return value
+def get_flags(command: str) -> List[str]:
+    return re.findall('(?:[A-Z]*=\S* )*\S* (\S*)', command)
 
 
+# noinspection PyClassHasNoInit
 class RunPath(type(PurePath())):
     """
     Modify PurePath to preserve '/' at end of path.

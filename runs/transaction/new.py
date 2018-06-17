@@ -19,20 +19,20 @@ class NewRunTransaction(SubTransaction):
         if len(self.queue) > 1:
             self.ui.check_permission(
                 "Generating the following runs:",
-                *[f"{run.path}: {run.full_command}" for run in self.queue])
+                *[f"{run.path}: {run.command}" for run in self.queue])
 
     def process(self, run: RunEntry):
         tmux = self.tmux(run.path)
         for dir_path in self.file_system.dir_paths(run.path):
             dir_path.mkdir(exist_ok=True, parents=True)
 
-        tmux.new(window_name=run.description, command=run.full_command)
+        tmux.new(window_name=run.description, command=run.command)
         self.db.append(run)
         self.ui.print(
             highlight('Description:'),
             run.description,
             highlight('Command sent to session:'),
-            run.full_command,
+            run.command,
             highlight('List active:'),
             'tmux list-session',
             highlight('Attach:'),

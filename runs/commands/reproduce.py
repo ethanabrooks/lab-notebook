@@ -46,6 +46,6 @@ def string(*patterns, db: DataBase):
             new_path += '.1'
         return '\n'.join([
             highlight('To reproduce:'), f'git checkout {entry.commit}\n',
-            f"runs new {new_path} '{entry.input_command}' --description='Reproduce {new_path}. "
+            f"runs new {new_path} '{entry.command}' --description='Reproduce {new_path}. "
             f"Original description: {entry.description}'"
         ])

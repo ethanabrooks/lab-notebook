@@ -91,16 +91,15 @@ class Transaction:
 
         self.db.__exit__(*args)
 
-    def add_run(self, path: PurePath, full_command: str, commit: str, datetime: str,
-                description: str, input_command: str):
+    def add_run(self, path: PurePath, command: str, commit: str, datetime: str,
+                description: str):
         self.sub_transactions.new_run.add(
             RunEntry(
                 path=path,
-                full_command=full_command,
+                command=command,
                 commit=commit,
                 datetime=datetime,
-                description=description,
-                input_command=input_command))
+                description=description))
 
     def move(self, src: PurePath, dest: PurePath, kill_tmux: bool):
         self.sub_transactions.move.add(Move(src=src, dest=dest, kill_tmux=kill_tmux))
@@ -111,11 +110,11 @@ class Transaction:
     def interrupt(self, path: PurePath):
         self.sub_transactions.interrupt.add(path)
 
-    def change_description(self, path: PurePath, full_command: str, old_description: str,
+    def change_description(self, path: PurePath, command: str, old_description: str,
                            new_description: str):
         self.sub_transactions.description_change.add(
             DescriptionChange(
                 path=path,
-                full_command=full_command,
+                command=command,
                 old_description=old_description,
                 new_description=new_description))
