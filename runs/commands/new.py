@@ -1,7 +1,7 @@
 import itertools
 from datetime import datetime
 from pathlib import PurePath
-from typing import List
+from typing import List, Tuple
 
 import re
 
@@ -12,8 +12,8 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser('new', help='Start a new run.')
     parser.add_argument(
         'path',
-        help='Unique path assigned to new run. "\\"-delimited.',
-        type=PurePath)
+        help='Unique path assigned to new run.',
+        type=str)
     parser.add_argument('command', help='Command that will be run in tmux.', type=str)
     parser.add_argument(
         '--description',
@@ -37,7 +37,7 @@ def add_subparser(subparsers):
 
 
 @Transaction.wrapper
-def cli(path: PurePath, prefix: str, command: str, description: str, flags: List[str],
+def cli(path: str, prefix: str, command: str, description: str, flags: List[str],
         transaction: Transaction, *args, **kwargs):
     runs = list(generate_runs(path, flags))
 
@@ -60,14 +60,14 @@ def parse_flag(flag, delims='=| '):
         return flag.split('|')
 
 
-def generate_runs(path: PurePath, flags: List[str]):
+def generate_runs(path: str, flags: List[str]) -> Tuple[PurePath, List[str]]:
     flags = [parse_flag(flag) for flag in flags]
     flag_combinations = list(itertools.product(*flags))
     for i, flags in enumerate(flag_combinations):
         new_path = path
         if len(flag_combinations) > 1:
-            assert isinstance(new_path, PurePath)
-            new_path = new_path.with_name(new_path.stem + str(i))
+            assert isinstance(new_path, str)
+            new_path = PurePath(new_path, str(i))
         yield new_path, flags
 
 
