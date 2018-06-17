@@ -5,22 +5,28 @@ from runs.util import RunPath
 
 
 def add_subparser(subparsers):
-    remove_parser = subparsers.add_parser(
+    parser = subparsers.add_parser(
         'rm',
         help="Delete runs from the database (and all associated tensorboard "
         "and checkpoint files). Don't worry, the script will ask for "
         "confirmation before deleting anything.")
-    remove_parser.add_argument(
+    parser.add_argument(
         'patterns',
         nargs='+',
         help=
         'This script will only delete entries in the database whose names are a complete '
         '(not partial) match of this glob pattern.',
         type=RunPath)
-    return remove_parser
+    parser.add_argument(
+        '--unless',
+        nargs='*',
+        type=RunPath,
+        help='Print list of path names without tree '
+             'formatting.')
+    return parser
 
 
 @Transaction.wrapper
-def cli(patterns: List[RunPath], transaction, *args, **kwargs):
-    for path in set(run.path for run in transaction.db[patterns]):
+def cli(patterns: List[RunPath], unless: List[RunPath], transaction, *args, **kwargs):
+    for path in set(run.path for run in transaction.db.get(patterns, unless=unless)):
         transaction.remove(path)

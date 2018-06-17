@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from tabulate import tabulate
 
@@ -11,32 +11,38 @@ DEFAULT_COLUMNS = ['commit', 'datetime', 'description', 'input_command']
 
 def add_subparser(subparsers):
     help = 'Only display paths matching this pattern.'
-    table_parser = subparsers.add_parser(
+    parser = subparsers.add_parser(
         'table', help='Display contents of run database as a table.')
-    table_parser.add_argument('pattern', nargs='*', help=help, type=RunPath)
-    table_parser.add_argument(
+    parser.add_argument('pattern', nargs='*', help=help, type=RunPath)
+    parser.add_argument(
+        '--unless',
+        nargs='*',
+        type=RunPath,
+        help='Print list of path names without tree '
+             'formatting.')
+    parser.add_argument(
         '--columns',
         nargs='*',
         default=None,
         help='Comma-separated list of columns to display in table. Default is {}'.format(
             ' '.join(DEFAULT_COLUMNS)))
-    table_parser.add_argument(
+    parser.add_argument(
         '--column-width',
         type=int,
         default=100,
         help='Maximum width of table columns. Longer values will '
         'be truncated and appended with "...".')
-    return table_parser
+    return parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(pattern: List[RunPath], db: DataBase, columns: List[str], column_width: int,
+def cli(pattern: List[RunPath], unless: List[RunPath], db: DataBase, columns: List[str], column_width: int,
         *args, **kwargs):
-    db.logger.print(string(*pattern, db=db, columns=columns, column_width=column_width))
+    db.logger.print(string(*pattern, unless=unless, db=db, columns=columns, column_width=column_width))
 
 
-def string(*patterns, db: DataBase, columns=None, column_width: int = 100):
+def string(*patterns, unless: Optional[List[RunPath]] = None, db: DataBase, columns=None, column_width: int = 100):
     if columns is None:
         columns = DEFAULT_COLUMNS
     assert isinstance(column_width, int)
@@ -51,7 +57,7 @@ def string(*patterns, db: DataBase, columns=None, column_width: int = 100):
             return '_'
 
     headers = sorted(columns)
-    entries = db.descendants(*patterns) if patterns else db.all()
+    entries = db.descendants(*patterns, unless=unless) if patterns else db.all()
     db = [[e.path] + [get_values(e, key) for key in headers]
           for e in sorted(entries, key=lambda e: e.path)]
     return tabulate(db, headers=headers)

@@ -10,30 +10,30 @@ help = 'Only display paths matching this pattern.'
 
 
 def add_subparser(subparsers):
-    list_parser = subparsers.add_parser('ls', help='List all names in run database.')
-    list_parser.add_argument('patterns', nargs='*', help=help, type=RunPath)
-    list_parser.add_argument(
+    parser = subparsers.add_parser('ls', help='List all names in run database.')
+    parser.add_argument('patterns', nargs='*', help=help, type=RunPath)
+    parser.add_argument(
         '--show-attrs',
         action='store_true',
         help='Print run attributes in addition to names.')
-    list_parser.add_argument(
+    parser.add_argument(
         '--porcelain',
         action='store_true',
         help='Print list of path names without tree '
         'formatting.')
-    list_parser.add_argument(
+    parser.add_argument(
         '--unless',
         nargs='*',
         type=RunPath,
         help='Print list of path names without tree '
         'formatting.')
-    return list_parser
+    return parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[RunPath], db: DataBase, porcelain: bool, unless: List[RunPath],
-        *args, **kwargs):
+def cli(patterns: List[RunPath], unless: List[RunPath],
+        db: DataBase, porcelain: bool, *args, **kwargs):
     db.logger.print(string(*patterns, db=db, porcelain=porcelain, unless=unless))
 
 

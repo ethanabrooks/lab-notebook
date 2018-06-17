@@ -5,17 +5,17 @@ from runs.util import RunPath
 
 
 def add_subparser(subparsers):
-    chdesc_parser = subparsers.add_parser(
+    parser = subparsers.add_parser(
         'change-description', help='Edit description of run.')
-    chdesc_parser.add_argument(
+    parser.add_argument(
         'path', help='Name of run whose description you want to edit.', type=RunPath)
-    chdesc_parser.add_argument(
+    parser.add_argument(
         'description',
         nargs='?',
         default=None,
         help='New description. If None, script will prompt for '
         'a description in Vim')
-    return chdesc_parser
+    return parser
 
 
 @Transaction.wrapper

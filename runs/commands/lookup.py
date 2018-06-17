@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from runs.commands import table
 from runs.database import DataBase
@@ -8,41 +8,46 @@ from runs.util import RunPath, highlight
 
 
 def add_subparser(subparsers):
-    lookup_parser = subparsers.add_parser(
+    parser = subparsers.add_parser(
         'lookup', help='Lookup specific value associated with database entry')
-    lookup_parser.add_argument(
+    parser.add_argument(
         'key',
         choices=RunEntry.fields() + ('all', ),
         help='Key that value is associated with.')
-    lookup_parser.add_argument(
+    parser.add_argument(
         'patterns',
         help='Pattern of runs for which to retrieve key.',
         type=RunPath,
         nargs='*')
-    lookup_parser.add_argument('--porcelain', action='store_true')
-    return lookup_parser
+    parser.add_argument(
+        '--unless',
+        nargs='*',
+        type=RunPath,
+        help='Exclude these paths from the analysis.')
+    parser.add_argument('--porcelain', action='store_true')
+    return parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[RunPath], key: str, db: DataBase, porcelain: bool, *args,
+def cli(patterns: List[RunPath], unless: List[RunPath], key: str, db: DataBase, porcelain: bool, *args,
         **kwargs):
-    db.logger.print(string(*patterns, db=db, key=key, porcelain=porcelain))
+    db.logger.print(string(*patterns, unless=unless, db=db, key=key, porcelain=porcelain))
 
 
-def string(*patterns, db: DataBase, key: str, porcelain: bool = True) -> str:
-    return '\n'.join(strings(*patterns, db=db, key=key, porcelain=porcelain))
+def string(*patterns, unless: List[RunPath] = None, db: DataBase, key: str, porcelain: bool = True) -> str:
+    return '\n'.join(strings(*patterns, unless=unless, db=db, key=key, porcelain=porcelain))
 
 
-def strings(*patterns, db: DataBase, key: str, porcelain: bool) -> List[str]:
+def strings(*patterns, unless: Optional[List[RunPath]], db: DataBase, key: str, porcelain: bool) -> List[str]:
     if key == 'all':
         if porcelain:
-            for entry in db[patterns, ]:
+            for entry in db.get(patterns, unless=unless):
                 yield str(entry)
         else:
-            yield table.string(*patterns, db=db)
+            yield table.string(*patterns, unless=unless, db=db)
     else:
-        attr_dict = get_dict(*patterns, db=db, key=key)
+        attr_dict = get_dict(*patterns, unless=unless, db=db, key=key)
         if porcelain:
             for value in attr_dict.values():
                 yield str(value)
@@ -51,5 +56,5 @@ def strings(*patterns, db: DataBase, key: str, porcelain: bool) -> List[str]:
                 yield highlight(path, ": ", sep='') + str(attr)
 
 
-def get_dict(*pattern, db: DataBase, key: str) -> Dict[RunPath, str]:
-    return {entry.path: entry.get(key) for entry in (db[pattern])}
+def get_dict(*pattern, unless: List[RunPath], db: DataBase, key: str) -> Dict[RunPath, str]:
+    return {entry.path: entry.get(key) for entry in (db.get(pattern, unless=unless))}
