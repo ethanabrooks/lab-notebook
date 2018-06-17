@@ -26,7 +26,7 @@ def add_subparser(subparsers):
         help="String to preprend to all main commands, for example, sourcing a virtualenv"
     )
     parser.add_argument(
-        '--flag',
+        '--flag', '-f',
         default=[],
         action='append',
         help="directories to create and sync automatically with each run")
