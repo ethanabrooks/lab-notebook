@@ -37,8 +37,6 @@ def flag_list(flags_string: str) -> List[List[str]]:
 
 
 def main(argv=sys.argv[1:]):
-    print(argv)
-
     config = ConfigParser(
         delimiters=[':'],
         allow_no_value=True,

@@ -53,9 +53,6 @@ def parse_flag(flag, delims='=| '):
     match = re.match(pattern, flag)
     if match:
         key, delim, values = match.groups()
-        print('key', key)
-        print('delim', delim)
-        print('values', values)
         return [f'{key}{delim}{value}' for value in values.split('|')]
     else:
         return flag.split('|')
