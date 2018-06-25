@@ -53,6 +53,9 @@ def parse_flag(flag, delims='=| '):
     match = re.match(pattern, flag)
     if match:
         key, delim, values = match.groups()
+        print('key', key)
+        print('delim', delim)
+        print('values', values)
         return [f'{key}{delim}{value}' for value in values.split('|')]
     else:
         return flag.split('|')
@@ -60,6 +63,7 @@ def parse_flag(flag, delims='=| '):
 
 def generate_runs(path: RunPath, flags: List[str]) -> Tuple[RunPath, List[str]]:
     flags = [parse_flag(flag) for flag in flags]
+    print(flags)
     flag_combinations = list(itertools.product(*flags))
     for i, flags in enumerate(flag_combinations):
         new_path = path
