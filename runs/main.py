@@ -64,7 +64,7 @@ def main(argv=sys.argv[1:]):
         '--quiet', '-q', action='store_true', help='Suppress print output')
     parser.add_argument(
         '--db-path',
-        help='path to YAML file storing run database information.',
+        help='path to sqlite file storing run database information.',
         type=Path)
     parser.add_argument(
         '--root',
