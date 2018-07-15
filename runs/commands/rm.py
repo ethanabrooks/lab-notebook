@@ -15,14 +15,14 @@ def add_subparser(subparsers):
         nargs='+',
         help=
         'This script will only delete entries in the database whose names are a complete '
-        '(not partial) match of this glob pattern.',
+        '(not partial) match of this sql pattern.',
         type=RunPath)
     parser.add_argument(
         '--unless',
         nargs='*',
         type=RunPath,
         help='Print list of path names without tree '
-             'formatting.')
+        'formatting.')
     return parser
 
 

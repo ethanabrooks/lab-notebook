@@ -19,38 +19,41 @@ def add_subparser(subparsers):
         help="Description to be assigned to new run. If None, use the same description as "
         "the run being reproduced.")
     parser.add_argument(
-        '--no-overwrite',
+        '--overwrite',
         action='store_true',
-        help='If this flag is given, a timestamp will be '
-        'appended to any new name that is already in '
-        'the database.  Otherwise this entry will '
-        'overwrite any entry with the same name. ')
+        help='Without this flag, runs paths either get a number appended to them or '
+        'have an existing number incremented. With this flag, the reproduced run '
+        'just gets overwritten.')
     parser.add_argument(
         '--unless',
         nargs='*',
         type=RunPath,
         help='Print list of path names without tree '
-             'formatting.')
+        'formatting.')
     return parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[RunPath], unless: List[RunPath],
-        db: DataBase, flags: List[str], *args, **kwargs):
-    db.logger.print(string(*patterns, unless=unless, db=db, flags=flags))
+def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, flags: List[str],
+        overwrite: bool, *args, **kwargs):
+    db.logger.print(
+        string(*patterns, unless=unless, db=db, flags=flags, overwrite=overwrite))
 
 
-def string(*patterns, unless: List[RunPath], db: DataBase, flags: List[str]):
+def string(*patterns, unless: List[RunPath], db: DataBase, flags: List[str],
+           overwrite: bool):
     for entry in db.descendants(*patterns, unless=unless):
         new_path = str(entry.path)
-        pattern = re.compile('(.*\.)(\d*)')
-        endswith_number = pattern.match(str(entry.path))
-        if endswith_number:
-            trailing_number = int(endswith_number[2]) + 1
-            new_path = endswith_number[1] + str(trailing_number)
-        else:
-            new_path += '.1'
+        if not overwrite:
+            pattern = re.compile('(.*\.)(\d*)')
+            endswith_number = pattern.match(str(entry.path))
+            while new_path in db:
+                if endswith_number:
+                    trailing_number = int(endswith_number[2]) + 1
+                    new_path = endswith_number[1] + str(trailing_number)
+                else:
+                    new_path += '.1'
 
         command = ' '.join([s for s in entry.full_command.split() if s not in flags])
         return '\n'.join([

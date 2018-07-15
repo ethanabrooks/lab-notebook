@@ -82,7 +82,8 @@ class DataBase:
         return [
             RunEntry(PurePath(p), *e) for p, *e in self.execute(
                 command=self.select(like=patterns, unless=unless),
-                patterns=patterns, unless=unless).fetchall()
+                patterns=patterns,
+                unless=unless).fetchall()
         ]
 
     def __getitem__(self, patterns: Sequence[PathLike]) -> List[RunEntry]:

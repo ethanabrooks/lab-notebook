@@ -5,8 +5,7 @@ from runs.util import RunPath
 
 
 def add_subparser(subparsers):
-    parser = subparsers.add_parser(
-        'change-description', help='Edit description of run.')
+    parser = subparsers.add_parser('change-description', help='Edit description of run.')
     parser.add_argument(
         'path', help='Name of run whose description you want to edit.', type=RunPath)
     parser.add_argument(

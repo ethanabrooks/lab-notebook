@@ -18,10 +18,7 @@ def add_subparser(subparsers):
         '(not partial) match of this glob pattern.',
         type=RunPath)
     parser.add_argument(
-        '--unless',
-        nargs='*',
-        type=RunPath,
-        help='Exclude these paths from the analysis.')
+        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
     return parser
 
 

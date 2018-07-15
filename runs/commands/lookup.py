@@ -20,26 +20,32 @@ def add_subparser(subparsers):
         type=RunPath,
         nargs='*')
     parser.add_argument(
-        '--unless',
-        nargs='*',
-        type=RunPath,
-        help='Exclude these paths from the analysis.')
-    parser.add_argument('--porcelain', action='store_true')
+        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
+    parser.add_argument(
+        '--porcelain',
+        action='store_true',
+        help='Print value only (for use with scripts)')
     return parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[RunPath], unless: List[RunPath], key: str, db: DataBase, porcelain: bool, *args,
-        **kwargs):
+def cli(patterns: List[RunPath], unless: List[RunPath], key: str, db: DataBase,
+        porcelain: bool, *args, **kwargs):
     db.logger.print(string(*patterns, unless=unless, db=db, key=key, porcelain=porcelain))
 
 
-def string(*patterns, unless: List[RunPath] = None, db: DataBase, key: str, porcelain: bool = True) -> str:
-    return '\n'.join(strings(*patterns, unless=unless, db=db, key=key, porcelain=porcelain))
+def string(*patterns,
+           unless: List[RunPath] = None,
+           db: DataBase,
+           key: str,
+           porcelain: bool = True) -> str:
+    return '\n'.join(
+        strings(*patterns, unless=unless, db=db, key=key, porcelain=porcelain))
 
 
-def strings(*patterns, unless: Optional[List[RunPath]], db: DataBase, key: str, porcelain: bool) -> List[str]:
+def strings(*patterns, unless: Optional[List[RunPath]], db: DataBase, key: str,
+            porcelain: bool) -> List[str]:
     if key == 'all':
         if porcelain:
             for entry in db.get(patterns, unless=unless):
@@ -56,5 +62,6 @@ def strings(*patterns, unless: Optional[List[RunPath]], db: DataBase, key: str, 
                 yield highlight(path, ": ", sep='') + str(attr)
 
 
-def get_dict(*pattern, unless: List[RunPath], db: DataBase, key: str) -> Dict[RunPath, str]:
+def get_dict(*pattern, unless: List[RunPath], db: DataBase,
+             key: str) -> Dict[RunPath, str]:
     return {entry.path: entry.get(key) for entry in (db.get(pattern, unless=unless))}

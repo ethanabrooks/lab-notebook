@@ -22,18 +22,14 @@ def add_subparser(subparsers):
         help='Print list of path names without tree '
         'formatting.')
     parser.add_argument(
-        '--unless',
-        nargs='*',
-        type=RunPath,
-        help='Print list of path names without tree '
-        'formatting.')
+        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
     return parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[RunPath], unless: List[RunPath],
-        db: DataBase, porcelain: bool, *args, **kwargs):
+def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, porcelain: bool,
+        *args, **kwargs):
     db.logger.print(string(*patterns, db=db, porcelain=porcelain, unless=unless))
 
 

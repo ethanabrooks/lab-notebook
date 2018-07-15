@@ -22,11 +22,7 @@ def add_subparser(subparsers):
         help='Name of run to rename.' + path_clarification,
         type=RunPath)
     parser.add_argument(
-        '--unless',
-        nargs='*',
-        type=RunPath,
-        help='Print list of path names without tree '
-             'formatting.')
+        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
     parser.add_argument(
         'destination', help='New name for run.' + path_clarification, type=RunPath)
     parser.add_argument(
@@ -38,10 +34,16 @@ def add_subparser(subparsers):
 
 @Transaction.wrapper
 def cli(source, unless, destination, kill_tmux, transaction, *args, **kwargs):
-    move(*source, unless=unless, dest_path=destination, kill_tmux=kill_tmux, transaction=transaction)
+    move(
+        *source,
+        unless=unless,
+        dest_path=destination,
+        kill_tmux=kill_tmux,
+        transaction=transaction)
 
 
-def move(*src_patterns, unless: List[RunPath], dest_path: str, kill_tmux: bool, transaction: Transaction):
+def move(*src_patterns, unless: List[RunPath], dest_path: str, kill_tmux: bool,
+         transaction: Transaction):
     db = transaction.db
     for src_pattern in src_patterns:
         src_entries = db.descendants(src_pattern, unless=unless)

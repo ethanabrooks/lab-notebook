@@ -20,14 +20,11 @@ def add_subparser(subparsers):
         'path_to_value',
         type=Path,
         help='The command will look for a file at this path containing'
-             'a scalar value. It will calculate the pearson correlation between '
-             'flags and this value. The keyword <path> will be replaced '
-             'by the path of the run.')
+        'a scalar value. It will calculate the pearson correlation between '
+        'flags and this value. The keyword <path> will be replaced '
+        'by the path of the run.')
     parser.add_argument(
-        '--unless',
-        nargs='*',
-        type=RunPath,
-        help='Exclude these paths from the analysis.')
+        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
     return parser
 
 
