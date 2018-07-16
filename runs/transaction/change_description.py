@@ -4,7 +4,7 @@ from runs.transaction.sub_transaction import SubTransaction
 from runs.util import string_from_vim
 
 DescriptionChange = namedtuple(
-    'DescriptionChange', ['path', 'full_command', 'old_description', 'new_description'])
+    'DescriptionChange', ['path', 'command', 'old_description', 'new_description'])
 
 
 class ChangeDescriptionTransaction(SubTransaction):
@@ -17,7 +17,7 @@ class ChangeDescriptionTransaction(SubTransaction):
             new_description = string_from_vim(
                 f"""
         Edit description for {change.path}.
-        Command: {change.full_command}
+        Command: {change.command}
         """, change.old_description)
             # noinspection PyProtectedMember
             return change._replace(new_description=new_description)

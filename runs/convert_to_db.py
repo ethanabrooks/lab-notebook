@@ -19,11 +19,10 @@ def yaml_to_run_entry(node, *parts):
     except KeyError:
         yield RunEntry(
             path=PurePath(*parts),
-            full_command=node['full_command'],
+            command=node['command'],
             commit=node['commit'],
             datetime=node['datetime'],
-            description=node['description'],
-            input_command=node['_input_command'])
+            description=node['description'])
 
 
 def main():

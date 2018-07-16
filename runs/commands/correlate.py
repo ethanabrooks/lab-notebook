@@ -77,7 +77,7 @@ def correlations(*patterns,
 
     def get_correlation(flag: str) -> float:
         def contains_flag(run: RunEntry) -> float:
-            return float(flag in get_flags(run.full_command))
+            return float(flag in get_flags(run.command))
 
         flag_mean = mean(contains_flag)
 
@@ -94,7 +94,7 @@ def correlations(*patterns,
         else:
             return math.inf
 
-    flags = {flag for run in runs for flag in get_flags(run.full_command)}
+    flags = {flag for run in runs for flag in get_flags(run.command)}
     return {
         flag: get_correlation(flag)
         for flag in flags if get_correlation(flag) < math.inf

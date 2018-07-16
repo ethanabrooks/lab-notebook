@@ -56,7 +56,7 @@ def string(*patterns, unless: List[RunPath], db: DataBase, flags: List[str],
                     new_path += '.1'
 
         flags = [interpolate_keywords(entry.path, f) for f in flags]
-        command = ' '.join([s for s in entry.full_command.split() if s not in flags])
+        command = ' '.join([s for s in entry.command.split() if s not in flags])
         return '\n'.join([
             highlight('To reproduce:'), f'git checkout {entry.commit}\n',
             f"runs new {new_path} '{command}' --description='Reproduce {entry.path}. "

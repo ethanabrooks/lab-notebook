@@ -6,7 +6,7 @@ from runs.database import DataBase
 from runs.logger import Logger
 from runs.util import RunPath
 
-DEFAULT_COLUMNS = ['commit', 'datetime', 'description', 'input_command']
+DEFAULT_COLUMNS = ['commit', 'datetime', 'description', 'command']
 
 
 def add_subparser(subparsers):
