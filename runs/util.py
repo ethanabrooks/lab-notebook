@@ -80,3 +80,10 @@ class RunPath(type(PurePath())):
         if self._is_dir:
             string += '/'
         return string
+
+
+def interpolate_keywords(path, string):
+    keywords = dict(path=path, name=RunPath(path).name)
+    for word, replacement in keywords.items():
+        string = string.replace(f'<{word}>', str(replacement))
+    return string

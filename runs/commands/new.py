@@ -1,11 +1,12 @@
 import itertools
-import re
 from datetime import datetime
 from pathlib import PurePath
 from typing import List, Tuple
 
+import re
+
 from runs.transaction.transaction import Transaction
-from runs.util import RunPath
+from runs.util import RunPath, interpolate_keywords
 
 
 def add_subparser(subparsers):
@@ -100,8 +101,3 @@ def new(path: RunPath, prefix: str, command: str, description: str, flags: List[
         input_command=command)
 
 
-def interpolate_keywords(path, string):
-    keywords = dict(path=path, name=RunPath(path).name)
-    for word, replacement in keywords.items():
-        string = string.replace(f'<{word}>', str(replacement))
-    return string

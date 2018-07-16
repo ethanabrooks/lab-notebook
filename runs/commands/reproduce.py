@@ -3,7 +3,7 @@ from typing import List
 
 from runs.database import DataBase
 from runs.logger import Logger
-from runs.util import RunPath, highlight
+from runs.util import RunPath, highlight, interpolate_keywords
 
 
 def add_subparser(subparsers):
@@ -55,6 +55,7 @@ def string(*patterns, unless: List[RunPath], db: DataBase, flags: List[str],
                 else:
                     new_path += '.1'
 
+        flags = [interpolate_keywords(entry.path, f) for f in flags]
         command = ' '.join([s for s in entry.full_command.split() if s not in flags])
         return '\n'.join([
             highlight('To reproduce:'), f'git checkout {entry.commit}\n',
