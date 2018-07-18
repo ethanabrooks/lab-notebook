@@ -3,8 +3,8 @@ from collections import namedtuple
 from runs.transaction.sub_transaction import SubTransaction
 from runs.util import string_from_vim
 
-DescriptionChange = namedtuple(
-    'DescriptionChange', ['path', 'command', 'old_description', 'new_description'])
+DescriptionChange = namedtuple('DescriptionChange',
+                               ['path', 'command', 'old_description', 'new_description'])
 
 
 class ChangeDescriptionTransaction(SubTransaction):

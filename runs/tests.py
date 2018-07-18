@@ -332,8 +332,8 @@ def test_move_dirs():
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'
         with DB as db:
-            assert_in('--run1',
-                      lookup.string(PurePath('test_run2'), db=db, key='command'))
+            assert_in('--run1', lookup.string(
+                PurePath('test_run2'), db=db, key='command'))
 
     with _setup('test'):
         move('test', 'test/test2')

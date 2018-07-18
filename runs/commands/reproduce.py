@@ -30,38 +30,62 @@ def add_subparser(subparsers):
         type=RunPath,
         help='Print list of path names without tree '
         'formatting.')
+    parser.add_argument(
+        '--command-only',
+        action='store_true',
+        help="Don't print the `git checkout <commit> part of the reproduce message "
+        "This is useful if you want to reproduce many runs but don't want to"
+        "switch to a different commit.")
     return parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase,
-        flags: List[str], prefix: str, overwrite: bool, *args, **kwargs):
-    db.logger.print(
-        string(*patterns, unless=unless, db=db, flags=flags, prefix=prefix,
-               overwrite=overwrite))
+def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, flags: List[str],
+        prefix: str, overwrite: bool, command_only: bool, *args, **kwargs):
+    for s in strings(
+            *patterns,
+            unless=unless,
+            db=db,
+            flags=flags,
+            prefix=prefix,
+            overwrite=overwrite,
+            command_only=command_only):
+        db.logger.print(s)
 
 
-def string(*patterns, unless: List[RunPath], db: DataBase,
-           flags: List[str], prefix: str, overwrite: bool):
-    for entry in db.descendants(*patterns, unless=unless):
-        new_path = str(entry.path)
-        if not overwrite:
-            pattern = re.compile('(.*\.)(\d*)')
-            endswith_number = pattern.match(str(entry.path))
-            while new_path in db:
-                if endswith_number:
-                    trailing_number = int(endswith_number[2]) + 1
-                    new_path = endswith_number[1] + str(trailing_number)
-                else:
-                    new_path += '.1'
+def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], prefix: str,
+            overwrite: bool, command_only: bool):
+    return [
+        string(
+            entry=entry,
+            db=db,
+            prefix=prefix,
+            flags=flags,
+            overwrite=overwrite,
+            command_only=command_only,
+        ) for entry in db.descendants(*patterns, unless=unless)
+    ]
 
-        flags = [interpolate_keywords(entry.path, f) for f in flags]
-        command = entry.command
-        for s in flags + [prefix]:
-            command = command.replace(s, '')
-        return '\n'.join([
-            highlight('To reproduce:'), f'git checkout {entry.commit}\n',
-            f"runs new {new_path} '{command}' --description='Reproduce {entry.path}. "
-            f"Original description: {entry.description}'"
-        ])
+
+def string(command_only, db, entry, flags, overwrite, prefix):
+    new_path = str(entry.path)
+    if not overwrite:
+        pattern = re.compile('(.*\.)(\d*)')
+        endswith_number = pattern.match(str(entry.path))
+        while new_path in db:
+            if endswith_number:
+                trailing_number = int(endswith_number[2]) + 1
+                new_path = endswith_number[1] + str(trailing_number)
+            else:
+                new_path += '.1'
+    flags = [interpolate_keywords(entry.path, f) for f in flags]
+    command = entry.command
+    for s in flags + [prefix]:
+        command = command.replace(s, '')
+    checkout_string = f'git checkout {entry.commit}\n',
+    command_string = f"runs new {new_path} '{command}' --description='Reproduce {entry.path}. "
+    f"Original description: {entry.description}'"
+    if command_only:
+        return command_string
+    return '\n'.join([highlight('To reproduce:'), checkout_string, command_string])

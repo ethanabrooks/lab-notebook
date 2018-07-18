@@ -4,7 +4,11 @@ from typing import Tuple
 
 class RunEntry(
         namedtuple('RunEntry', [
-            'path', 'command', 'commit', 'datetime', 'description',
+            'path',
+            'command',
+            'commit',
+            'datetime',
+            'description',
         ])):
     __slots__ = ()
 
