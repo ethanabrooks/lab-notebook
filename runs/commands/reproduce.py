@@ -35,14 +35,15 @@ def add_subparser(subparsers):
 
 @Logger.wrapper
 @DataBase.wrapper
-def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, flags: List[str],
-        overwrite: bool, *args, **kwargs):
+def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase,
+        flags: List[str], prefix: str, overwrite: bool, *args, **kwargs):
     db.logger.print(
-        string(*patterns, unless=unless, db=db, flags=flags, overwrite=overwrite))
+        string(*patterns, unless=unless, db=db, flags=flags, prefix=prefix,
+               overwrite=overwrite))
 
 
-def string(*patterns, unless: List[RunPath], db: DataBase, flags: List[str],
-           overwrite: bool):
+def string(*patterns, unless: List[RunPath], db: DataBase,
+           flags: List[str], prefix: str, overwrite: bool):
     for entry in db.descendants(*patterns, unless=unless):
         new_path = str(entry.path)
         if not overwrite:
@@ -56,7 +57,9 @@ def string(*patterns, unless: List[RunPath], db: DataBase, flags: List[str],
                     new_path += '.1'
 
         flags = [interpolate_keywords(entry.path, f) for f in flags]
-        command = ' '.join([s for s in entry.command.split() if s not in flags])
+        command = entry.command
+        for s in flags + [prefix]:
+            command = command.replace(s, '')
         return '\n'.join([
             highlight('To reproduce:'), f'git checkout {entry.commit}\n',
             f"runs new {new_path} '{command}' --description='Reproduce {entry.path}. "
