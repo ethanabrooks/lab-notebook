@@ -61,11 +61,16 @@ def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], pr
         s.append(f'git checkout {commit}')
         _s = ['runs new']
         for i, entry in enumerate(entries):
-            command = get_command_string(db=db, entry=entry, flags=flags, overwrite=overwrite, prefix=prefix)
-            new_path = RunPath(path, str(i)) if path else entry.path
-            _s.append(f'--path={shlex.quote(str(new_path))}')
-            _s.append(f'--command={shlex.quote(command)}')
-            _s.append(f'--description={shlex.quote(entry.description)}')
+            new_path = shlex.quote(str(path or entry.path))
+            command = shlex.quote(get_command_string(db=db, entry=entry, flags=flags, overwrite=overwrite, prefix=prefix))
+            description = shlex.quote(entry.description)
+            if len(entries) == 1:
+                _s[0] += f"{new_path} {command} --description={description}"
+            else:
+                _s.append(f'--path={new_path}')
+                _s.append(f'--command={command}')
+                _s.append(f'--description={description}')
+                _s.append('')
         _s = ' \\\n  '.join(_s)
         s += _s.split('\n')
     return s
