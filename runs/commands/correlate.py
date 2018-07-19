@@ -10,7 +10,7 @@ from runs.util import RunPath
 
 
 def add_subparser(subparsers):
-    parser = subparsers.add_parser('correlate', help='Rank flags by correlation.')
+    parser = subparsers.add_parser('correlate', help='Rank flags by Pearson correlation.')
     parser.add_argument(
         'patterns',
         nargs='*',
@@ -19,7 +19,7 @@ def add_subparser(subparsers):
     parser.add_argument(
         'path_to_value',
         type=Path,
-        help='The command will look for a file at this path containing'
+        help='The command will look for a file at this path containing '
         'a scalar value. It will calculate the pearson correlation between '
         'flags and this value. The keyword <path> will be replaced '
         'by the path of the run.')

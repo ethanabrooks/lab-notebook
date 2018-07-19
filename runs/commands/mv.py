@@ -12,10 +12,8 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'mv',
         help='Move a run from OLD to NEW. '
-        'Functionality is identical to `mkdir -p` except that non-existent dirs'
-        'are created and empty dirs are removed automatically'
-        'The program will show you planned '
-        'moves and ask permission before changing anything.')
+        'Functionality is identical to Linux `mv` except that non-existent dirs'
+        'are created and empty dirs are removed automatically.')
     parser.add_argument(
         'source',
         nargs='+',

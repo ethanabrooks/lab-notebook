@@ -7,8 +7,8 @@ from importlib import import_module
 from pathlib import Path, PurePath
 from typing import List
 
-from runs.commands import (change_description, correlate, interrupt, lookup,
-                           ls, mv, new, reproduce, rm, table, kill)
+from runs.commands import (change_description, correlate, interrupt, kill,
+                           lookup, ls, mv, new, reproduce, rm, table)
 from runs.logger import Logger
 
 MAIN = 'main'
@@ -59,7 +59,9 @@ def main(argv=sys.argv[1:]):
             flags=[],
         )
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        epilog="The script will ask permission before running, deleting, moving, or "
+        "permanently changing anything.")
     parser.add_argument(
         '--quiet', '-q', action='store_true', help='Suppress print output')
     parser.add_argument(

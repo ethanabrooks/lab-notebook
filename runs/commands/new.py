@@ -10,32 +10,44 @@ from runs.util import RunPath, interpolate_keywords
 
 
 def add_subparser(subparsers):
-    parser = subparsers.add_parser('new', help='Start a new run.')
+    parser = subparsers.add_parser(
+        'new',
+        help='Start a new run.',
+        epilog='When there are multiple paths/commands/descriptions, '
+        'they get collated. If there is one path but multiple commands, '
+        'each path gets appended with a number. Similarly if there is one '
+        'description, it gets broadcasted to all paths/commands.')
 
-    def paths_arg(*arg, nargs):
+    def paths_arg(*arg, nargs, help):
         parser.add_argument(
             *arg,
             nargs=nargs,
             dest='paths',
             action='append',
             type=RunPath,
-            help='Unique path assigned to new run.',
+            help=help,
         )
 
-    def command_arg(*arg, nargs):
+    def command_arg(*arg, nargs, help):
         parser.add_argument(
             *arg,
             nargs=nargs,
             dest='commands',
             action='append',
             type=str,
-            help='Command that will be run in tmux.',
+            help=help,
         )
 
-    paths_arg(nargs='?')
-    paths_arg('--path', nargs=None)
-    command_arg(nargs='?')
-    command_arg('--command', nargs=None)
+    paths_arg(nargs='?', help='Unique path assigned to new run.')
+    paths_arg(
+        '--path',
+        nargs=None,
+        help='Additional paths to create (collated with commands and descriptions).')
+    command_arg(nargs='?', help='Command that will be run in tmux.')
+    command_arg(
+        '--command',
+        nargs=None,
+        help='Additional commands to run (collated with paths and descriptions).')
     parser.add_argument(
         '--description',
         dest='descriptions',

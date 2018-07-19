@@ -5,11 +5,7 @@ from runs.util import RunPath
 
 
 def add_subparser(subparsers):
-    parser = subparsers.add_parser(
-        'kill',
-        help="Delete runs from the database (and all associated tensorboard "
-        "and checkpoint files). Don't worry, the script will ask for "
-        "confirmation before deleting anything.")
+    parser = subparsers.add_parser('kill', help="Kill selected TMUX sessions.")
     parser.add_argument(
         'patterns',
         nargs='+',

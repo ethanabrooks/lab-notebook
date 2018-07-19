@@ -9,7 +9,7 @@ from runs.util import RunPath, highlight
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'lookup', help='Lookup specific value associated with database entry')
+        'lookup', help="Lookup specific value associated with database entry.")
     parser.add_argument(
         'key',
         choices=RunEntry.fields() + ('all', ),

@@ -10,10 +10,13 @@ DEFAULT_COLUMNS = ['commit', 'datetime', 'description', 'command']
 
 
 def add_subparser(subparsers):
-    help = 'Only display paths matching this pattern.'
     parser = subparsers.add_parser(
         'table', help='Display contents of run database as a table.')
-    parser.add_argument('pattern', nargs='*', help=help, type=RunPath)
+    parser.add_argument(
+        'pattern',
+        nargs='*',
+        help='Only display paths matching this pattern.',
+        type=RunPath)
     parser.add_argument(
         '--unless', nargs='*', type=RunPath, help='Exclude these paths from the output.')
     parser.add_argument(

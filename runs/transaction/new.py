@@ -16,10 +16,9 @@ class NewRunTransaction(SubTransaction):
         if self.queue and self.bash.dirty_repo():
             self.ui.check_permission(
                 "Repo is dirty. You should commit before run. Run anyway?")
-        if len(self.queue) > 1:
-            self.ui.check_permission(
-                "Generating the following runs:",
-                *[f"{run.path}: {run.command}" for run in self.queue])
+        self.ui.check_permission(
+            f"Generating the following run{'s' if len(self.queue) > 1 else ''}:",
+            *[f"{run.path}: {run.command}" for run in self.queue])
 
     def process(self, run: RunEntry):
         tmux = self.tmux(run.path)

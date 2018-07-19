@@ -8,8 +8,7 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'rm',
         help="Delete runs from the database (and all associated tensorboard "
-        "and checkpoint files). Don't worry, the script will ask for "
-        "confirmation before deleting anything.")
+        "and checkpoint files).")
     parser.add_argument(
         'patterns',
         nargs='+',

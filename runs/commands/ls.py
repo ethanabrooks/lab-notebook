@@ -10,7 +10,7 @@ help = 'Only display paths matching this pattern.'
 
 
 def add_subparser(subparsers):
-    parser = subparsers.add_parser('ls', help='List all names in run database.')
+    parser = subparsers.add_parser('ls', help='Print paths in run database.')
     parser.add_argument('patterns', nargs='*', help=help, type=RunPath)
     parser.add_argument(
         '--show-attrs',
