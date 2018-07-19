@@ -1,4 +1,7 @@
+import shlex
+
 import re
+from collections import defaultdict
 from typing import List
 
 from runs.database import DataBase
@@ -30,45 +33,39 @@ def add_subparser(subparsers):
         type=RunPath,
         help='Print list of path names without tree '
         'formatting.')
-    parser.add_argument(
-        '--command-only',
-        action='store_true',
-        help="Don't print the `git checkout <commit> part of the reproduce message "
-        "This is useful if you want to reproduce many runs but don't want to"
-        "switch to a different commit.")
     return parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
 def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, flags: List[str],
-        prefix: str, overwrite: bool, command_only: bool, *args, **kwargs):
-    for s in strings(
-            *patterns,
-            unless=unless,
-            db=db,
-            flags=flags,
-            prefix=prefix,
-            overwrite=overwrite,
-            command_only=command_only):
-        db.logger.print(s)
+        prefix: str, overwrite: bool, *args, **kwargs):
+    for string in strings(
+            *patterns, unless=unless, db=db, flags=flags, prefix=prefix,
+            overwrite=overwrite):
+        db.logger.print(string)
 
 
 def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], prefix: str,
-            overwrite: bool, command_only: bool):
-    return [
-        string(
-            entry=entry,
-            db=db,
-            prefix=prefix,
-            flags=flags,
-            overwrite=overwrite,
-            command_only=command_only,
-        ) for entry in db.descendants(*patterns, unless=unless)
-    ]
+            overwrite: bool):
+    entry_dict = defaultdict(list)
+    s = [highlight('To reproduce:')]
+    for entry in db.descendants(*patterns, unless=unless):
+        entry_dict[entry.commit].append(entry)
+    for commit, entries in entry_dict.items():
+        s.append(f'git checkout {commit}')
+        _s = ['runs new']
+        for entry in entries:
+            command = get_command_string(db=db, entry=entry, flags=flags, overwrite=overwrite, prefix=prefix)
+            _s.append(f'--path={shlex.quote(str(entry.path))}')
+            _s.append(f'--command={shlex.quote(command)}')
+            _s.append(f'--description={shlex.quote(entry.description)}')
+        _s = ' \\\n  '.join(_s)
+        s += _s.split('\n')
+    return s
 
 
-def string(command_only, db, entry, flags, overwrite, prefix):
+def get_command_string(db, entry, flags, overwrite, prefix):
     new_path = str(entry.path)
     if not overwrite:
         pattern = re.compile('(.*\.)(\d*)')
@@ -83,9 +80,7 @@ def string(command_only, db, entry, flags, overwrite, prefix):
     command = entry.command
     for s in flags + [prefix]:
         command = command.replace(s, '')
-    checkout_string = f'git checkout {entry.commit}\n',
-    command_string = f"runs new {new_path} '{command}' --description='Reproduce {entry.path}. "
-    f"Original description: {entry.description}'"
-    if command_only:
-        return command_string
-    return '\n'.join([highlight('To reproduce:'), checkout_string, command_string])
+    return command
+    # command_string = f"runs new {new_path} '{command}' --description='Reproduce {entry.path}. "
+    # f"Original description: {entry.description}'"
+    # return command_string

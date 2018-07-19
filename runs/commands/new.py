@@ -10,10 +10,35 @@ from runs.util import RunPath, interpolate_keywords
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('new', help='Start a new run.')
-    parser.add_argument('path', help='Unique path assigned to new run.', type=RunPath)
-    parser.add_argument('command', help='Command that will be run in tmux.', type=str)
+
+    def paths_arg(*arg, nargs):
+        parser.add_argument(
+            *arg,
+            nargs=nargs,
+            dest='paths',
+            action='append',
+            type=RunPath,
+            help='Unique path assigned to new run.',
+        )
+
+    def command_arg(*arg, nargs):
+        parser.add_argument(
+            *arg,
+            nargs=nargs,
+            dest='commands',
+            action='append',
+            type=str,
+            help='Command that will be run in tmux.',
+        )
+
+    paths_arg(nargs='?')
+    paths_arg('--path', nargs=None)
+    command_arg(nargs='?')
+    command_arg('--command', nargs=None)
     parser.add_argument(
         '--description',
+        dest='descriptions',
+        action='append',
         help='Description of this run. Explain what this run was all about or '
         'write whatever your heart desires. If this argument is `commit-message`,'
         'it will simply use the last commit message.')
@@ -35,11 +60,25 @@ def add_subparser(subparsers):
 
 
 @Transaction.wrapper
-def cli(path: RunPath, prefix: str, command: str, description: str, flags: List[str],
-        transaction: Transaction, *args, **kwargs):
-    runs = list(generate_runs(path, flags))
+def cli(prefix: str, paths: List[RunPath], commands: List[str], flags: List[str],
+        descriptions: List[str], transaction: Transaction, *args, **kwargs):
+    paths = [p for p in paths if p]
+    commands = [c for c in commands if c]
+    if len(descriptions) == 1:
+        descriptions *= len(paths)
+        if not len(paths) == len(commands):
+            transaction.db.logger.exit(
+                'Number of paths must be the same as the number of commands')
+    elif not len(paths) == len(commands) == len(descriptions):
+        import ipdb; ipdb.set_trace()
+        transaction.db.logger.exit(
+            f'Got {len(paths)} paths, {len(commands)} commands, and {len(descriptions)} descriptions.'
+            f'These numbers should all be the same so that they can be collated.')
+    runs = [(path, command, parsed_flags, description)
+            for base_path, command, description in zip(paths, commands, descriptions)
+            for path, parsed_flags in generate_runs(base_path, flags)]
 
-    for path, flags in runs:
+    for path, command, flags, description in runs:
         new(path=path,
             prefix=prefix,
             command=command,
