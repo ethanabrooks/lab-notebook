@@ -2,7 +2,7 @@ import shlex
 
 import re
 from collections import defaultdict
-from typing import List
+from typing import List, Optional
 
 from runs.database import DataBase
 from runs.logger import Logger
@@ -15,6 +15,11 @@ def add_subparser(subparsers):
         help='Print commands to reproduce a run. This command '
         'does not have side-effects (besides printing).')
     parser.add_argument('patterns', nargs='+', type=RunPath)
+    parser.add_argument(
+        '--path',
+        type=RunPath,
+        default=None,
+        help="This is for cases when you want to run the reproduced command on a new path.")
     parser.add_argument(
         '--description',
         type=str,
@@ -39,15 +44,15 @@ def add_subparser(subparsers):
 @Logger.wrapper
 @DataBase.wrapper
 def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, flags: List[str],
-        prefix: str, overwrite: bool, *args, **kwargs):
+        prefix: str, overwrite: bool, path: Optional[RunPath], *args, **kwargs):
     for string in strings(
             *patterns, unless=unless, db=db, flags=flags, prefix=prefix,
-            overwrite=overwrite):
+            overwrite=overwrite, path=path):
         db.logger.print(string)
 
 
 def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], prefix: str,
-            overwrite: bool):
+            overwrite: bool, path: Optional[RunPath]):
     entry_dict = defaultdict(list)
     s = [highlight('To reproduce:')]
     for entry in db.descendants(*patterns, unless=unless):
@@ -55,9 +60,10 @@ def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], pr
     for commit, entries in entry_dict.items():
         s.append(f'git checkout {commit}')
         _s = ['runs new']
-        for entry in entries:
+        for i, entry in enumerate(entries):
             command = get_command_string(db=db, entry=entry, flags=flags, overwrite=overwrite, prefix=prefix)
-            _s.append(f'--path={shlex.quote(str(entry.path))}')
+            new_path = RunPath(path, str(i)) if path else entry.path
+            _s.append(f'--path={shlex.quote(str(new_path))}')
             _s.append(f'--command={shlex.quote(command)}')
             _s.append(f'--description={shlex.quote(entry.description)}')
         _s = ' \\\n  '.join(_s)
