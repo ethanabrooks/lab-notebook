@@ -4,6 +4,8 @@ from datetime import datetime
 from pathlib import PurePath
 from typing import List, Tuple
 
+from collections import defaultdict
+
 from runs.transaction.transaction import Transaction
 from runs.util import RunPath, interpolate_keywords
 
@@ -74,17 +76,21 @@ def cli(prefix: str, paths: List[RunPath], commands: List[str], flags: List[str]
         transaction.db.logger.exit(
             f'Got {len(paths)} paths, {len(commands)} commands, and {len(descriptions)} descriptions.'
             f'These numbers should all be the same so that they can be collated.')
-    runs = [(path, command, parsed_flags, description)
-            for base_path, command, description in zip(paths, commands, descriptions)
-            for path, parsed_flags in generate_runs(base_path, flags)]
+    runs = defaultdict(list)
+    for path, command, description in zip(paths, commands, descriptions):
+        for parsed_flags in generate_runs(flags):
+            runs[path].append((command, parsed_flags, description))
 
-    for path, command, flags, description in runs:
-        new(path=path,
-            prefix=prefix,
-            command=command,
-            description=description,
-            flags=flags,
-            transaction=transaction)
+    for path in runs:
+        for i, (command, flags, description) in enumerate(runs[path]):
+            if len(runs[path]) > 1:
+                path = RunPath(path, str(i))
+            new(path=path,
+                prefix=prefix,
+                command=command,
+                description=description,
+                flags=flags,
+                transaction=transaction)
 
 
 def parse_flag(flag, delims='=| '):
@@ -97,16 +103,9 @@ def parse_flag(flag, delims='=| '):
         return flag.split('|')
 
 
-def generate_runs(path: RunPath, flags: List[str]) -> Tuple[RunPath, List[str]]:
+def generate_runs(flags: List[str]) -> Tuple[RunPath, List[str]]:
     flags = [parse_flag(flag) for flag in flags]
-    print(flags)
-    flag_combinations = list(itertools.product(*flags))
-    for i, flags in enumerate(flag_combinations):
-        new_path = path
-        if len(flag_combinations) > 1:
-            assert isinstance(new_path, RunPath)
-            new_path = RunPath(str(new_path), str(i))
-        yield new_path, flags
+    return itertools.product(*flags)
 
 
 def build_command(command: str, path: RunPath, prefix: str, flags: List[str]) -> str:
