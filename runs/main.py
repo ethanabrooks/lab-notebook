@@ -8,7 +8,7 @@ from pathlib import Path, PurePath
 from typing import List
 
 from runs.commands import (change_description, correlate, interrupt, lookup,
-                           ls, mv, new, reproduce, rm, table)
+                           ls, mv, new, reproduce, rm, table, kill)
 from runs.logger import Logger
 
 MAIN = 'main'
@@ -102,6 +102,7 @@ def main(argv=sys.argv[1:]):
                 interrupt.add_subparser,
                 reproduce.add_subparser,
                 correlate.add_subparser,
+                kill.add_subparser,
             ]
     ]:
         assert isinstance(subparser, argparse.ArgumentParser)

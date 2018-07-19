@@ -59,11 +59,11 @@ def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, flags: Lis
 def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], prefix: str,
             overwrite: bool, path: Optional[RunPath]):
     entry_dict = defaultdict(list)
-    return_string = [highlight('To reproduce:')]
+    return_strings = [highlight('To reproduce:')]
     for entry in db.descendants(*patterns, unless=unless):
         entry_dict[entry.commit].append(entry)
     for commit, entries in entry_dict.items():
-        return_string.append(f'git checkout {commit}')
+        return_strings.append(f'git checkout {commit}')
         command_string = 'runs new'
         for i, entry in enumerate(entries):
             new_path = get_path_string(
@@ -84,8 +84,8 @@ def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], pr
                     f'--description={description}',
                     '',
                 ])
-        return_string.append(command_string)
-    return return_string
+        return_strings.append(command_string)
+    return return_strings
 
 
 def get_path_string(path: RunPath, i: Optional[int], db: DataBase,
