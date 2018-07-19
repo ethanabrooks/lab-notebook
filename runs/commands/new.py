@@ -1,10 +1,9 @@
 import itertools
 import re
+from collections import defaultdict
 from datetime import datetime
 from pathlib import PurePath
 from typing import List, Tuple
-
-from collections import defaultdict
 
 from runs.transaction.transaction import Transaction
 from runs.util import RunPath, interpolate_keywords
@@ -72,7 +71,6 @@ def cli(prefix: str, paths: List[RunPath], commands: List[str], flags: List[str]
             transaction.db.logger.exit(
                 'Number of paths must be the same as the number of commands')
     elif not len(paths) == len(commands) == len(descriptions):
-        import ipdb; ipdb.set_trace()
         transaction.db.logger.exit(
             f'Got {len(paths)} paths, {len(commands)} commands, and {len(descriptions)} descriptions.'
             f'These numbers should all be the same so that they can be collated.')

@@ -1,6 +1,5 @@
-import shlex
-
 import re
+import shlex
 from collections import defaultdict
 from typing import List, Optional
 
@@ -19,7 +18,8 @@ def add_subparser(subparsers):
         '--path',
         type=RunPath,
         default=None,
-        help="This is for cases when you want to run the reproduced command on a new path.")
+        help="This is for cases when you want to run the reproduced command on a new path."
+    )
     parser.add_argument(
         '--description',
         type=str,
@@ -46,49 +46,68 @@ def add_subparser(subparsers):
 def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, flags: List[str],
         prefix: str, overwrite: bool, path: Optional[RunPath], *args, **kwargs):
     for string in strings(
-            *patterns, unless=unless, db=db, flags=flags, prefix=prefix,
-            overwrite=overwrite, path=path):
+            *patterns,
+            unless=unless,
+            db=db,
+            flags=flags,
+            prefix=prefix,
+            overwrite=overwrite,
+            path=path):
         db.logger.print(string)
 
 
 def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], prefix: str,
             overwrite: bool, path: Optional[RunPath]):
     entry_dict = defaultdict(list)
-    s = [highlight('To reproduce:')]
+    return_string = [highlight('To reproduce:')]
     for entry in db.descendants(*patterns, unless=unless):
         entry_dict[entry.commit].append(entry)
     for commit, entries in entry_dict.items():
-        s.append(f'git checkout {commit}')
-        _s = ['runs new']
+        return_string.append(f'git checkout {commit}')
+        command_string = 'runs new'
         for i, entry in enumerate(entries):
-            new_path = shlex.quote(str(path or entry.path))
-            command = shlex.quote(get_command_string(db=db, entry=entry, flags=flags, overwrite=overwrite, prefix=prefix))
-            description = shlex.quote(entry.description)
+            new_path = get_path_string(
+                path=path or entry.path,
+                i=i if len(entries) > 1 else None,
+                db=db,
+                overwrite=overwrite)
+            subcommand = get_command_string(
+                path=RunPath(new_path), prefix=prefix, command=entry.command, flags=flags)
+            new_path, subcommand, description = map(
+                shlex.quote, [new_path, subcommand, entry.description])
             if len(entries) == 1:
-                _s[0] += f"{new_path} {command} --description={description}"
+                command_string += f" {new_path} {subcommand} --description={description}"
             else:
-                _s.append(f'--path={new_path}')
-                _s.append(f'--command={command}')
-                _s.append(f'--description={description}')
-                _s.append('')
-        _s = ' \\\n  '.join(_s)
-        s += _s.split('\n')
-    return s
+                command_string += ' \\\n  '.join([
+                    f'--path={new_path}',
+                    f'--command={subcommand}',
+                    f'--description={description}',
+                    '',
+                ])
+        return_string.append(command_string)
+    return return_string
 
 
-def get_command_string(db, entry, flags, overwrite, prefix):
-    new_path = str(entry.path)
-    if not overwrite:
+def get_path_string(path: RunPath, i: Optional[int], db: DataBase,
+                    overwrite: bool) -> str:
+    path = str(path)
+    if i:
+        path += str(i)
+    if overwrite:
+        return path
+    while path in db:
         pattern = re.compile('(.*\.)(\d*)')
-        endswith_number = pattern.match(str(entry.path))
-        while new_path in db:
-            if endswith_number:
-                trailing_number = int(endswith_number[2]) + 1
-                new_path = endswith_number[1] + str(trailing_number)
-            else:
-                new_path += '.1'
-    flags = [interpolate_keywords(entry.path, f) for f in flags]
-    command = entry.command
+        match = pattern.match(str(path))
+        if match:
+            _, stem, number = match
+            path = stem + str(number)
+        else:
+            path += '.1'
+    return path
+
+
+def get_command_string(path: RunPath, prefix: str, command: str, flags: List[str]) -> str:
+    flags = [interpolate_keywords(path, f) for f in flags]
     for s in flags + [prefix]:
         command = command.replace(s, '')
     return command

@@ -5,8 +5,9 @@ from typing import List, Sequence, Union
 
 from runs.logger import Logger
 from runs.run_entry import RunEntry
+from runs.util import RunPath
 
-PathLike = Union[str, PurePath, Path]
+PathLike = Union[str, RunPath, PurePath, Path]
 
 
 class DataBase:
@@ -80,7 +81,7 @@ class DataBase:
 
     def get(self, patterns: Sequence[PathLike], unless=None) -> List[RunEntry]:
         return [
-            RunEntry(PurePath(p), *e) for p, *e in self.execute(
+            RunEntry(RunPath(p), *e) for p, *e in self.execute(
                 command=self.select(like=patterns, unless=unless),
                 patterns=patterns,
                 unless=unless).fetchall()
@@ -88,7 +89,7 @@ class DataBase:
 
     def __getitem__(self, patterns: Sequence[PathLike]) -> List[RunEntry]:
         return [
-            RunEntry(PurePath(p), *e)
+            RunEntry(RunPath(p), *e)
             for p, *e in self.execute(self.select(like=patterns), patterns).fetchall()
         ]
 
