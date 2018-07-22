@@ -99,7 +99,7 @@ def get_path_string(path: RunPath, i: Optional[int], db: DataBase,
         pattern = re.compile('(.*\.)(\d*)')
         match = pattern.match(str(path))
         if match:
-            _, stem, number = match
+            stem, number = match.groups()
             path = stem + str(number)
         else:
             path += '.1'
