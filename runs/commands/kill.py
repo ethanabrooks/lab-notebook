@@ -19,6 +19,6 @@ def add_subparser(subparsers):
 
 
 @Transaction.wrapper
-def cli(patterns: List[RunPath], unless: List[RunPath], transaction, *args, **kwargs):
+def cli(patterns: List[RunPath], unless: List[RunPath], transaction: Transaction, *args, **kwargs):
     for path in set(run.path for run in transaction.db.get(patterns, unless=unless)):
         transaction.kill(path)

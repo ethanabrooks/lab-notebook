@@ -114,7 +114,7 @@ class Transaction:
         self.sub_transactions.interrupt.add(path)
 
     def kill(self, path: PurePath):
-        self.sub_transactions.interrupt.add(path)
+        self.sub_transactions.kill.add(path)
 
     def change_description(self, path: PurePath, command: str, old_description: str,
                            new_description: str):
