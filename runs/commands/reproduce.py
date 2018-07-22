@@ -100,7 +100,7 @@ def get_path_string(path: RunPath, i: Optional[int], db: DataBase,
         match = pattern.match(str(path))
         if match:
             stem, number = match.groups()
-            path = stem + str(number)
+            path = stem + str(int(number) + 1)
         else:
             path += '.1'
     return path
