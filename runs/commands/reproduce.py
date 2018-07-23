@@ -44,7 +44,8 @@ def add_subparser(subparsers):
 @Logger.wrapper
 @DataBase.wrapper
 def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, flags: List[str],
-        prefix: str, overwrite: bool, path: Optional[RunPath], *args, **kwargs):
+        prefix: str, overwrite: bool, path: Optional[RunPath], description: str,
+        *args, **kwargs):
     for string in strings(
             *patterns,
             unless=unless,
@@ -52,12 +53,14 @@ def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, flags: Lis
             flags=flags,
             prefix=prefix,
             overwrite=overwrite,
-            path=path):
+            path=path,
+            description=description,
+    ):
         db.logger.print(string)
 
 
 def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], prefix: str,
-            overwrite: bool, path: Optional[RunPath]):
+            overwrite: bool, path: Optional[RunPath], description: Optional[str]):
     entry_dict = defaultdict(list)
     return_strings = [highlight('To reproduce:')]
     for entry in db.descendants(*patterns, unless=unless):
@@ -74,7 +77,7 @@ def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], pr
             subcommand = get_command_string(
                 path=RunPath(new_path), prefix=prefix, command=entry.command, flags=flags)
             new_path, subcommand, description = map(
-                shlex.quote, [new_path, subcommand, entry.description])
+                shlex.quote, [new_path, subcommand, description or entry.description])
             if len(entries) == 1:
                 command_string += f" {new_path} {subcommand} --description={description}"
             else:
