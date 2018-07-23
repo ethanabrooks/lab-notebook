@@ -78,7 +78,8 @@ def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], pr
             if len(entries) == 1:
                 command_string += f" {new_path} {subcommand} --description={description}"
             else:
-                command_string += ' \\\n  '.join([
+                command_string = ' \\\n  '.join([
+                    command_string,
                     f'--path={new_path}',
                     f'--command={subcommand}',
                     f'--description={description}',
