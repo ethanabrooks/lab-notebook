@@ -11,7 +11,6 @@ from runs.run_entry import RunEntry
 from runs.shell import Bash
 from runs.transaction.change_description import (ChangeDescriptionTransaction,
                                                  DescriptionChange)
-from runs.transaction.interrupt import InterruptTransaction
 from runs.transaction.kill import KillTransaction
 from runs.transaction.move import Move, MoveTransaction
 from runs.transaction.new import NewRunTransaction
@@ -20,7 +19,6 @@ from runs.transaction.sub_transaction import SubTransaction
 
 TransactionType = namedtuple('TransactionType', [
     'description_change',
-    'interrupt',
     'kill',
     'removal',
     'move',
@@ -64,7 +62,6 @@ class Transaction:
 
         self.sub_transactions = TransactionType(
             description_change=ChangeDescriptionTransaction(**kwargs),
-            interrupt=InterruptTransaction(**kwargs),
             kill=KillTransaction(**kwargs),
             removal=RemovalTransaction(**kwargs),
             move=MoveTransaction(**kwargs),
@@ -109,9 +106,6 @@ class Transaction:
 
     def remove(self, path: PurePath):
         self.sub_transactions.removal.add(path)
-
-    def interrupt(self, path: PurePath):
-        self.sub_transactions.interrupt.add(path)
 
     def kill(self, path: PurePath):
         self.sub_transactions.kill.add(path)

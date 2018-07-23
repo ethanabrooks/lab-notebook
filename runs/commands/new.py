@@ -77,13 +77,19 @@ def cli(prefix: str, paths: List[RunPath], commands: List[str], flags: List[str]
         descriptions: List[str], transaction: Transaction, *args, **kwargs):
     paths = [p for p in paths if p]
     commands = [c for c in commands if c]
-    if len(descriptions) == 1:
+    if len(paths) == 0:
+        transaction.ui.exit('Must provide at least one path.')
+    if len(commands) == 0:
+        transaction.ui.exit('Must provide at least one command.')
+    if descriptions is None:
+        descriptions = [''] * len(commands)
+    elif len(descriptions) == 1:
         descriptions *= len(paths)
         if not len(paths) == len(commands):
-            transaction.db.logger.exit(
+            transaction.ui.exit(
                 'Number of paths must be the same as the number of commands')
     elif not len(paths) == len(commands) == len(descriptions):
-        transaction.db.logger.exit(
+        transaction.ui.exit(
             f'Got {len(paths)} paths, {len(commands)} commands, and {len(descriptions)} descriptions.'
             f'These numbers should all be the same so that they can be collated.')
     runs = defaultdict(list)

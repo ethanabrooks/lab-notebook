@@ -10,15 +10,10 @@ class TMUXSession:
 
     def new(self, window_name, command):
         self.kill()
-        self.cmd('tmux new -d -s'.split() + [self.name, '-n', window_name])
-        self.cmd('tmux send-keys -t'.split() + [self.name, command, 'Enter'])
+        self.cmd('tmux new -d -s'.split() + [self.name, '-n', window_name, command])
 
     def kill(self):
         self.cmd('tmux kill-session -t'.split() + [self.name], fail_ok=True)
-
-    def interrupt(self):
-        for keys in ('^C', '^D'):
-            self.cmd('tmux send-keys -t'.split() + [self.name, keys, 'Enter'])
 
     def rename(self, new):
         if isinstance(new, TMUXSession):

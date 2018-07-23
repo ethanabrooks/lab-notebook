@@ -7,7 +7,7 @@ from importlib import import_module
 from pathlib import Path, PurePath
 from typing import List
 
-from runs.commands import (change_description, correlate, interrupt, kill,
+from runs.commands import (change_description, correlate, kill,
                            lookup, ls, mv, new, reproduce, rm, table)
 from runs.logger import Logger
 
@@ -101,7 +101,6 @@ def main(argv=sys.argv[1:]):
                 table.add_subparser,
                 lookup.add_subparser,
                 change_description.add_subparser,
-                interrupt.add_subparser,
                 reproduce.add_subparser,
                 correlate.add_subparser,
                 kill.add_subparser,
