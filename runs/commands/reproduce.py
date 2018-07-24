@@ -72,16 +72,16 @@ def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], pr
                 overwrite=overwrite)
             subcommand = get_command_string(
                 path=RunPath(new_path), prefix=prefix, command=entry.command, flags=flags)
-            new_path, subcommand, description = map(
+            new_path, subcommand, _description = map(
                 shlex.quote, [new_path, subcommand, description or entry.description])
             if len(entries) == 1:
-                command_string += f" {new_path} {subcommand} --description={description}"
+                command_string += f' {new_path} {subcommand} --description="{_description}"'
             else:
                 command_string = ' \\\n  '.join([
                     command_string,
                     f'--path={new_path}',
                     f'--command={subcommand}',
-                    f'--description={description}',
+                    f'--description="{_description}"',
                     '',
                 ])
         return_strings.append(command_string)
