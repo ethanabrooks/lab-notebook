@@ -23,7 +23,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--option', default=0)
 print(vars(parser.parse_args()))\
 """
-COMMAND = 'python test.py'
+COMMAND = 'python3 test.py'
 WORK_DIR = '/tmp/test-run-manager'
 DB_PATH = Path(WORK_DIR, 'runs.db')
 ROOT = WORK_DIR + '/.runs'
