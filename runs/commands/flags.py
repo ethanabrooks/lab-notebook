@@ -4,7 +4,8 @@ from typing import List
 
 from runs.database import DataBase
 from runs.logger import Logger
-from runs.util import RunPath
+from runs.transaction.transaction import natural_order
+from runs.util import RunPath, natural_order
 
 
 def add_subparser(subparsers):
@@ -34,7 +35,7 @@ def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, delimiter:
 def strings(*patterns, unless: List[RunPath], db: DataBase, delimiter: str):
     commands = [e.command for e in db.descendants(*patterns, unless=unless)]
     flag_dict = parse_flags(commands, delimiter=delimiter)
-    return [f'{f}{delimiter}{"|".join(v)}' for f, v in flag_dict.items()]
+    return [f'{f}{delimiter}{"|".join(sorted(v, key=natural_order))}' for f, v in flag_dict.items()]
 
 
 def parse_flags(commands: List[str], delimiter: str):

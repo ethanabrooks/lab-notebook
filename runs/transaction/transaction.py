@@ -1,8 +1,8 @@
-import re
-from collections import namedtuple
-from functools import wraps
 from pathlib import Path, PurePath
 from typing import List
+
+from collections import namedtuple
+from functools import wraps
 
 from runs.database import DataBase
 from runs.file_system import FileSystem
@@ -16,6 +16,7 @@ from runs.transaction.move import Move, MoveTransaction
 from runs.transaction.new import NewRunTransaction
 from runs.transaction.removal import RemovalTransaction
 from runs.transaction.sub_transaction import SubTransaction
+from runs.util import natural_order
 
 TransactionType = namedtuple('TransactionType', [
     'description_change',
@@ -24,10 +25,6 @@ TransactionType = namedtuple('TransactionType', [
     'move',
     'new_run',
 ])
-
-
-def natural_keys(text):
-    return [int(c) if c.isdigit() else c for c in re.split('(\d+)', text)]
 
 
 class Transaction:
@@ -74,7 +71,7 @@ class Transaction:
 
     def __exit__(self, *args):
         def sort(st: SubTransaction):
-            st.queue = sorted(st.queue, key=lambda x: natural_keys(str(x)))
+            st.queue = sorted(st.queue, key=lambda x: natural_order(str(x)))
 
         def validate(st: SubTransaction):
             st.validate()

@@ -1,4 +1,6 @@
 import argparse
+
+import re
 import shutil
 import subprocess
 from datetime import datetime
@@ -87,3 +89,7 @@ def interpolate_keywords(path, string):
     for word, replacement in keywords.items():
         string = string.replace(f'<{word}>', str(replacement))
     return string
+
+
+def natural_order(text):
+    return [int(c) if c.isdigit() else c for c in re.split('(\d+)', text)]
