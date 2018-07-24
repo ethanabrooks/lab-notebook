@@ -38,7 +38,7 @@ def strings(*patterns, unless: List[RunPath], db: DataBase, delimiter: str):
 
 
 def parse_flags(commands: List[str], delimiter: str):
-    flags = defaultdict(list)
+    flags = defaultdict(set)
     for command in commands:
         for word in command.split():
             if delimiter in command:
@@ -46,5 +46,5 @@ def parse_flags(commands: List[str], delimiter: str):
                 match = re.match(pattern, word)
                 if match:
                     key, delim, value = match.groups()
-                    flags[key].append(value)
+                    flags[key].add(value)
     return flags
