@@ -10,7 +10,8 @@ class TMUXSession:
 
     def new(self, window_name, command):
         self.kill()
-        self.cmd('tmux new -d -s'.split() + [self.name, '-n', window_name, command])
+        self.cmd('tmux new -d -s'.split() + [self.name, '-n', window_name])
+        self.cmd('tmux send-keys -t'.split() + [self.name, command, 'Enter'])
 
     def kill(self):
         self.cmd('tmux kill-session -t'.split() + [self.name], fail_ok=True)
