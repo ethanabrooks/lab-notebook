@@ -1,17 +1,15 @@
 import re
-import shlex
 from collections import defaultdict
-from typing import List, Optional
+from typing import List
 
 from runs.database import DataBase
 from runs.logger import Logger
-from runs.util import RunPath, highlight, interpolate_keywords
+from runs.util import RunPath
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'flags',
-        help='Print flags whose cross-product correspond to the queried runs.')
+        'flags', help='Print flags whose cross-product correspond to the queried runs.')
     parser.add_argument('patterns', nargs='+', type=RunPath)
     parser.add_argument(
         '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
@@ -48,4 +46,3 @@ def parse_flags(commands: List[str], delimiter: str):
                     key, delim, value = match.groups()
                     flags[key].append(value)
     return flags
-

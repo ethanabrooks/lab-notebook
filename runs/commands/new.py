@@ -101,7 +101,7 @@ def cli(prefix: str, paths: List[RunPath], commands: List[str], flags: List[str]
 
     for path in runs:
         for i, (command, flags, description) in enumerate(runs[path]):
-            new_path=path
+            new_path = path
             if len(runs[path]) > 1:
                 new_path = RunPath(path, str(i))
             new(path=new_path,

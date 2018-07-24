@@ -7,8 +7,8 @@ from importlib import import_module
 from pathlib import Path, PurePath
 from typing import List
 
-from runs.commands import (change_description, correlate, kill,
-                           lookup, ls, mv, new, reproduce, rm, table)
+from runs.commands import (change_description, correlate, kill, lookup, ls, mv,
+                           new, reproduce, rm, table)
 from runs.logger import Logger
 
 MAIN = 'main'
@@ -29,8 +29,7 @@ def pure_path_list(paths: str) -> List[PurePath]:
 
 
 def flag_list(flags_string: str) -> List[List[str]]:
-    return codecs.decode(
-        flags_string, encoding='unicode_escape').strip('\n').split('\n')
+    return codecs.decode(flags_string, encoding='unicode_escape').strip('\n').split('\n')
 
 
 def main(argv=sys.argv[1:]):
@@ -52,7 +51,6 @@ def main(argv=sys.argv[1:]):
             root=Path('.runs').absolute(),
             db_path=Path('runs.db').absolute(),
         )
-
 
     parser = argparse.ArgumentParser(
         epilog="The script will ask permission before running, deleting, moving, or "

@@ -40,8 +40,8 @@ def add_subparser(subparsers):
 @Logger.wrapper
 @DataBase.wrapper
 def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, flags: List[str],
-        prefix: str, overwrite: bool, path: Optional[RunPath], description: str,
-        *args, **kwargs):
+        prefix: str, overwrite: bool, path: Optional[RunPath], description: str, *args,
+        **kwargs):
     for string in strings(
             *patterns,
             unless=unless,
