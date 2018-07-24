@@ -26,6 +26,7 @@ def add_subparser(subparsers):
             action='append',
             type=RunPath,
             help=help,
+            metavar='PATH',
         )
 
     def command_arg(*arg, nargs, help):
@@ -36,6 +37,7 @@ def add_subparser(subparsers):
             action='append',
             type=str,
             help=help,
+            metavar='COMMAND',
         )
 
     paths_arg(nargs='?', help='Unique path assigned to new run.')
