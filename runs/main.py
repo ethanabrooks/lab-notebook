@@ -29,11 +29,8 @@ def pure_path_list(paths: str) -> List[PurePath]:
 
 
 def flag_list(flags_string: str) -> List[List[str]]:
-    if flags_string:
-        return codecs.decode(
-            flags_string, encoding='unicode_escape').strip('\n').split('\n')
-    else:
-        return []
+    return codecs.decode(
+        flags_string, encoding='unicode_escape').strip('\n').split('\n')
 
 
 def main(argv=sys.argv[1:]):
@@ -54,10 +51,8 @@ def main(argv=sys.argv[1:]):
         config[MAIN] = dict(
             root=Path('.runs').absolute(),
             db_path=Path('runs.db').absolute(),
-            dir_names=[],
-            prefix='',
-            flags=[],
         )
+
 
     parser = argparse.ArgumentParser(
         epilog="The script will ask permission before running, deleting, moving, or "
@@ -90,7 +85,7 @@ def main(argv=sys.argv[1:]):
         root=config[MAIN].get_path('root'),
         db_path=config[MAIN].get_path('db_path'),
         dir_names=config[MAIN].get_pure_path_list('dir_names', []),
-        flags=config[MAIN].get_flag_list(FLAGS, []))
+        flags=(config[MAIN].get_flag_list(FLAGS, [])))
 
     for subparser in [parser] + [
             adder(subparsers) for adder in [

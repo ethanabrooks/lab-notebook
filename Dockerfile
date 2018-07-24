@@ -9,7 +9,7 @@ RUN git config --global user.email "you@example.com"
 RUN git config --global user.name "Your Name"
 
 WORKDIR /usr/local/run_manager
-RUN pip3 install tabulate
+RUN pip3 install tabulate ipdb
 COPY setup.py .
 COPY README.rst .
 COPY runs-git .
