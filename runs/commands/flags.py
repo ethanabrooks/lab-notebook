@@ -13,6 +13,8 @@ def add_subparser(subparsers):
     parser.add_argument('patterns', nargs='+', type=RunPath)
     parser.add_argument(
         '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
+    parser.add_argument(
+        '--delimiter', default='=', help='Delimiter for flag patterns.')
     return parser
 
 
@@ -32,7 +34,7 @@ def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, delimiter:
 def strings(*patterns, unless: List[RunPath], db: DataBase, delimiter: str):
     commands = [e.command for e in db.descendants(*patterns, unless=unless)]
     flag_dict = parse_flags(commands, delimiter=delimiter)
-    return [f'{f}{delimiter}{"|".join(*v)}' for f, v in flag_dict.items()]
+    return [f'{f}{delimiter}{"|".join(v)}' for f, v in flag_dict.items()]
 
 
 def parse_flags(commands: List[str], delimiter: str):
