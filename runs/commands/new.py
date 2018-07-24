@@ -124,8 +124,7 @@ def parse_flag(flag, delims='=| '):
 
 def generate_runs(flags: List[str]) -> Tuple[RunPath, List[str]]:
     flags = [parse_flag(flag) for flag in flags]
-    product = list(itertools.product(*flags))
-    return product
+    return itertools.product(*flags)
 
 
 def build_command(command: str, path: RunPath, prefix: str, flags: List[str]) -> str:
