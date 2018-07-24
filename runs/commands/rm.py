@@ -17,11 +17,7 @@ def add_subparser(subparsers):
         '(not partial) match of this sql pattern.',
         type=RunPath)
     parser.add_argument(
-        '--unless',
-        nargs='*',
-        type=RunPath,
-        help='Print list of path names without tree '
-        'formatting.')
+        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
     return parser
 
 

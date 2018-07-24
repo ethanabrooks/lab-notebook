@@ -33,11 +33,7 @@ def add_subparser(subparsers):
         'have an existing number incremented. With this flag, the reproduced run '
         'just gets overwritten.')
     parser.add_argument(
-        '--unless',
-        nargs='*',
-        type=RunPath,
-        help='Print list of path names without tree '
-        'formatting.')
+        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
     return parser
 
 
