@@ -44,7 +44,7 @@ def move(*src_patterns, unless: List[RunPath], dest_path: str, kill_tmux: bool,
          transaction: Transaction):
     db = transaction.db
     for src_pattern in src_patterns:
-        src_entries = db.descendants(src_pattern, unless=unless)
+        src_entries = db.get(src_pattern, unless=unless)
 
         def is_dir(pattern):
             return pattern == RunPath('.') or \

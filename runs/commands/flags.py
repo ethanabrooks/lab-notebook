@@ -33,7 +33,7 @@ def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, delimiter:
 
 
 def strings(*patterns, unless: List[RunPath], db: DataBase, delimiter: str):
-    commands = [e.command for e in db.descendants(*patterns, unless=unless)]
+    commands = [e.command for e in db.get(patterns, unless=unless)]
     flag_dict = parse_flags(commands, delimiter=delimiter)
     return [f'{f}{delimiter}{"|".join(sorted(v, key=natural_order))}' for f, v in flag_dict.items()]
 
