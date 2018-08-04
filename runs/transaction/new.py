@@ -28,6 +28,8 @@ class NewRunTransaction(SubTransaction):
         tmux.new(window_name=run.description, command=run.command)
         self.db.append(run)
         self.ui.print(
+            highlight('Path:'),
+            str(run.path),
             highlight('Description:'),
             run.description,
             highlight('Command sent to session:'),
