@@ -1,8 +1,7 @@
-from pathlib import Path, PurePath
-from typing import List
-
 from collections import namedtuple
 from functools import wraps
+from pathlib import Path, PurePath
+from typing import List
 
 from runs.database import DataBase
 from runs.file_system import FileSystem

@@ -16,10 +16,7 @@ def add_subparser(subparsers):
         '--show-attrs',
         action='store_true',
         help='Print run attributes in addition to names.')
-    parser.add_argument(
-        '--depth',
-        type=int,
-        help='Depth of tree to print.')
+    parser.add_argument('--depth', type=int, help='Depth of tree to print.')
     parser.add_argument(
         '--porcelain',
         action='store_true',
@@ -34,20 +31,32 @@ def add_subparser(subparsers):
 @DataBase.wrapper
 def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, porcelain: bool,
         depth, *args, **kwargs):
-    db.logger.print(string(*patterns, db=db, porcelain=porcelain, unless=unless,
-                           depth=depth,))
+    db.logger.print(
+        string(
+            *patterns,
+            db=db,
+            porcelain=porcelain,
+            unless=unless,
+            depth=depth,
+        ))
 
 
-def string(*patterns, db: DataBase, porcelain: bool = True,
-           unless: List[RunPath] = None, depth: int = None) -> str:
+def string(*patterns,
+           db: DataBase,
+           porcelain: bool = True,
+           unless: List[RunPath] = None,
+           depth: int = None) -> str:
     return '\n'.join(
-        map(str, paths(*patterns, db=db, porcelain=porcelain, unless=unless, depth=depth)))
+        map(str, paths(*patterns, db=db, porcelain=porcelain, unless=unless,
+                       depth=depth)))
 
 
-def paths(*patterns, db: DataBase, porcelain: bool = True,
-          unless: List[RunPath] = None, depth: int = None) -> List[str]:
-    entries = db.get(
-        patterns, unless=unless) if patterns else db.all(unless=unless)
+def paths(*patterns,
+          db: DataBase,
+          porcelain: bool = True,
+          unless: List[RunPath] = None,
+          depth: int = None) -> List[str]:
+    entries = db.get(patterns, unless=unless) if patterns else db.all(unless=unless)
     _paths = [e.path for e in entries]
     return _paths if porcelain else tree_strings(build_tree(_paths), depth=depth)
 
@@ -80,6 +89,5 @@ def tree_strings(tree, prefix='', root_prefix='', root='.', depth=None):
                     prefix=prefix,
                     root_prefix='├── ' if _next else '└── ',
                     root=root,
-                    depth=None if depth is None else depth - 1
-            ):
+                    depth=None if depth is None else depth - 1):
                 yield RunPath(s)
