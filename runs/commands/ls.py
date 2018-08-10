@@ -41,8 +41,8 @@ def string(*patterns, db: DataBase, porcelain: bool = True,
 
 def paths(*patterns, db: DataBase, porcelain: bool = True,
           unless: List[RunPath] = None) -> List[str]:
-    entries = db.descendants(
-        *patterns, unless=unless) if patterns else db.all(unless=unless)
+    entries = db.get(
+        patterns, unless=unless) if patterns else db.all(unless=unless)
     _paths = [e.path for e in entries]
     return _paths if porcelain else tree_strings(build_tree(_paths))
 

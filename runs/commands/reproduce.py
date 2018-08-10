@@ -59,7 +59,7 @@ def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], pr
             overwrite: bool, path: Optional[RunPath], description: Optional[str]):
     entry_dict = defaultdict(list)
     return_strings = [highlight('To reproduce:')]
-    for entry in db.descendants(*patterns, unless=unless):
+    for entry in db.get(patterns, unless=unless):
         entry_dict[entry.commit].append(entry)
     for commit, entries in entry_dict.items():
         return_strings.append(f'git checkout {commit}')
