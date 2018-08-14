@@ -30,23 +30,27 @@ def add_subparser(subparsers):
         type=int,
         default=100,
         help='Maximum width of table columns. Longer values will '
-        'be truncated and appended with "...".')
+             'be truncated and appended with "...".')
+    parser.add_argument(
+        '--porcelain', action='store_true',
+        help='This option toggles csv print out (as opposed to formatted print from tabulate)')
     return parser
 
 
 @Logger.wrapper
 @DataBase.wrapper
 def cli(pattern: List[RunPath], unless: List[RunPath], db: DataBase, columns: List[str],
-        column_width: int, *args, **kwargs):
+        column_width: int, porcelain, *args, **kwargs):
     db.logger.print(
         string(
             *pattern, unless=unless, db=db, columns=columns, column_width=column_width))
 
 
 def string(*patterns,
-           unless: Optional[List[RunPath]] = None,
+           unless: List[RunPath] = None,
            db: DataBase,
-           columns=None,
+           columns: List[str] = None,
+           porcelain: bool,
            column_width: int = 100):
     if columns is None:
         columns = DEFAULT_COLUMNS
@@ -63,6 +67,8 @@ def string(*patterns,
 
     headers = sorted(columns)
     entries = db.descendants(*patterns, unless=unless) if patterns else db.all()
-    db = [[e.path] + [get_values(e, key) for key in headers]
-          for e in sorted(entries, key=lambda e: e.path)]
-    return tabulate(db, headers=headers)
+    table = [[e.path] + [get_values(e, key) for key in headers]
+             for e in sorted(entries, key=lambda e: e.path)]
+    if porcelain:
+        return '\n'.join([','.join(r) for r in table])
+    return tabulate(table, headers=headers)
