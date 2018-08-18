@@ -68,7 +68,7 @@ class DataBase:
     def query(func):
         @wraps(func)
         def query_wrapper(db, query_args: QueryArgs, *args, **kwargs):
-            runs = db.get(**query_args._asdict())
+            runs = db.get(**(query_args._asdict()))
             return func(*args, **kwargs, runs=runs, db=db)
 
         return DataBase.bundle_query_args(query_wrapper)
@@ -115,12 +115,11 @@ class DataBase:
         if unless:
             string += f' EXCEPT {self.select(like=unless)}'
         if order:
-            invalid_keys = set(order) - set(self.fields)
-            if invalid_keys:
+            if order not in self.fields:
                 self.logger.exit('The following keys are invalid: '
                                  f'{", ".join(invalid_keys)}')
 
-            string += f' ORDER BY {", ".join(order)}'
+            string += f' ORDER BY {order}'
         return string
 
     def execute(self,

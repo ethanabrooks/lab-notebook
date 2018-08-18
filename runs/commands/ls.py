@@ -14,7 +14,7 @@ def add_subparser(subparsers):
 
     default_flags = copy(DEFAULT_QUERY_FLAGS)
     default_flags['patterns'].update(default='%', nargs='*')
-    add_query_flags(parser, with_sort=False, default_flags=default_flags)
+    add_query_flags(parser, with_sort=True, default_flags=default_flags)
 
     parser.add_argument(
         '--show-attrs',
