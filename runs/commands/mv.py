@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from copy import copy
 from itertools import zip_longest
@@ -49,23 +50,32 @@ def cli(query_args: QueryArgs, destination: PurePath, kill_tmux: bool, transacti
         transaction=transaction)
 
 
+def add_root(path):
+    return './' + re.sub('\A\.\/', '', str(path))
+
+
+def add_slash(path):
+    return str(path).rstrip('/') + '/'
+
+
 def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool,
          transaction: Transaction, db: DataBase):
     dest_path_is_dir = any([dest_path == PurePath('.'),
                             f'{dest_path}/%' in db,
                             str(dest_path).endswith('/')])
     if dest_path_is_dir:
-        dest_path = str(dest_path) + '/'
+        dest_path = add_slash(dest_path)
 
     for src_pattern in query_args.patterns:
         src_to_dest = defaultdict(list)
         src_entries = db.get(**query_args._replace(patterns=[src_pattern])._asdict())
-        part_to_replace = src_pattern  # TODO
+        part_to_replace = add_root(src_pattern)  # TODO
         if dest_path_is_dir:
-            part_to_replace = str(src_pattern.parent) + '/'
+            part_to_replace = add_root(add_slash(src_pattern.parent))
         for entry in src_entries:
+            path = add_root(entry.path)
             src_to_dest[entry.path] += [
-                str(entry.path).replace(str(part_to_replace),str(dest_path))]
+                path.replace(str(part_to_replace), str(dest_path))]
 
         for src, dests in src_to_dest.items():
             for i, dest in enumerate(dests):

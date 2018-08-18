@@ -293,10 +293,10 @@ def test_move_dirs():
         # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/test_run', 'new_dir/test_run'
 
-    # with _setup('sub/test_run'), _setup('new_dir/test_run2'):
-    #     move('sub', 'new_dir')
-    #     # src is dir and dest is dir -> move src into dest and bring children
-    #     yield check_move, 'sub/test_run', 'new_dir/sub/test_run'
+    with _setup('sub/test_run'), _setup('sub2/test_run2'):
+        move('sub', 'sub2')
+        # src is dir and dest is dir -> move src into dest and bring children
+        yield check_move, 'sub/test_run', 'sub2/sub/test_run'
 
     with _setup('sub/sub1/test_run'):
         move('sub/sub1/', '.')
@@ -320,10 +320,10 @@ def test_move_dirs():
         # dest is dir -> move node into dest
         yield check_move, 'sub1/test_run1', 'sub2/test_run1'
 
-    # with _setup('sub1/sub1/test_run1'), _setup('sub2/test_run2'):
-    #     move('sub1/sub1', 'sub2')
-    #     # dest is dir and src is dir -> move node into dest
-    #     yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
+    with _setup('sub1/sub1/test_run1'), _setup('sub2/test_run2'):
+        move('sub1/sub1', 'sub2')
+        # dest is dir and src is dir -> move node into dest
+        yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
 
     with _setup('test_run1', flags=['--run1']), _setup('test_run2', flags=['run2']):
         move('test_run1', 'test_run2')
