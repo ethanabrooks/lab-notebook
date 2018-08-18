@@ -31,5 +31,5 @@ class TMUXSession:
 
     @staticmethod
     def active_runs(logger):
-        tmux = TMUXSession.list(logger)
-        return [s.replace(',', '%') for s in tmux.list()]
+        runs = TMUXSession.list(logger)
+        return [r.replace(',', '%') for r in runs]
