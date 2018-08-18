@@ -1,13 +1,12 @@
 from typing import Optional
 
 from runs.transaction.transaction import Transaction
-from runs.util import RunPath
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('change-description', help='Edit description of run.')
     parser.add_argument(
-        'path', help='Name of run whose description you want to edit.', type=RunPath)
+        'path', help='Name of run whose description you want to edit.', type=PurePath)
     parser.add_argument(
         'description',
         nargs='?',
@@ -18,7 +17,7 @@ def add_subparser(subparsers):
 
 
 @Transaction.wrapper
-def cli(transaction: Transaction, path: RunPath, description: Optional[str], *args,
+def cli(transaction: Transaction, path: PurePath, description: Optional[str], *args,
         **kwargs):
     entry = transaction.db.entry(path)
     transaction.change_description(

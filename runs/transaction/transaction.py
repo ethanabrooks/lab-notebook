@@ -8,6 +8,7 @@ from runs.file_system import FileSystem
 from runs.logger import UI
 from runs.run_entry import RunEntry
 from runs.shell import Bash
+from runs.tmux_session import TMUXSession
 from runs.transaction.change_description import (ChangeDescriptionTransaction,
                                                  DescriptionChange)
 from runs.transaction.kill import KillTransaction
@@ -30,23 +31,26 @@ class Transaction:
     @staticmethod
     def wrapper(func):
         @wraps(func)
-        def _wrapper(db_path, root, dir_names, quiet, assume_yes, *args, **kwargs):
-            transaction = Transaction(
-                db_path=db_path,
-                root=root,
-                dir_names=dir_names,
-                quiet=quiet,
-                assume_yes=assume_yes)
-            with transaction as open_transaction:
-                return func(transaction=open_transaction, *args, **kwargs)
+        def _wrapper(db_path, quiet, assume_yes, root, dir_names, *args, **kwargs):
+            ui = UI(assume_yes=assume_yes, quiet=quiet)
+            with DataBase(path=db_path, logger=ui) as db:
+                transaction = Transaction(
+                    ui=ui,
+                    db=db,
+                    root=root,
+                    dir_names=dir_names, )
+                with transaction as open_transaction:
+                    return func(db=db,
+                                logger=ui,
+                                bash=open_transaction.bash,
+                                transaction=open_transaction, *args, **kwargs)
 
         return _wrapper
 
-    def __init__(self, db_path: Path, quiet: bool, assume_yes: bool, root: Path,
+    def __init__(self, db: DataBase, ui: UI, root: PurePath,
                  dir_names: List[str]):
-        self.ui = UI(quiet=quiet, assume_yes=assume_yes)
-        self.db = DataBase(path=db_path, logger=self.ui)
-
+        self.ui = ui
+        self.db = db
         self.bash = Bash(logger=self.ui)
         file_system = FileSystem(root=root, dir_names=dir_names)
         kwargs = dict(
@@ -65,7 +69,6 @@ class Transaction:
         )
 
     def __enter__(self):
-        self.db = self.db.__enter__()
         return self
 
     def __exit__(self, *args):
@@ -84,8 +87,6 @@ class Transaction:
                 assert isinstance(sub_transaction, SubTransaction)
                 if sub_transaction.queue:
                     process(sub_transaction)
-
-        self.db.__exit__(*args)
 
     def add_run(self, path: PurePath, command: str, commit: str, datetime: str,
                 description: str):

@@ -3,20 +3,21 @@ import shlex
 from collections import defaultdict
 from typing import List, Optional
 
-from runs.database import DataBase
+from runs.database import DataBase, add_query_flags
 from runs.logger import Logger
-from runs.util import RunPath, highlight, interpolate_keywords
+from runs.run_entry import RunEntry
+from runs.util import PurePath, highlight, interpolate_keywords
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'reproduce',
-        help='Print commands to reproduce a run. This command '
+        help='Print commands to reproduce a run or runs. This command '
         'does not have side-effects (besides printing).')
-    parser.add_argument('patterns', nargs='+', type=RunPath)
+    add_query_flags(parser, with_sort=False)
     parser.add_argument(
         '--path',
-        type=RunPath,
+        type=PurePath,
         default=None,
         help="This is for cases when you want to run the reproduced command on a new path."
     )
@@ -32,34 +33,30 @@ def add_subparser(subparsers):
         help='Without this flag, runs paths either get a number appended to them or '
         'have an existing number incremented. With this flag, the reproduced run '
         'just gets overwritten.')
-    parser.add_argument(
-        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
     return parser
 
 
-@Logger.wrapper
-@DataBase.wrapper
-def cli(patterns: List[RunPath], unless: List[RunPath], db: DataBase, flags: List[str],
-        prefix: str, overwrite: bool, path: Optional[RunPath], description: str, *args,
-        **kwargs):
+@DataBase.query
+@DataBase.open
+def cli(runs: List[RunEntry], flags: List[str], logger: Logger, db: DataBase, prefix: str,
+        overwrite: bool, path: Optional[PurePath], description: str, *args, **kwargs):
     for string in strings(
-            *patterns,
-            unless=unless,
             db=db,
+            runs=runs,
             flags=flags,
             prefix=prefix,
             overwrite=overwrite,
             path=path,
             description=description,
     ):
-        db.logger.print(string)
+        logger.print(string)
 
 
-def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], prefix: str,
-            overwrite: bool, path: Optional[RunPath], description: Optional[str]):
+def strings(runs: List[RunEntry], flags: List[str], prefix: str, db: DataBase,
+            overwrite: bool, path: Optional[PurePath], description: Optional[str]):
     entry_dict = defaultdict(list)
     return_strings = [highlight('To reproduce:')]
-    for entry in db.get(patterns, unless=unless):
+    for entry in runs:
         entry_dict[entry.commit].append(entry)
     for commit, entries in entry_dict.items():
         return_strings.append(f'git checkout {commit}')
@@ -71,7 +68,7 @@ def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], pr
                 db=db,
                 overwrite=overwrite)
             subcommand = get_command_string(
-                path=RunPath(new_path), prefix=prefix, command=entry.command, flags=flags)
+                path=PurePath(new_path), prefix=prefix, command=entry.command, flags=flags)
             new_path, subcommand, _description = map(
                 shlex.quote, [new_path, subcommand, description or entry.description])
             if len(entries) == 1:
@@ -88,7 +85,7 @@ def strings(*patterns, unless: List[RunPath], db: DataBase, flags: List[str], pr
     return return_strings
 
 
-def get_path_string(path: RunPath, i: Optional[int], db: DataBase,
+def get_path_string(path: PurePath, i: Optional[int], db: DataBase,
                     overwrite: bool) -> str:
     path = str(path)
     if i:
@@ -106,7 +103,7 @@ def get_path_string(path: RunPath, i: Optional[int], db: DataBase,
     return path
 
 
-def get_command_string(path: RunPath, prefix: str, command: str, flags: List[str]) -> str:
+def get_command_string(path: PurePath, prefix: str, command: str, flags: List[str]) -> str:
     flags = [interpolate_keywords(path, f) for f in flags]
     for s in flags + [prefix]:
         command = command.replace(s, '')

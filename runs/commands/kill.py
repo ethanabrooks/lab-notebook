@@ -1,32 +1,21 @@
+from copy import copy
 from typing import List
 
+from runs.database import add_query_flags, DataBase, DEFAULT_QUERY_FLAGS
+from runs.run_entry import RunEntry
 from runs.transaction.transaction import Transaction
-from runs.util import RunPath
-from runs.tmux_session import TMUXSession
-from runs.shell import Bash
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('kill', help="Kill selected TMUX sessions.")
-    parser.add_argument(
-        'patterns',
-        nargs='*',
-        help=
-        'This script will only delete entries in the database whose names are a complete '
-        '(not partial) match of this glob pattern.',
-        type=RunPath)
-    parser.add_argument(
-        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
-    parser.add_argument(
-        '--active', action='store_true', help='Kill all active runs.')
+    default_flags = copy(DEFAULT_QUERY_FLAGS)
+    default_flags['patterns'].update(help='Pattern of runs to kill')
+    add_query_flags(parser, with_sort=False, default_flags=default_flags)
     return parser
 
 
 @Transaction.wrapper
-def cli(patterns: List[RunPath], unless: List[RunPath], active: bool,
-        transaction: Transaction, *args, **kwargs):
-    if active:
-        tmux = TMUXSession(path='dummy', bash=Bash(transaction.db.logger))
-        patterns = [s.replace(',', '%') for s in tmux.list()]
-    for path in set(run.path for run in transaction.db.get(patterns, unless=unless)):
+@DataBase.query
+def cli(runs: List[RunEntry], transaction: Transaction, *args, **kwargs):
+    for path in set(run.path for run in runs):
         transaction.kill(path)

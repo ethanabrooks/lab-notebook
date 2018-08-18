@@ -6,14 +6,6 @@ import runs
 class Logger:
     exists = False
 
-    @staticmethod
-    def wrapper(func):
-        @wraps(func)
-        def _wrapper(quiet, *args, **kwargs):
-            return func(*args, **kwargs, logger=Logger(quiet=quiet))
-
-        return _wrapper
-
     def __init__(self, quiet):
         # TODO: make this class singleton somehow
         # if Logger.exists:

@@ -1,27 +1,29 @@
+from copy import copy
 from typing import List
 
+from runs.database import add_query_flags, DataBase, DEFAULT_QUERY_FLAGS
+from runs.run_entry import RunEntry
 from runs.transaction.transaction import Transaction
-from runs.util import RunPath
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'rm',
         help="Delete runs from the database (and all associated tensorboard "
-        "and checkpoint files).")
-    parser.add_argument(
-        'patterns',
-        nargs='+',
-        help=
-        'This script will only delete entries in the database whose names are a complete '
-        '(not partial) match of this sql pattern.',
-        type=RunPath)
-    parser.add_argument(
-        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
+             "and checkpoint files).")
+    default_flags = copy(DEFAULT_QUERY_FLAGS)
+    default_flags['patterns'].update(help=
+                                     'This script will only delete entries in the database whose names are a complete '
+                                     '(not partial) match of this sql pattern.')
+    add_query_flags(
+        parser,
+        with_sort=False,
+        default_flags=default_flags)
     return parser
 
 
 @Transaction.wrapper
-def cli(patterns: List[RunPath], unless: List[RunPath], transaction, *args, **kwargs):
-    for path in set(run.path for run in transaction.db.get(patterns, unless=unless)):
+@DataBase.query
+def cli(runs: List[RunEntry], transaction, *args, **kwargs):
+    for path in set(run.path for run in runs):
         transaction.remove(path)

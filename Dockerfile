@@ -17,4 +17,4 @@ COPY runs runs/
 RUN pip3 install -e .
 
 #RUN echo 'alias t="python3 -m unittest runs/tests.py"' > /root/.bashrc
-CMD ["nosetests", "-x"]
+CMD ["nosetests", "-x", "-s", "runs/tests.py:test_move_dirs"]

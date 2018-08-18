@@ -5,8 +5,10 @@ from datetime import datetime
 from pathlib import PurePath
 from typing import List, Tuple
 
+from runs.database import DataBase
+from runs.logger import UI
 from runs.transaction.transaction import Transaction
-from runs.util import RunPath, interpolate_keywords
+from runs.util import PurePath, interpolate_keywords
 
 
 def add_subparser(subparsers):
@@ -24,7 +26,7 @@ def add_subparser(subparsers):
             nargs=nargs,
             dest='paths',
             action='append',
-            type=RunPath,
+            type=PurePath,
             help=help,
             metavar='PATH',
         )
@@ -75,23 +77,24 @@ def add_subparser(subparsers):
 
 
 @Transaction.wrapper
-def cli(prefix: str, paths: List[RunPath], commands: List[str], flags: List[str],
+def cli(prefix: str, paths: List[PurePath], commands: List[str],
+        flags: List[str], logger: UI,
         descriptions: List[str], transaction: Transaction, *args, **kwargs):
     paths = [p for p in paths if p]
     commands = [c for c in commands if c]
     if len(paths) == 0:
-        transaction.ui.exit('Must provide at least one path.')
+        logger.exit('Must provide at least one path.')
     if len(commands) == 0:
-        transaction.ui.exit('Must provide at least one command.')
+        logger.exit('Must provide at least one command.')
     if descriptions is None:
         descriptions = [''] * len(commands)
     elif len(descriptions) == 1:
         descriptions *= len(paths)
         if not len(paths) == len(commands):
-            transaction.ui.exit(
+            logger.exit(
                 'Number of paths must be the same as the number of commands')
     elif not len(paths) == len(commands) == len(descriptions):
-        transaction.ui.exit(
+        logger.exit(
             f'Got {len(paths)} paths, {len(commands)} commands, and {len(descriptions)} descriptions.'
             f'These numbers should all be the same so that they can be collated.')
     runs = defaultdict(list)
@@ -103,7 +106,7 @@ def cli(prefix: str, paths: List[RunPath], commands: List[str], flags: List[str]
         for i, (command, flags, description) in enumerate(runs[path]):
             new_path = path
             if len(runs[path]) > 1:
-                new_path = RunPath(path, str(i))
+                new_path = PurePath(path, str(i))
             new(path=new_path,
                 prefix=prefix,
                 command=command,
@@ -122,12 +125,12 @@ def parse_flag(flag, delims='=| '):
         return flag.split('|')
 
 
-def generate_runs(flags: List[str]) -> Tuple[RunPath, List[str]]:
+def generate_runs(flags: List[str]) -> Tuple[PurePath, List[str]]:
     flags = [parse_flag(flag) for flag in flags]
     return itertools.product(*flags)
 
 
-def build_command(command: str, path: RunPath, prefix: str, flags: List[str]) -> str:
+def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -> str:
     if prefix:
         command = f'{prefix} {command}'
     flags = ' '.join(interpolate_keywords(path, f) for f in flags)
@@ -136,7 +139,7 @@ def build_command(command: str, path: RunPath, prefix: str, flags: List[str]) ->
     return command
 
 
-def new(path: RunPath, prefix: str, command: str, description: str, flags: List[str],
+def new(path: PurePath, prefix: str, command: str, description: str, flags: List[str],
         transaction: Transaction):
     bash = transaction.bash
     full_command = build_command(command, path, prefix, flags)

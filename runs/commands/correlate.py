@@ -3,19 +3,15 @@ import re
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
-from runs.database import DataBase
+from runs.database import DataBase, add_query_flags
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.util import RunPath
+from runs.util import PurePath
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('correlate', help='Rank flags by Pearson correlation.')
-    parser.add_argument(
-        'patterns',
-        nargs='*',
-        help='Analyze the flags associated with these runs',
-        type=RunPath)
+    add_query_flags(parser, with_sort=False)
     parser.add_argument(
         'path_to_value',
         type=Path,
@@ -23,23 +19,13 @@ def add_subparser(subparsers):
         'a scalar value. It will calculate the pearson correlation between '
         'flags and this value. The keyword <path> will be replaced '
         'by the path of the run.')
-    parser.add_argument(
-        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the search.')
     return parser
 
 
-@Logger.wrapper
-@DataBase.wrapper
-def cli(patterns: List[RunPath], db: DataBase, unless: List[RunPath], path_to_value: Path,
-        *args, **kwargs):
-    db.logger.print(
-        *strings(
-            'correlation, flag',
-            *patterns,
-            db=db,
-            unless=unless,
-            path_to_value=path_to_value),
-        sep='\n')
+@DataBase.open
+@DataBase.query
+def cli(logger: Logger, runs: List[RunEntry], path_to_value: Path, *args, **kwargs):
+    logger.print(*strings(runs=runs, path_to_value=path_to_value), sep='\n')
 
 
 def strings(*args, **kwargs):
@@ -53,16 +39,14 @@ def get_flags(command: str) -> List[str]:
     return findall
 
 
-def correlations(*patterns,
-                 db: DataBase,
-                 path_to_value: Path,
-                 unless: List[RunPath] = None) -> Dict[str, float]:
-    runs = db.get(patterns, unless=unless)
-
+def correlations(
+        runs: List[RunEntry],
+        path_to_value: Path,
+) -> Dict[str, float]:
     def mean(f: Callable) -> float:
         return sum(map(f, runs)) / float(len(runs))
 
-    def get_value(path: RunPath) -> Optional[float]:
+    def get_value(path: PurePath) -> Optional[float]:
         try:
             with Path(str(path_to_value).replace('<path>', str(path))).open() as f:
                 return float(f.read())

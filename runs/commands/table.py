@@ -1,10 +1,10 @@
-from typing import List, Optional
+from typing import List
 
 from tabulate import tabulate
 
-from runs.database import DataBase
+from runs.database import DataBase, add_query_flags
 from runs.logger import Logger
-from runs.util import RunPath
+from runs.run_entry import RunEntry
 
 DEFAULT_COLUMNS = ['commit', 'datetime', 'description', 'command']
 
@@ -12,13 +12,7 @@ DEFAULT_COLUMNS = ['commit', 'datetime', 'description', 'command']
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'table', help='Display contents of run database as a table.')
-    parser.add_argument(
-        'pattern',
-        nargs='*',
-        help='Only display paths matching this pattern.',
-        type=RunPath)
-    parser.add_argument(
-        '--unless', nargs='*', type=RunPath, help='Exclude these paths from the output.')
+    add_query_flags(parser, with_sort=True)
     parser.add_argument(
         '--columns',
         nargs='*',
@@ -30,27 +24,27 @@ def add_subparser(subparsers):
         type=int,
         default=100,
         help='Maximum width of table columns. Longer values will '
-             'be truncated and appended with "...".')
+        'be truncated and appended with "...".')
     parser.add_argument(
-        '--porcelain', action='store_true',
-        help='This option toggles csv print out (as opposed to formatted print from tabulate)')
+        '--porcelain',
+        action='store_true',
+        help=
+        'This option toggles csv print out (as opposed to formatted print from tabulate)')
     return parser
 
 
-@Logger.wrapper
-@DataBase.wrapper
-def cli(pattern: List[RunPath], unless: List[RunPath], db: DataBase, columns: List[str],
-        column_width: int, porcelain, *args, **kwargs):
-    db.logger.print(
+@DataBase.query
+@DataBase.open
+def cli(runs: List[RunEntry], logger: Logger, columns: List[str], column_width: int,
+        porcelain, *args, **kwargs):
+    logger.print(
         string(
-            *pattern, unless=unless, db=db, columns=columns, column_width=column_width))
+            runs=runs, columns=columns, porcelain=porcelain, column_width=column_width))
 
 
-def string(*patterns,
-           unless: List[RunPath] = None,
-           db: DataBase,
-           columns: List[str] = None,
+def string(runs: List[RunEntry],
            porcelain: bool,
+           columns: List[str] = None,
            column_width: int = 100):
     if columns is None:
         columns = DEFAULT_COLUMNS
@@ -66,9 +60,8 @@ def string(*patterns,
             return '_'
 
     headers = sorted(columns)
-    entries = db.descendants(*patterns, unless=unless) if patterns else db.all()
     table = [[e.path] + [get_values(e, key) for key in headers]
-             for e in sorted(entries, key=lambda e: e.path)]
+             for e in sorted(runs, key=lambda e: e.path)]
     if porcelain:
         return '\n'.join([','.join(r) for r in table])
     return tabulate(table, headers=headers)

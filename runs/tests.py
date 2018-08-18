@@ -141,25 +141,22 @@ def check_tmux(path):
 def check_db(path, flags):
     with DB as db:
         # check known values
+        runs = db.get(path + '%')
         assert_in(DESCRIPTION, lookup.string(
-            path + '%',
-            db=db,
+            runs=runs,
             key='description',
         ))
         assert_in(COMMAND, lookup.string(
-            path + '%',
-            db=db,
+            runs=runs,
             key='command',
         ))
         assert_in(path, lookup.string(
-            path + '%',
-            db=db,
+            runs=runs,
             key='path',
         ))
         for flag in flags:
             assert_in(flag, lookup.string(
-                path + '%',
-                db=db,
+                runs=runs,
                 key='command',
             ))
 
@@ -176,7 +173,7 @@ def check_tmux_killed(path):
 
 def check_del_entry(path):
     with DB as db:
-        assert_not_in(path, ls.paths(path, db=db))
+        assert_not_in(path, db.get(path))
 
 
 def check_rm_files(path):
@@ -187,13 +184,14 @@ def check_rm_files(path):
 
 def check_list_happy(pattern):
     with DB as db:
-        string = ls.string(pattern, db=db)
+        runs = db.get(pattern)
+        string = ls.string(runs=runs)
         assert_in('test_run', string)
 
 
 def check_list_sad(pattern):
     with DB as db:
-        string = ls.string(pattern, db=db, porcelain=True)
+        string = ls.string(runs=db.get([pattern]), porcelain=True)
         eq_(string, '')
 
 
@@ -243,7 +241,7 @@ def test_list():
 
 def test_table():
     with _setup(TEST_RUN), DB as db:
-        string = table.string(db=db)
+        string = table.string(runs=db.all(), porcelain=False)
         yield check_table, string
 
 
@@ -251,7 +249,7 @@ def test_lookup():
     with _setup(TEST_RUN), DB as db:
         for key, value in dict(
                 path=TEST_RUN, description=DESCRIPTION, command=COMMAND).items():
-            assert_in(value, lookup.string(PurePath(TEST_RUN), db=db, key=key))
+            assert_in(value, lookup.string(runs=db.get([TEST_RUN]), key=key))
         with assert_raises(SystemExit):
             run_main('lookup', 'x', TEST_RUN)
 
@@ -261,7 +259,7 @@ def test_chdesc():
         description = 'new description'
         run_main('change-description', TEST_RUN, description)
         assert_in(description, lookup.string(
-            PurePath(TEST_RUN), db=db, key='description'))
+            runs=db.get([TEST_RUN]), key='description'))
 
 
 def test_move():
@@ -333,7 +331,7 @@ def test_move_dirs():
         yield check_move, 'test_run1', 'test_run2'
         with DB as db:
             assert_in('--run1', lookup.string(
-                PurePath('test_run2'), db=db, key='command'))
+                runs=db.get(['test_run2']), key='command'))
 
     with _setup('test'):
         move('test', 'test/test2')

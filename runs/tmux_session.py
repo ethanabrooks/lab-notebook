@@ -4,7 +4,7 @@ from runs.shell import Bash
 
 
 class TMUXSession:
-    def __init__(self, path: PurePath, bash: Bash):
+    def __init__(self, bash: Bash, path: PurePath = None):
         self.name = str(path).replace('.', ',').replace(':', ';')
         self.cmd = bash.cmd
 
@@ -12,9 +12,6 @@ class TMUXSession:
         self.kill()
         self.cmd('tmux new -d -s'.split() + [self.name, '-n', window_name])
         self.cmd('tmux send-keys -t'.split() + [self.name, command, 'Enter'])
-
-    def list(self):
-        return self.cmd("tmux list-session -F #{session_name}".split()).split('\n')
 
     def kill(self):
         self.cmd('tmux kill-session -t'.split() + [self.name], fail_ok=True)
@@ -26,3 +23,13 @@ class TMUXSession:
 
     def __str__(self):
         return self.name
+
+    @staticmethod
+    def list(logger):
+        bash = Bash(logger)
+        return bash.cmd("tmux list-session -F #{session_name}".split()).split('\n')
+
+    @staticmethod
+    def active_runs(logger):
+        tmux = TMUXSession.list(logger)
+        return [s.replace(',', '%') for s in tmux.list()]
