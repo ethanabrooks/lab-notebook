@@ -119,7 +119,7 @@ class DataBase:
                 self.logger.exit('The following keys are invalid: '
                                  f'{", ".join(invalid_keys)}')
 
-            string += f' ORDER BY {order}'
+            string += f' ORDER BY "{order}"'
         return string
 
     def execute(self,
