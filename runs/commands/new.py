@@ -5,7 +5,6 @@ from datetime import datetime
 from pathlib import PurePath
 from typing import List, Tuple
 
-from runs.database import DataBase
 from runs.logger import UI
 from runs.transaction.transaction import Transaction
 from runs.util import PurePath, interpolate_keywords
@@ -77,9 +76,8 @@ def add_subparser(subparsers):
 
 
 @Transaction.wrapper
-def cli(prefix: str, paths: List[PurePath], commands: List[str],
-        flags: List[str], logger: UI,
-        descriptions: List[str], transaction: Transaction, *args, **kwargs):
+def cli(prefix: str, paths: List[PurePath], commands: List[str], flags: List[str],
+        logger: UI, descriptions: List[str], transaction: Transaction, *args, **kwargs):
     paths = [p for p in paths if p]
     commands = [c for c in commands if c]
     if len(paths) == 0:
@@ -91,8 +89,7 @@ def cli(prefix: str, paths: List[PurePath], commands: List[str],
     elif len(descriptions) == 1:
         descriptions *= len(paths)
         if not len(paths) == len(commands):
-            logger.exit(
-                'Number of paths must be the same as the number of commands')
+            logger.exit('Number of paths must be the same as the number of commands')
     elif not len(paths) == len(commands) == len(descriptions):
         logger.exit(
             f'Got {len(paths)} paths, {len(commands)} commands, and {len(descriptions)} descriptions.'

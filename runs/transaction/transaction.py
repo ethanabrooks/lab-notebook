@@ -1,6 +1,6 @@
 from collections import namedtuple
 from functools import wraps
-from pathlib import Path, PurePath
+from pathlib import PurePath
 from typing import List
 
 from runs.database import DataBase
@@ -8,7 +8,6 @@ from runs.file_system import FileSystem
 from runs.logger import UI
 from runs.run_entry import RunEntry
 from runs.shell import Bash
-from runs.tmux_session import TMUXSession
 from runs.transaction.change_description import (ChangeDescriptionTransaction,
                                                  DescriptionChange)
 from runs.transaction.kill import KillTransaction
@@ -38,17 +37,20 @@ class Transaction:
                     ui=ui,
                     db=db,
                     root=root,
-                    dir_names=dir_names, )
+                    dir_names=dir_names,
+                )
                 with transaction as open_transaction:
-                    return func(db=db,
-                                logger=ui,
-                                bash=open_transaction.bash,
-                                transaction=open_transaction, *args, **kwargs)
+                    return func(
+                        db=db,
+                        logger=ui,
+                        bash=open_transaction.bash,
+                        transaction=open_transaction,
+                        *args,
+                        **kwargs)
 
         return _wrapper
 
-    def __init__(self, db: DataBase, ui: UI, root: PurePath,
-                 dir_names: List[str]):
+    def __init__(self, db: DataBase, ui: UI, root: PurePath, dir_names: List[str]):
         self.ui = ui
         self.db = db
         self.bash = Bash(logger=self.ui)

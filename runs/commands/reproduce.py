@@ -68,7 +68,10 @@ def strings(runs: List[RunEntry], flags: List[str], prefix: str, db: DataBase,
                 db=db,
                 overwrite=overwrite)
             subcommand = get_command_string(
-                path=PurePath(new_path), prefix=prefix, command=entry.command, flags=flags)
+                path=PurePath(new_path),
+                prefix=prefix,
+                command=entry.command,
+                flags=flags)
             new_path, subcommand, _description = map(
                 shlex.quote, [new_path, subcommand, description or entry.description])
             if len(entries) == 1:
@@ -103,7 +106,8 @@ def get_path_string(path: PurePath, i: Optional[int], db: DataBase,
     return path
 
 
-def get_command_string(path: PurePath, prefix: str, command: str, flags: List[str]) -> str:
+def get_command_string(path: PurePath, prefix: str, command: str,
+                       flags: List[str]) -> str:
     flags = [interpolate_keywords(path, f) for f in flags]
     for s in flags + [prefix]:
         command = command.replace(s, '')

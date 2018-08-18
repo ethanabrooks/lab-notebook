@@ -3,12 +3,11 @@ from collections import defaultdict
 from copy import copy
 from itertools import zip_longest
 from pathlib import PurePath
-from typing import List
 
-from runs.database import DataBase, QueryArgs
+from runs.database import (DEFAULT_QUERY_FLAGS, DataBase, QueryArgs,
+                           add_query_flags)
 from runs.transaction.transaction import Transaction
 from runs.util import PurePath
-from runs.database import add_query_flags, DEFAULT_QUERY_FLAGS
 
 path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
 
@@ -17,8 +16,8 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'mv',
         help='Move a run from OLD to NEW. '
-             'Functionality is identical to Linux `mv` except that non-existent dirs'
-             'are created and empty dirs are removed automatically.')
+        'Functionality is identical to Linux `mv` except that non-existent dirs'
+        'are created and empty dirs are removed automatically.')
 
     default_flags = copy(DEFAULT_QUERY_FLAGS)
     del default_flags['--descendants']
@@ -40,8 +39,8 @@ def add_subparser(subparsers):
 
 @Transaction.wrapper
 @DataBase.bundle_query_args
-def cli(query_args: QueryArgs, destination: PurePath, kill_tmux: bool, transaction: Transaction,
-        db: DataBase, *args, **kwargs):
+def cli(query_args: QueryArgs, destination: PurePath, kill_tmux: bool,
+        transaction: Transaction, db: DataBase, *args, **kwargs):
     move(
         query_args=query_args,
         db=db,
@@ -58,11 +57,12 @@ def add_slash(path):
     return str(path).rstrip('/') + '/'
 
 
-def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool,
-         transaction: Transaction, db: DataBase):
-    dest_path_is_dir = any([dest_path == PurePath('.'),
-                            f'{dest_path}/%' in db,
-                            str(dest_path).endswith('/')])
+def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Transaction,
+         db: DataBase):
+    dest_path_is_dir = any([
+        dest_path == PurePath('.'), f'{dest_path}/%' in db,
+        str(dest_path).endswith('/')
+    ])
     if dest_path_is_dir:
         dest_path = add_slash(dest_path)
 
@@ -75,7 +75,8 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool,
         for entry in src_entries:
             path = add_root(entry.path)
             src_to_dest[entry.path] += [
-                path.replace(str(part_to_replace), str(dest_path))]
+                path.replace(str(part_to_replace), str(dest_path))
+            ]
 
         for src, dests in src_to_dest.items():
             for i, dest in enumerate(dests):

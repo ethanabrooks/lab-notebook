@@ -3,7 +3,7 @@ import shutil
 import subprocess
 from contextlib import contextmanager
 from fnmatch import fnmatch
-from pathlib import Path, PurePath
+from pathlib import Path
 
 from nose.tools import (assert_false, assert_in, assert_is_instance,
                         assert_not_in, assert_raises, eq_, ok_)
@@ -258,8 +258,7 @@ def test_chdesc():
     with _setup(TEST_RUN), DB as db:
         description = 'new description'
         run_main('change-description', TEST_RUN, description)
-        assert_in(description, lookup.string(
-            runs=db.get([TEST_RUN]), key='description'))
+        assert_in(description, lookup.string(runs=db.get([TEST_RUN]), key='description'))
 
 
 def test_move():
@@ -330,8 +329,7 @@ def test_move_dirs():
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'
         with DB as db:
-            assert_in('--run1', lookup.string(
-                runs=db.get(['test_run2']), key='command'))
+            assert_in('--run1', lookup.string(runs=db.get(['test_run2']), key='command'))
 
     with _setup('test'):
         move('test', 'test/test2')

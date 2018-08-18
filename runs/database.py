@@ -13,16 +13,15 @@ from runs.util import PurePath
 PathLike = Union[str, PurePath, PurePath, Path]
 
 DEFAULT_QUERY_FLAGS = {
-    'patterns': dict(nargs='*', type=PurePath,
-                     help='Look up runs matching these patterns'),
-    '--unless': dict(nargs='*', type=PurePath,
-                     help='Exclude these paths from the search.'),
-    '--active': dict(action='store_true',
-                     help='Include all active runs in query.'),
-    '--descendants': dict(action='store_true',
-                          help='Include all descendants of pattern.'),
-    '--sort': dict(default=None, choices=RunEntry.fields(),
-                   help='Sort query by this field.')
+    'patterns': dict(
+        nargs='*', type=PurePath, help='Look up runs matching these patterns'),
+    '--unless': dict(
+        nargs='*', type=PurePath, help='Exclude these paths from the search.'),
+    '--active': dict(action='store_true', help='Include all active runs in query.'),
+    '--descendants': dict(
+        action='store_true', help='Include all descendants of pattern.'),
+    '--sort': dict(
+        default=None, choices=RunEntry.fields(), help='Sort query by this field.')
 }
 
 
@@ -55,12 +54,20 @@ class DataBase:
     @staticmethod
     def bundle_query_args(func):
         @wraps(func)
-        def bundle_query_args_wrapper(logger, db, patterns, descendants, unless, active, *args, **kwargs):
+        def bundle_query_args_wrapper(logger, db, patterns, descendants, unless, active,
+                                      *args, **kwargs):
             if active:
                 patterns = TMUXSession.active_runs(logger)
             sort = kwargs['sort'] if 'sort' in kwargs else None
-            query_args = QueryArgs(patterns=patterns, unless=unless, order=sort, descendants=descendants)
-            return func(*args, **kwargs, query_args=query_args, patterns=patterns, logger=logger, db=db)
+            query_args = QueryArgs(
+                patterns=patterns, unless=unless, order=sort, descendants=descendants)
+            return func(
+                *args,
+                **kwargs,
+                query_args=query_args,
+                patterns=patterns,
+                logger=logger,
+                db=db)
 
         return bundle_query_args_wrapper
 
@@ -138,8 +145,11 @@ class DataBase:
     def __contains__(self, *patterns: PathLike) -> bool:
         return bool(self.execute(self.select(like=patterns), patterns).fetchone())
 
-    def get(self, patterns: Sequence[PathLike], unless: Sequence[PathLike] = None,
-            order: str = None, descendants: bool = False) -> List[RunEntry]:
+    def get(self,
+            patterns: Sequence[PathLike],
+            unless: Sequence[PathLike] = None,
+            order: str = None,
+            descendants: bool = False) -> List[RunEntry]:
         if descendants:
             patterns = [f'{pattern}%' for pattern in patterns]
         return [
@@ -186,7 +196,7 @@ class DataBase:
         """)
 
     def entry(self, path: PathLike):
-        entries = self[path,]
+        entries = self[path, ]
         if len(entries) == 0:
             self.logger.exit(
                 f"Found no entries for {path}. Current entries:",
