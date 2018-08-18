@@ -1,3 +1,4 @@
+from pathlib import PurePath
 from typing import Optional
 
 from runs.transaction.transaction import Transaction

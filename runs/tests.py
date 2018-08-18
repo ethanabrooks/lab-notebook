@@ -293,37 +293,37 @@ def test_move_dirs():
         # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/test_run', 'new_dir/test_run'
 
-    with _setup('sub/test_run'), _setup('new_dir/test_run2'):
-        move('sub', 'new_dir')
-        # src is dir and dest is dir -> move src into dest and bring children
-        yield check_move, 'sub/test_run', 'new_dir/sub/test_run'
+    # with _setup('sub/test_run'), _setup('new_dir/test_run2'):
+    #     move('sub', 'new_dir')
+    #     # src is dir and dest is dir -> move src into dest and bring children
+    #     yield check_move, 'sub/test_run', 'new_dir/sub/test_run'
 
     with _setup('sub/sub1/test_run'):
         move('sub/sub1/', '.')
         # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/sub1/test_run', 'sub1/test_run'
 
-    with _setup('sub/test_run1'), _setup('sub/test_run2'):
-        move('sub/%', 'new')
-        # src is multi -> for each node match, move head into dest
-        yield check_move, 'sub/test_run1', 'new/test_run1'
-        yield check_move, 'sub/test_run2', 'new/test_run2'
+    # with _setup('sub/test_run1'), _setup('sub/test_run2'):
+    #     move('sub/%', 'new')
+    #     # src is multi -> for each node match, move head into dest
+    #     yield check_move, 'sub/test_run1', 'new/test_run1'
+    #     yield check_move, 'sub/test_run2', 'new/test_run2'
 
-    with _setup('sub/sub1/test_run1'), _setup('sub/sub2/test_run2'):
-        move('sub/%', 'new')
-        # src is multi -> for each node match, move head into dest
-        yield check_move, 'sub/sub1/test_run1', 'new/sub1/test_run1'
-        yield check_move, 'sub/sub2/test_run2', 'new/sub2/test_run2'
+    # with _setup('sub/sub1/test_run1'), _setup('sub/sub2/test_run2'):
+    #     move('sub/%', 'new')
+    #     # src is multi -> for each node match, move head into dest
+    #     yield check_move, 'sub/sub1/test_run1', 'new/sub1/test_run1'
+    #     yield check_move, 'sub/sub2/test_run2', 'new/sub2/test_run2'
 
     with _setup('sub1/test_run1'), _setup('sub2/test_run2'):
         move('sub1/test_run1', 'sub2')
         # dest is dir -> move node into dest
         yield check_move, 'sub1/test_run1', 'sub2/test_run1'
 
-    with _setup('sub1/sub1/test_run1'), _setup('sub2/test_run2'):
-        move('sub1/sub1', 'sub2')
-        # dest is dir and src is dir -> move node into dest
-        yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
+    # with _setup('sub1/sub1/test_run1'), _setup('sub2/test_run2'):
+    #     move('sub1/sub1', 'sub2')
+    #     # dest is dir and src is dir -> move node into dest
+    #     yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
 
     with _setup('test_run1', flags=['--run1']), _setup('test_run2', flags=['run2']):
         move('test_run1', 'test_run2')
@@ -338,9 +338,9 @@ def test_move_dirs():
         # move into self; this is a problem for movedir
         yield check_move, 'test', 'test/test2'
 
-    with _setup('test_run1'), _setup('test_run2'):
-        # src is multi, dest is run -> create dir with same name as dest
-        #                              and move into dir
-        move('test_run%', 'test_run2')
-        yield check_move, 'test_run1', 'test_run2/test_run1'
-        yield check_move, 'test_run2', 'test_run2/test_run2'
+    # with _setup('test_run1'), _setup('test_run2'):
+    #     # src is multi, dest is run -> create dir with same name as dest
+    #     #                              and move into dir
+    #     move('test_run%', 'test_run2')
+    #     yield check_move, 'test_run1', 'test_run2/test_run1'
+    #     yield check_move, 'test_run2', 'test_run2/test_run2'

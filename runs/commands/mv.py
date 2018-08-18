@@ -55,15 +55,14 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool,
                             f'{dest_path}/%' in db,
                             str(dest_path).endswith('/')])
     if dest_path_is_dir:
-        dest_path = PurePath(str(dest_path) + '/')
+        dest_path = str(dest_path) + '/'
 
     for src_pattern in query_args.patterns:
         src_to_dest = defaultdict(list)
         src_entries = db.get(**query_args._replace(patterns=[src_pattern])._asdict())
         part_to_replace = src_pattern  # TODO
         if dest_path_is_dir:
-            import ipdb; ipdb.set_trace()
-            part_to_replace = PurePath(str(src_pattern.parent) + '/')
+            part_to_replace = str(src_pattern.parent) + '/'
         for entry in src_entries:
             src_to_dest[entry.path] += [
                 str(entry.path).replace(str(part_to_replace),str(dest_path))]
@@ -71,7 +70,9 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool,
         for src, dests in src_to_dest.items():
             for i, dest in enumerate(dests):
                 if len(dests) > 1:
-                    dest = PurePath(dest, i)
+                    dest = PurePath(dest, str(i))
+                else:
+                    dest = PurePath(dest)
                 transaction.move(src=src, dest=dest, kill_tmux=kill_tmux)
                 if dest in db:
                     transaction.remove(dest)
