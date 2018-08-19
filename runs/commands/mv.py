@@ -1,4 +1,5 @@
 import re
+import sqlite3
 from collections import defaultdict
 from copy import copy
 from itertools import zip_longest
@@ -16,8 +17,8 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'mv',
         help='Move a run from OLD to NEW. '
-        'Functionality is identical to Linux `mv` except that non-existent dirs'
-        'are created and empty dirs are removed automatically.')
+             'Functionality is identical to Linux `mv` except that non-existent dirs'
+             'are created and empty dirs are removed automatically.')
 
     default_flags = copy(DEFAULT_QUERY_FLAGS)
     del default_flags['--descendants']
@@ -57,6 +58,17 @@ def add_slash(path):
     return str(path).rstrip('/') + '/'
 
 
+def like(a: str, b: str) -> bool:
+    conn = sqlite3.connect(":memory:")
+    try:
+        c = conn.cursor()
+        c.execute("SELECT ? LIKE ?", (a, b))
+        result, = c.fetchone()
+        return bool(result)
+    finally:
+        conn.close()
+
+
 def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Transaction,
          db: DataBase):
     dest_path_is_dir = any([
@@ -67,51 +79,34 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
         dest_path = add_slash(dest_path)
 
     for src_pattern in query_args.patterns:
-        src_to_dest = defaultdict(list)
+        dest_to_src = defaultdict(list)
         src_entries = db.get(**query_args._replace(patterns=[src_pattern])._asdict())
-        part_to_replace = add_root(src_pattern)  # TODO
-        if dest_path_is_dir:
-            part_to_replace = add_root(add_slash(src_pattern.parent))
         for entry in src_entries:
+            parents = [entry.path] + [str(p) + '/' for p in entry.path.parents]
+            matching = None
+            for p in parents:
+                if like(str(p), str(src_pattern) + '%'):
+                    matching = PurePath(p)
+            if matching is None:
+                raise RuntimeError(f'Somehow, {entry.path} does not match with {src_pattern}.')
+
+            part_to_replace = add_root(matching)
+
+            if dest_path_is_dir:
+                part_to_replace = add_root(add_slash(src_pattern.parent))
             path = add_root(entry.path)
-            src_to_dest[entry.path] += [
-                path.replace(str(part_to_replace), str(dest_path))
+
+            dest = path.replace(str(part_to_replace), str(dest_path))
+            dest_to_src[dest] += [
+                entry.path
             ]
 
-        for src, dests in src_to_dest.items():
-            for i, dest in enumerate(dests):
-                if len(dests) > 1:
+        for dest, srcs in dest_to_src.items():
+            for i, src in enumerate(srcs):
+                if len(srcs) > 1:
                     dest = PurePath(dest, str(i))
                 else:
                     dest = PurePath(dest)
                 transaction.move(src=src, dest=dest, kill_tmux=kill_tmux)
                 if dest in db:
                     transaction.remove(dest)
-
-    def save():
-        def is_dir(pattern):
-            return pattern == PurePath('.') or \
-                   f'{PurePath(pattern)}/%' in db
-
-        for entry in src_entries:
-            src_path = PurePath(entry.path)
-            if is_dir(src_pattern):
-                if is_dir(dest_path) or len(src_entries) > 1:
-                    old_parts = PurePath(src_pattern).parent.parts
-                    src_parts = PurePath(src_path).parts
-                    dest = PurePath(
-                        dest_path, *[
-                            p for p, from_old in zip_longest(src_parts, old_parts)
-                            if not from_old
-                        ])
-                else:
-                    dest = PurePath(dest_path, PurePath(src_path).name)
-            else:
-                if is_dir(dest_path) or len(src_entries) > 1:
-                    dest = PurePath(dest_path, PurePath(src_path).name)
-                else:
-                    dest = PurePath(dest_path)
-
-            transaction.move(src=entry.path, dest=dest, kill_tmux=kill_tmux)
-            if dest in db:
-                transaction.remove(dest)
