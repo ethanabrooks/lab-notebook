@@ -36,8 +36,8 @@ def add_subparser(subparsers):
     return parser
 
 
-@DataBase.query
 @DataBase.open
+@DataBase.query
 def cli(runs: List[RunEntry], flags: List[str], logger: Logger, db: DataBase, prefix: str,
         overwrite: bool, path: Optional[PurePath], description: str, *args, **kwargs):
     for string in strings(
