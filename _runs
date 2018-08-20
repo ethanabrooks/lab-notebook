@@ -1,6 +1,6 @@
 #compdef runs
 
-run_paths=("${(@f)$(runs ls --porcelain)}")
+run_paths=("${(@f)$(runs ls)}")
 formatted_paths=()
 for run_path in $run_paths; do
   formatted_paths+=${run_path}

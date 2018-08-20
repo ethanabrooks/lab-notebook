@@ -191,7 +191,7 @@ def check_list_happy(pattern):
 
 def check_list_sad(pattern):
     with DB as db:
-        string = ls.string(runs=db.get([pattern]), porcelain=True)
+        string = ls.string(runs=db.get([pattern]))
         eq_(string, '')
 
 
@@ -241,7 +241,7 @@ def test_list():
 
 def test_table():
     with _setup(TEST_RUN), DB as db:
-        string = table.string(runs=db.all(), porcelain=False)
+        string = table.string(runs=db.all())
         yield check_table, string
 
 
