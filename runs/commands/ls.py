@@ -39,7 +39,7 @@ def cli(runs: List[RunEntry], logger: Logger, pprint: bool, depth, *args, **kwar
     ))
 
 
-def string(runs: List[RunEntry], pprint: bool = True, depth: int = None) -> str:
+def string(runs: List[RunEntry], pprint: bool = False, depth: int = None) -> str:
     return '\n'.join(map(str, paths(runs=runs, pprint=pprint, depth=depth)))
 
 
