@@ -20,32 +20,32 @@ def add_subparser(subparsers):
         '--show-attrs',
         action='store_true',
         help='Print run attributes in addition to names.')
-    parser.add_argument('--depth', type=int, help='Depth of tree to print.')
+    parser.add_argument('--depth', type=int, help='Depth of path to print.')
     parser.add_argument(
-        '--porcelain',
+        '--pprint',
         action='store_true',
-        help='Print list of path names without tree '
+        help='format list of path names as tree '
         'formatting.')
     return parser
 
 
 @DataBase.open
 @DataBase.query
-def cli(runs: List[RunEntry], logger: Logger, porcelain: bool, depth, *args, **kwargs):
+def cli(runs: List[RunEntry], logger: Logger, pprint: bool, depth, *args, **kwargs):
     logger.print(string(
         runs=runs,
-        porcelain=porcelain,
+        pprint=pprint,
         depth=depth,
     ))
 
 
-def string(runs: List[RunEntry], porcelain: bool = True, depth: int = None) -> str:
-    return '\n'.join(map(str, paths(runs=runs, porcelain=porcelain, depth=depth)))
+def string(runs: List[RunEntry], pprint: bool = True, depth: int = None) -> str:
+    return '\n'.join(map(str, paths(runs=runs, pprint=pprint, depth=depth)))
 
 
-def paths(runs: List[RunEntry], porcelain: bool = True, depth: int = None) -> List[str]:
+def paths(runs: List[RunEntry], pprint: bool = True, depth: int = None) -> List[str]:
     _paths = [e.path for e in runs]
-    return _paths if porcelain else tree_strings(build_tree(_paths), depth=depth)
+    return tree_strings(build_tree(_paths), depth=depth) if pprint else _paths
 
 
 def build_tree(paths, depth: int = None):
