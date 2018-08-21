@@ -14,7 +14,7 @@ def add_subparser(subparsers):
         'key',
         choices=RunEntry.fields() + ('all', ),
         help='Key that value is associated with.')
-    add_query_flags(parser, with_sort=False)
+    add_query_flags(parser, with_sort=True)
     parser.add_argument(
         '--porcelain',
         action='store_true',
@@ -23,10 +23,9 @@ def add_subparser(subparsers):
 
 
 @DataBase.open
-@DataBase.bundle_query_args
-def cli(query_args: QueryArgs, db: DataBase, logger: Logger, key: str, porcelain: bool,
+@DataBase.query
+def cli(runs: List[RunEntry], db: DataBase, logger: Logger, key: str, porcelain: bool,
         *args, **kwargs):
-    runs = db.get(**query_args._replace(order=key)._asdict())
     logger.print(string(runs=runs, key=key, porcelain=porcelain))
 
 

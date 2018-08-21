@@ -21,7 +21,7 @@ DEFAULT_QUERY_FLAGS = {
     '--descendants': dict(
         action='store_true', help='Include all descendants of pattern.'),
     '--sort': dict(
-        default=None, choices=RunEntry.fields(), help='Sort query by this field.')
+        default='datetime', choices=RunEntry.fields(), help='Sort query by this field.')
 }
 
 
