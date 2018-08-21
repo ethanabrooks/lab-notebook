@@ -241,7 +241,7 @@ def test_list():
 
 def test_table():
     with _setup(TEST_RUN), DB as db:
-        string = table.string(runs=db.all())
+        string = table.string(runs=db.all(), porcelain=True)
         yield check_table, string
 
 
