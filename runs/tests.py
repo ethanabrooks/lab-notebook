@@ -191,7 +191,6 @@ def check_list_happy(pattern):
 
 def check_list_sad(pattern):
     with DB as db:
-        import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
         string = ls.string(runs=db.get([pattern]))
         eq_(string, '')
 
