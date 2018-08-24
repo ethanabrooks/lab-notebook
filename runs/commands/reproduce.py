@@ -1,5 +1,5 @@
 import re
-import shlex
+import json
 from collections import defaultdict
 from typing import List, Optional
 
@@ -73,9 +73,9 @@ def strings(runs: List[RunEntry], flags: List[str], prefix: str, db: DataBase,
                 command=entry.command,
                 flags=flags)
             new_path, subcommand, _description = map(
-                shlex.quote, [new_path, subcommand, description or entry.description])
+                json.dumps, [new_path, subcommand, description or entry.description])
             if len(entries) == 1:
-                command_string += f' {new_path} {subcommand} --description="{_description}"'
+                command_string += f' {new_path} {subcommand} --description={_description}'
             else:
                 command_string = ' \\\n  '.join([
                     command_string,
