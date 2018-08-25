@@ -33,8 +33,8 @@ def add_subparser(subparsers):
     return parser
 
 
-@DataBase.query
 @DataBase.open
+@DataBase.query
 def cli(runs: List[RunEntry], logger: Logger, columns: List[str], column_width: int,
         porcelain, *args, **kwargs):
     logger.print(
@@ -63,5 +63,5 @@ def string(runs: List[RunEntry],
     table = [[e.path] + [get_values(e, key) for key in headers]
              for e in sorted(runs, key=lambda e: e.path)]
     if porcelain:
-        return '\n'.join([','.join(r) for r in table])
+        return '\n'.join([','.join(map(str, r)) for r in table])
     return tabulate(table, headers=headers)
