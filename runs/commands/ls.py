@@ -6,7 +6,7 @@ from typing import List
 from runs.database import DEFAULT_QUERY_FLAGS, DataBase, add_query_flags
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.util import PurePath
+from runs.util import PurePath, natural_order
 
 
 def add_subparser(subparsers):
@@ -44,8 +44,10 @@ def string(runs: List[RunEntry], pprint: bool = False, depth: int = None) -> str
 
 
 def paths(runs: List[RunEntry], pprint: bool = True, depth: int = None) -> List[str]:
-    _paths = [e.path for e in runs]
-    return tree_strings(build_tree(_paths), depth=depth) if pprint else _paths
+    _paths = [PurePath(*e.path.parts[:depth]) for e in runs]
+    if depth is not None:
+        _paths = sorted(set(_paths), key=lambda p: natural_order(str(p)))
+    return tree_strings(build_tree(_paths)) if pprint else _paths
 
 
 def build_tree(paths, depth: int = None):
@@ -62,19 +64,18 @@ def build_tree(paths, depth: int = None):
     return {k: build_tree(v, depth=depth) for k, v in aggregator.items()}
 
 
-def tree_strings(tree, prefix='', root_prefix='', root='.', depth=None):
+def tree_strings(tree, prefix='', root_prefix='', root='.'):
     yield prefix + root_prefix + root
     if root_prefix == '├── ':
         prefix += '│   '
     if root_prefix == '└── ':
         prefix += '    '
-    if tree and (depth is None or depth > 0):
+    if tree:
         items = _, *tail = tree.items()
         for (root, tree), _next in zip_longest(items, tail):
             for s in tree_strings(
                     tree=tree,
                     prefix=prefix,
                     root_prefix='├── ' if _next else '└── ',
-                    root=root,
-                    depth=None if depth is None else depth - 1):
+                    root=root):
                 yield PurePath(s)
