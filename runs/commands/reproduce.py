@@ -1,4 +1,3 @@
-import re
 import json
 from collections import defaultdict
 from typing import List, Optional
@@ -27,25 +26,18 @@ def add_subparser(subparsers):
         default=None,
         help="Description to be assigned to new run. If None, use the same description as "
         "the run being reproduced.")
-    parser.add_argument(
-        '--overwrite',
-        action='store_true',
-        help='Without this flag, runs paths either get a number appended to them or '
-        'have an existing number incremented. With this flag, the reproduced run '
-        'just gets overwritten.')
     return parser
 
 
 @DataBase.open
 @DataBase.query
 def cli(runs: List[RunEntry], flags: List[str], logger: Logger, db: DataBase, prefix: str,
-        overwrite: bool, path: Optional[PurePath], description: str, *args, **kwargs):
+         path: Optional[PurePath], description: str, *args, **kwargs):
     for string in strings(
             db=db,
             runs=runs,
             flags=flags,
             prefix=prefix,
-            overwrite=overwrite,
             path=path,
             description=description,
     ):
@@ -53,7 +45,7 @@ def cli(runs: List[RunEntry], flags: List[str], logger: Logger, db: DataBase, pr
 
 
 def strings(runs: List[RunEntry], flags: List[str], prefix: str, db: DataBase,
-            overwrite: bool, path: Optional[PurePath], description: Optional[str]):
+             path: Optional[PurePath], description: Optional[str]):
     entry_dict = defaultdict(list)
     return_strings = [highlight('To reproduce:')]
     for entry in runs:
@@ -62,18 +54,21 @@ def strings(runs: List[RunEntry], flags: List[str], prefix: str, db: DataBase,
         return_strings.append(f'git checkout {commit}')
         command_string = 'runs new'
         for i, entry in enumerate(entries):
-            new_path = get_path_string(
-                path=path or entry.path,
-                i=i if len(entries) > 1 else None,
-                db=db,
-                overwrite=overwrite)
+            if path is None:
+                new_path = entry.path
+            elif len(entries) > 1:
+                new_path = PurePath(path, str(i))
+            else:
+                new_path = path
+
             subcommand = get_command_string(
                 path=PurePath(new_path),
                 prefix=prefix,
                 command=entry.command,
                 flags=flags)
             new_path, subcommand, _description = map(
-                json.dumps, [new_path, subcommand, description or entry.description])
+                json.dumps, [str(new_path), subcommand,
+                             description or entry.description.strip('"').strip("'")])
             if len(entries) == 1:
                 command_string += f' {new_path} {subcommand} --description={_description}'
             else:
@@ -81,29 +76,10 @@ def strings(runs: List[RunEntry], flags: List[str], prefix: str, db: DataBase,
                     command_string,
                     f'--path={new_path}',
                     f'--command={subcommand}',
-                    f'--description="{_description}"',
-                    '',
+                    f'--description={_description}',
                 ])
         return_strings.append(command_string)
     return return_strings
-
-
-def get_path_string(path: PurePath, i: Optional[int], db: DataBase,
-                    overwrite: bool) -> str:
-    path = str(path)
-    if i:
-        path += str(i)
-    if overwrite:
-        return path
-    while path in db:
-        pattern = re.compile('(.*\.)(\d*)')
-        match = pattern.match(str(path))
-        if match:
-            stem, number = match.groups()
-            path = stem + str(int(number) + 1)
-        else:
-            path += '.1'
-    return path
 
 
 def get_command_string(path: PurePath, prefix: str, command: str,

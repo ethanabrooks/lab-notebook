@@ -1,17 +1,12 @@
 #!/bin/zsh
+positional=($@)
+for i ({0..$#}); do
+  if [[ ${positional[$i][1,1]} != '-' ]]; then
+    j=$i
+  fi
+done
+commit=$(runs lookup commit ${positional[$j]} --porcelain)
+echo $commit
+positional[$j]=$commit
 
-positional=()
-  while [[ $# -gt 0 ]]; do
-    arg=$1
-    if [[ ${1[1,1]} == '+' ]]; then
-      arg=$(runs lookup commit ${1[2,-1]})
-      if [[ $arg =~ 'No runs match pattern.*' ]]; then
-        runs ls
-        exit
-      fi
-    fi
-    positional+=("$arg") # save it in an array for later
-    shift # past argument ;;
-  done
-set -- "${positional[@]}" # restore positional parameters
-/usr/bin/git "$@"
+/usr/bin/git $positional
