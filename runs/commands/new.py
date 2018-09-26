@@ -129,7 +129,6 @@ def run_args(paths: List[PurePath], commands: List[str],
               for v in flag.values] for flag in flags]))
         for j, flag_set in enumerate(flag_sets):
             new_path = path if len(flag_sets) == 1 else PurePath(path, str(j))
-            import ipdb; ipdb.set_trace()
             yield RunArgs(path=new_path,
                           command=command,
                           description=description,
