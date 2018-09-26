@@ -124,9 +124,9 @@ def run_args(paths: List[PurePath], commands: List[str],
         if len(descriptions) == 1:
             description = descriptions[0]
 
-        flag_sets = list(itertools.product(
-            *[[v if flag.key is None else f'{flag.key}={v}'
-              for v in flag.values] for flag in flags]))
+        flag_sets = [[v if flag.key is None else f'{flag.key}={v}'
+                for v in flag.values] for flag in flags]
+        flag_sets = list(itertools.product(*flag_sets))
         for j, flag_set in enumerate(flag_sets):
             new_path = path if len(flag_sets) == 1 else PurePath(path, str(j))
             yield RunArgs(path=new_path,

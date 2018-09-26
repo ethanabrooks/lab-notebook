@@ -1,12 +1,19 @@
 import itertools
 import json
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Tuple, Any
 
 from runs.commands.new import new_run, Flag, run_args
 from runs.logger import UI
 from runs.transaction.transaction import Transaction
 from runs.util import PurePath
+
+
+def flags_hook(pairs: List[Tuple[Any, Any]]):
+    keys, values = zip(*pairs)
+    if len(set(keys)) != len(keys):  # duplicates
+        return [Flag(key=k, values=v if isinstance(v, (list, tuple)) else [v]) for k, v in pairs]
+    return dict(pairs)
 
 
 def add_subparser(subparsers):
@@ -16,7 +23,6 @@ def add_subparser(subparsers):
 
     parser.add_argument(
         '--path',
-        nargs='+',
         dest='paths',
         action='append',
         type=PurePath,
@@ -26,9 +32,6 @@ def add_subparser(subparsers):
     )
     parser.add_argument(
         '--spec',
-        nargs='+',
-        dest='specs',
-        action='append',
         type=Path,
         help='JSON file that contains either a single or an array of JSON objects'
              'each with a "command" key and a "flags" key. The "command" value'
@@ -61,27 +64,26 @@ class SpecObj:
 
 
 @Transaction.wrapper
-def cli(prefix: str, paths: List[PurePath], specs: List[Path],
+def cli(prefix: str, paths: List[PurePath], spec: Path,
         logger: UI, descriptions: List[str], transaction: Transaction,
         *args, **kwargs):
     # spec: Path
-    for path, spec, description in zip(paths, specs, descriptions):
-        with spec.open() as f:
-            obj = json.load(f)
-        if isinstance(obj, dict):
-            obj = [obj]
+    with spec.open() as f:
+        array = json.load(f, object_pairs_hook=flags_hook)
+    if isinstance(array, dict):
+        array = [array]
+
+    for path, obj in zip(paths, array):
         try:
-            obj_list = [SpecObj(**k) for k in obj]
+            obj = SpecObj(**obj)
         except TypeError:
             logger.exit(f'Each object in {spec.path} must have a '
                         f'"command" field and a "flags" field.')
-
         # arg: RunArg
-        commands, flags = zip(obj_list)
-        for arg in run_args(paths=paths,
-                            commands=commands,
+        for arg in run_args(paths=[path],
+                            commands=[obj.command],
                             descriptions=descriptions,
-                            flags=flags):
+                            flags=obj.flags):
             new_run(**args._asdict(),
                     prefix=prefix,
                     transaction=transaction)
