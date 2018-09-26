@@ -1,11 +1,9 @@
 import itertools
-import json
 import re
 from argparse import ArgumentParser
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 from datetime import datetime
-from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import List
 
 from runs.logger import UI
 from runs.transaction.transaction import Transaction
@@ -73,42 +71,14 @@ def cli(prefix: str, paths: List[PurePath], commands: List[str], flags: List[str
         logger: UI, descriptions: List[str], transaction: Transaction,
         *args, **kwargs):
     flags = list(map(parse_flag, flags))
-    try:
-        # args: RunArgs
-        for args in run_args(paths=paths,
-                             commands=commands,
-                             descriptions=descriptions,
-                             flags=flags):
-            new_run(**args._asdict(),
-                    prefix=prefix,
-                    transaction=transaction)
-    except AssertionError as e:
-        logger.exit(str(e))
-
-
-def parse_flag(flag: str, delims: str = '=| '):
-    """
-    :return: a list of [--flag=value] strings
-    """
-    pattern = f'([^{delims}]*)({delims})(.*)'
-    match = re.match(pattern, flag)
-    if match:
-        key, delim, values = match.groups()
-        return Flag(key=key, values=[value for value in values.split('|')])
-    else:
-        return Flag(key=None, values=flag.split('|'))
-
-
-def run_args(paths: List[PurePath], commands: List[str],
-             descriptions: List[str], flags: List[Flag]):
     n = len(commands)
-    assert len(paths) in [1, n], \
-        'There must either be 1 or n paths ' \
-        'where n is the number of commands.'
+    if not len(paths) in [1, n]:
+        logger.exit('There must either be 1 or n paths '
+                    'where n is the number of commands.')
 
-    assert len(descriptions) in [0, 1, n], \
-        'There must either be 1 or n descriptions ' \
-        'where n is the number of commands.'
+    if not len(descriptions) in [0, 1, n]:
+        logger.exit('There must either be 1 or n descriptions '
+                    'where n is the number of commands.')
 
     iterator = enumerate(itertools.zip_longest(paths,
                                                commands,
@@ -124,15 +94,25 @@ def run_args(paths: List[PurePath], commands: List[str],
         if len(descriptions) == 1:
             description = descriptions[0]
 
-        flag_sets = [[v if flag.key is None else f'{flag.key}={v}'
-                for v in flag.values] for flag in flags]
-        flag_sets = list(itertools.product(*flag_sets))
-        for j, flag_set in enumerate(flag_sets):
-            new_path = path if len(flag_sets) == 1 else PurePath(path, str(j))
-            yield RunArgs(path=new_path,
-                          command=command,
-                          description=description,
-                          flags=flag_set)
+        new(path=path,
+            prefix=prefix,
+            command=command,
+            description=description,
+            flags=flags,
+            transaction=transaction)
+
+
+def parse_flag(flag: str, delims: str = '=| '):
+    """
+    :return: a list of [--flag=value] strings
+    """
+    pattern = f'([^{delims}]*)({delims})(.*)'
+    match = re.match(pattern, flag)
+    if match:
+        key, delim, values = match.groups()
+        return Flag(key=key, values=[value for value in values.split('|')])
+    else:
+        return Flag(key=None, values=flag.split('|'))
 
 
 def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -> str:
@@ -144,10 +124,9 @@ def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -
     return command
 
 
-def new_run(path: PurePath, prefix: str, command: str, description: str,
-            flags: List[str], transaction: Transaction):
+def new(path: PurePath, prefix: str, command: str, description: str,
+        flags: List[Flag], transaction: Transaction):
     bash = transaction.bash
-    full_command = build_command(command, path, prefix, flags)
     if description is None:
         description = ''
     if description == 'commit-message':
@@ -156,9 +135,18 @@ def new_run(path: PurePath, prefix: str, command: str, description: str,
     if path in transaction.db:
         transaction.remove(path)
 
-    transaction.add_run(
-        path=PurePath(path),
-        command=full_command,
-        commit=bash.last_commit(),
-        datetime=datetime.now().isoformat(),
-        description=description)
+    flag_sets = [[v if flag.key is None else f'{flag.key}={v}' for v in flag.values]
+                 for flag in flags]
+    flag_sets = list(itertools.product(*flag_sets))
+    for i, flag_set in enumerate(flag_sets):
+        new_path = path if len(flag_sets) == 1 else PurePath(path, str(i))
+        full_command = build_command(command=command,
+                                     path=path,
+                                     prefix=prefix,
+                                     flags=flag_set)
+        transaction.add_run(
+            path=new_path,
+            command=full_command,
+            commit=bash.last_commit(),
+            datetime=datetime.now().isoformat(),
+            description=description)
