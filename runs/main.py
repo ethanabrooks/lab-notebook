@@ -8,7 +8,7 @@ from pathlib import Path, PurePath
 from typing import List
 
 from runs.commands import (change_description, correlate, flags, kill, lookup,
-                           ls, mv, new, reproduce, rm, table)
+                           ls, mv, new, reproduce, rm, table, new_from_spec)
 from runs.logger import Logger
 
 MAIN = 'main'
@@ -88,6 +88,7 @@ def main(argv=sys.argv[1:]):
     for subparser in [parser] + [
             adder(subparsers) for adder in [
                 new.add_subparser,
+                new_from_spec.add_subparser,
                 rm.add_subparser,
                 mv.add_subparser,
                 ls.add_subparser,
