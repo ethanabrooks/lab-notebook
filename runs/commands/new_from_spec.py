@@ -1,18 +1,13 @@
 import json
+from collections.__init__ import namedtuple
+from configparser import ConfigParser
 from pathlib import Path
 from typing import List, Tuple, Any
 
-from runs.commands.new import new, Flag
+from runs.commands.new import new
 from runs.logger import UI
 from runs.transaction.transaction import Transaction
 from runs.util import PurePath
-
-
-def flags_hook(pairs: List[Tuple[Any, Any]]):
-    keys, values = zip(*pairs)
-    if len(set(keys)) != len(keys):  # duplicates
-        return [Flag(key=k, values=v if isinstance(v, (list, tuple)) else [v]) for k, v in pairs]
-    return dict(pairs)
 
 
 def add_subparser(subparsers):
@@ -34,8 +29,7 @@ def add_subparser(subparsers):
              '"a: b," becomes "--a=b" for example.',
     )
     parser.add_argument(
-        '--description',
-        dest='descriptions',
+        'description',
         help='Description of this run. Explain what this run was all about or '
              'write whatever your heart desires. If this argument is `commit-message`,'
              'it will simply use the last commit message.')
@@ -44,16 +38,25 @@ def add_subparser(subparsers):
         type=str,
         help="String to prepend to all main commands, for example, sourcing a virtualenv"
     )
+    parser.add_argument(
+        '--flag',
+        '-f',
+        default=[],
+        action='append',
+        help="directories to create and sync automatically with each run")
     return parser
     # new_parser.add_argument(
     #     '--summary-path',
     #     help='Path where Tensorflow summary of run is to be written.')
 
 
+Flag = namedtuple('Flag', 'key values')
+
+
 class SpecObj:
     def __init__(self, command: str, flags: List[Flag], delimiter: str = '='):
         self.command = command
-        self.flags = flags
+        self.flags = list(map(Flag, flags))
         self.delimiter = delimiter
 
 
@@ -63,20 +66,24 @@ def cli(prefix: str, path: PurePath, spec: Path,
         *args, **kwargs):
     # spec: Path
     with spec.open() as f:
-        array = json.load(f, object_pairs_hook=flags_hook)
-    if isinstance(array, dict):
-        array = [array]
+        obj = json.load(f, object_pairs_hook=lambda pairs: pairs)
+    try:
+        try:
+            array = list(map(SpecObj, obj))
+        except ValueError:
+            array = [SpecObj(**obj)]
+    except ValueError:
+        logger.exit(f'Each object in {spec} must have a '
+                    f'"command" field and a "flags" field.')
 
     for i, obj in enumerate(array):
-        try:
-            obj = SpecObj(**obj)
-        except TypeError:
-            logger.exit(f'Each object in {spec.path} must have a '
-                        f'"command" field and a "flags" field.')
         new_path = path if len(array) == 1 else PurePath(path, str(i))
+        flags = [[f'--{v}' if f.key == 'null' else f'--{f.key}={v}'
+                  for v in f.values]
+                 for f in obj.flags]
         new(path=new_path,
             prefix=prefix,
             command=obj.command,
             description=description,
-            flags=obj.flags,
+            flags=flags,
             transaction=transaction)

@@ -1,7 +1,6 @@
 import itertools
 import re
 from argparse import ArgumentParser
-from collections import namedtuple
 from datetime import datetime
 from typing import List
 
@@ -62,10 +61,6 @@ def add_subparser(subparsers):
     #     help='Path where Tensorflow summary of run is to be written.')
 
 
-Flag = namedtuple('Flag', 'key values')
-RunArgs = namedtuple('RunArgs', 'path command description flags')
-
-
 @Transaction.wrapper
 def cli(prefix: str, paths: List[PurePath], commands: List[str], flags: List[str],
         logger: UI, descriptions: List[str], transaction: Transaction,
@@ -102,7 +97,7 @@ def cli(prefix: str, paths: List[PurePath], commands: List[str], flags: List[str
             transaction=transaction)
 
 
-def parse_flag(flag: str, delims: str = '=| '):
+def parse_flag(flag: str, delims: str = '=| ') -> List[str]:
     """
     :return: a list of [--flag=value] strings
     """
@@ -110,9 +105,9 @@ def parse_flag(flag: str, delims: str = '=| '):
     match = re.match(pattern, flag)
     if match:
         key, delim, values = match.groups()
-        return Flag(key=key, values=[value for value in values.split('|')])
+        return [f'--{key}={value}' for value in values.split('|')]
     else:
-        return Flag(key=None, values=flag.split('|'))
+        return flag.split('|')
 
 
 def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -> str:
@@ -125,7 +120,7 @@ def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -
 
 
 def new(path: PurePath, prefix: str, command: str, description: str,
-        flags: List[Flag], transaction: Transaction):
+        flags: List[List[str]], transaction: Transaction):
     bash = transaction.bash
     if description is None:
         description = ''
@@ -135,9 +130,7 @@ def new(path: PurePath, prefix: str, command: str, description: str,
     if path in transaction.db:
         transaction.remove(path)
 
-    flag_sets = [[v if flag.key is None else f'{flag.key}={v}' for v in flag.values]
-                 for flag in flags]
-    flag_sets = list(itertools.product(*flag_sets))
+    flag_sets = list(itertools.product(*flags))
     for i, flag_set in enumerate(flag_sets):
         new_path = path if len(flag_sets) == 1 else PurePath(path, str(i))
         full_command = build_command(command=command,
