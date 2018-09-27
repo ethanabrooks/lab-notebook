@@ -129,7 +129,7 @@ def main(argv=sys.argv[1:]):
     kwargs = {k: v for k, v in vars(args).items()}
     try:
         # pluralize flags
-        kwargs[FLAGS] = tuple(set(args.flag) | set(main_config[FLAGS]))
+        kwargs[FLAGS] = list(set(args.flag) | set(main_config[FLAGS]))
     except AttributeError:
         pass
     module.cli(**kwargs)

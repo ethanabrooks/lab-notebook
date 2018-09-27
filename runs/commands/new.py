@@ -127,14 +127,14 @@ def new(path: PurePath, prefix: str, command: str, description: str,
     if description == 'commit-message':
         description = bash.cmd('git log -1 --pretty=%B'.split())
 
-    if path in transaction.db:
-        transaction.remove(path)
-
     flag_sets = list(itertools.product(*flags))
     for i, flag_set in enumerate(flag_sets):
         new_path = path if len(flag_sets) == 1 else PurePath(path, str(i))
+        if new_path in transaction.db:
+            transaction.remove(new_path)
+
         full_command = build_command(command=command,
-                                     path=path,
+                                     path=new_path,
                                      prefix=prefix,
                                      flags=flag_set)
         transaction.add_run(

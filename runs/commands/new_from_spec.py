@@ -56,12 +56,12 @@ Flag = namedtuple('Flag', 'key values')
 class SpecObj:
     def __init__(self, command: str, flags: List[Flag], delimiter: str = '='):
         self.command = command
-        self.flags = list(map(Flag, flags))
+        self.flags = [Flag(*f) for f in flags]
         self.delimiter = delimiter
 
 
 @Transaction.wrapper
-def cli(prefix: str, path: PurePath, spec: Path,
+def cli(prefix: str, path: PurePath, spec: Path, flags: List[str],
         logger: UI, description: str, transaction: Transaction,
         *args, **kwargs):
     # spec: Path
@@ -69,18 +69,24 @@ def cli(prefix: str, path: PurePath, spec: Path,
         obj = json.load(f, object_pairs_hook=lambda pairs: pairs)
     try:
         try:
-            array = list(map(SpecObj, obj))
-        except ValueError:
-            array = [SpecObj(**obj)]
-    except ValueError:
+            array = [SpecObj(**dict(obj))]
+        except TypeError:
+            array = [SpecObj(**dict(o)) for o in obj]
+    except TypeError:
         logger.exit(f'Each object in {spec} must have a '
                     f'"command" field and a "flags" field.')
 
     for i, obj in enumerate(array):
         new_path = path if len(array) == 1 else PurePath(path, str(i))
-        flags = [[f'--{v}' if f.key == 'null' else f'--{f.key}={v}'
-                  for v in f.values]
-                 for f in obj.flags]
+
+        def parse_flag(flag: Flag):
+            values = flag.values if isinstance(flag.values, list) else [flag.values]
+
+            return [f'--{v}' if flag.key == 'null' else f'--{flag.key}="{v}"'
+                    for v in values]
+
+        flags = [[f] for f in flags]
+        flags += list(map(parse_flag, obj.flags))
         new(path=new_path,
             prefix=prefix,
             command=obj.command,
