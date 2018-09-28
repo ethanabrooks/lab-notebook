@@ -81,8 +81,8 @@ def cli(prefix: str, path: PurePath, spec: Path, flags: List[str],
 
         def parse_flag(flag: Flag):
             values = flag.values if isinstance(flag.values, list) else [flag.values]
-
-            return [f'--{v}' if flag.key == 'null' else f'--{flag.key}="{v}"'
+            null_keys = ['null', '', 'none', 'None']
+            return [f'--{v}' if flag.key in null_keys else f'--{flag.key}="{v}"'
                     for v in values]
 
         flags = [[f] for f in flags]
