@@ -5,3 +5,6 @@
 dist/
 build/
 .ropeproject
+.pyre/
+.pyre_configuration
+.watchmanconfig
