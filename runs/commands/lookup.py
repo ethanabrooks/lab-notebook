@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from runs.commands import table
-from runs.database import DataBase, QueryArgs, add_query_flags
+from runs.database import DataBase, add_query_flags
 from runs.logger import Logger
 from runs.run_entry import RunEntry
 from runs.util import PurePath, highlight

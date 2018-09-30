@@ -1,8 +1,7 @@
 import json
 from collections.__init__ import namedtuple
-from configparser import ConfigParser
 from pathlib import Path
-from typing import List, Tuple, Any
+from typing import List
 
 from runs.commands.new import new
 from runs.logger import UI
@@ -12,32 +11,26 @@ from runs.util import PurePath
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'new-from-spec',
-        help='Start a new run using a JSON specification.')
+        'new-from-spec', help='Start a new run using a JSON specification.')
 
-    parser.add_argument(
-        'path',
-        type=PurePath,
-        help='Unique path for each run. '
-    )
+    parser.add_argument('path', type=PurePath, help='Unique path for each run. ')
     parser.add_argument(
         'spec',
         type=Path,
         help='JSON file that contains either a single or an array of JSON objects'
-             'each with a "command" key and a "flags" key. The "command" value'
-             'is a single string and the "flags" value is a JSON object such that'
-             '"a: b," becomes "--a=b" for example.',
+        'each with a "command" key and a "flags" key. The "command" value'
+        'is a single string and the "flags" value is a JSON object such that'
+        '"a: b," becomes "--a=b" for example.',
     )
     parser.add_argument(
         'description',
         help='Description of this run. Explain what this run was all about or '
-             'write whatever your heart desires. If this argument is `commit-message`,'
-             'it will simply use the last commit message.')
+        'write whatever your heart desires. If this argument is `commit-message`,'
+        'it will simply use the last commit message.')
     parser.add_argument(
         '--prefix',
         type=str,
-        help="String to prepend to all main commands, for example, sourcing a virtualenv"
-    )
+        help="String to prepend to all main commands, for example, sourcing a virtualenv")
     parser.add_argument(
         '--flag',
         '-f',
@@ -61,9 +54,8 @@ class SpecObj:
 
 
 @Transaction.wrapper
-def cli(prefix: str, path: PurePath, spec: Path, flags: List[str],
-        logger: UI, description: str, transaction: Transaction,
-        *args, **kwargs):
+def cli(prefix: str, path: PurePath, spec: Path, flags: List[str], logger: UI,
+        description: str, transaction: Transaction, *args, **kwargs):
     # spec: Path
     with spec.open() as f:
         obj = json.load(f, object_pairs_hook=lambda pairs: pairs)
@@ -82,8 +74,10 @@ def cli(prefix: str, path: PurePath, spec: Path, flags: List[str],
         def parse_flag(flag: Flag):
             values = flag.values if isinstance(flag.values, list) else [flag.values]
             null_keys = ['null', '', 'none', 'None']
-            return [f'--{v}' if flag.key in null_keys else f'--{flag.key}="{v}"'
-                    for v in values]
+            return [
+                f'--{v}' if flag.key in null_keys else f'--{flag.key}="{v}"'
+                for v in values
+            ]
 
         flags = [[f] for f in flags]
         flags += list(map(parse_flag, obj.flags))

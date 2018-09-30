@@ -2,7 +2,6 @@ import re
 import sqlite3
 from collections import defaultdict
 from copy import copy
-from itertools import zip_longest
 from pathlib import PurePath
 
 from runs.database import (DEFAULT_QUERY_FLAGS, DataBase, QueryArgs,
@@ -17,8 +16,8 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'mv',
         help='Move a run from OLD to NEW. '
-             'Functionality is identical to Linux `mv` except that non-existent dirs'
-             'are created and empty dirs are removed automatically.')
+        'Functionality is identical to Linux `mv` except that non-existent dirs'
+        'are created and empty dirs are removed automatically.')
 
     default_flags = copy(DEFAULT_QUERY_FLAGS)
     del default_flags['--descendants']
@@ -88,7 +87,8 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
                 if like(str(p), str(src_pattern) + '%'):
                     matching = PurePath(p)
             if matching is None:
-                raise RuntimeError(f'Somehow, {entry.path} does not match with {src_pattern}.')
+                raise RuntimeError(
+                    f'Somehow, {entry.path} does not match with {src_pattern}.')
 
             part_to_replace = add_root(matching)
 
@@ -97,9 +97,7 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
             path = add_root(entry.path)
 
             dest = path.replace(str(part_to_replace), str(dest_path))
-            dest_to_src[dest] += [
-                entry.path
-            ]
+            dest_to_src[dest] += [entry.path]
 
         for dest, srcs in dest_to_src.items():
             for i, src in enumerate(srcs):

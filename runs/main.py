@@ -8,7 +8,7 @@ from pathlib import Path, PurePath
 from typing import List
 
 from runs.commands import (change_description, correlate, flags, kill, lookup,
-                           ls, mv, new, reproduce, rm, table, new_from_spec)
+                           ls, mv, new, new_from_spec, reproduce, rm, table)
 from runs.logger import Logger
 
 MAIN = 'main'

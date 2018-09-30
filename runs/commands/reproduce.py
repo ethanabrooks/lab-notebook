@@ -32,7 +32,7 @@ def add_subparser(subparsers):
 @DataBase.open
 @DataBase.query
 def cli(runs: List[RunEntry], flags: List[str], logger: Logger, db: DataBase, prefix: str,
-         path: Optional[PurePath], description: str, *args, **kwargs):
+        path: Optional[PurePath], description: str, *args, **kwargs):
     for string in strings(
             db=db,
             runs=runs,
@@ -45,7 +45,7 @@ def cli(runs: List[RunEntry], flags: List[str], logger: Logger, db: DataBase, pr
 
 
 def strings(runs: List[RunEntry], flags: List[str], prefix: str, db: DataBase,
-             path: Optional[PurePath], description: Optional[str]):
+            path: Optional[PurePath], description: Optional[str]):
     entry_dict = defaultdict(list)
     return_strings = [highlight('To reproduce:')]
     for entry in runs:
@@ -66,9 +66,10 @@ def strings(runs: List[RunEntry], flags: List[str], prefix: str, db: DataBase,
                 prefix=prefix,
                 command=entry.command,
                 flags=flags)
-            new_path, subcommand, _description = map(
-                json.dumps, [str(new_path), subcommand,
-                             description or entry.description.strip('"').strip("'")])
+            new_path, subcommand, _description = map(json.dumps, [
+                str(new_path), subcommand, description
+                or entry.description.strip('"').strip("'")
+            ])
             if len(entries) == 1:
                 command_string += f' {new_path} {subcommand} --description={_description}'
             else:

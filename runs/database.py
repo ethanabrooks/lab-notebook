@@ -13,15 +13,16 @@ from runs.util import PurePath
 PathLike = Union[str, PurePath, PurePath, Path]
 
 DEFAULT_QUERY_FLAGS = {
-    'patterns': dict(
-        nargs='*', type=PurePath, help='Look up runs matching these patterns'),
-    '--unless': dict(
-        nargs='*', type=PurePath, help='Exclude these paths from the search.'),
-    '--active': dict(action='store_true', help='Include all active runs in query.'),
-    '--descendants': dict(
-        action='store_true', help='Include all descendants of pattern.'),
-    '--sort': dict(
-        default='datetime', choices=RunEntry.fields(), help='Sort query by this field.')
+    'patterns':
+    dict(nargs='*', type=PurePath, help='Look up runs matching these patterns'),
+    '--unless':
+    dict(nargs='*', type=PurePath, help='Exclude these paths from the search.'),
+    '--active':
+    dict(action='store_true', help='Include all active runs in query.'),
+    '--descendants':
+    dict(action='store_true', help='Include all descendants of pattern.'),
+    '--sort':
+    dict(default='datetime', choices=RunEntry.fields(), help='Sort query by this field.')
 }
 
 
@@ -153,7 +154,7 @@ class DataBase:
         if descendants:
             patterns = [f'{pattern}%' for pattern in patterns]
         return [
-            RunEntry(PurePath(p), *e) for p, *e in self.execute(
+            RunEntry(PurePath(p), *e) for (p, *e) in self.execute(
                 command=self.select(like=patterns, unless=unless, order=order),
                 patterns=patterns,
                 unless=unless,
@@ -163,7 +164,7 @@ class DataBase:
     def __getitem__(self, patterns: Sequence[PathLike]) -> List[RunEntry]:
         return [
             RunEntry(PurePath(p), *e)
-            for p, *e in self.execute(self.select(like=patterns), patterns).fetchall()
+            for (p, *e) in self.execute(self.select(like=patterns), patterns).fetchall()
         ]
 
     def __delitem__(self, *patterns: PathLike):

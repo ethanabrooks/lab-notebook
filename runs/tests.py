@@ -128,9 +128,7 @@ flags : {flag_string}
         f.write(SCRIPT)
     BASH.cmd(['git', 'add', '--all'], cwd=WORK_DIR)
     BASH.cmd(['git', 'commit', '-am', 'init'], cwd=WORK_DIR)
-    run_main('new',
-             f'--path={path}',
-             f'--command={COMMAND}',
+    run_main('new', f'--path={path}', f'--command={COMMAND}',
              f'--description="{DESCRIPTION}"')
     yield
     BASH.cmd('tmux kill-session -t'.split() + [path], fail_ok=True)
