@@ -1,6 +1,6 @@
 # stdlib
-import json
 from collections import defaultdict
+import json
 from typing import List, Optional
 
 # first party

@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # stdlib
+# stdlib
 import argparse
 import codecs
-import sys
 from configparser import ConfigParser, ExtendedInterpolation
 from importlib import import_module
 from pathlib import Path, PurePath
+import sys
 from typing import List
 
 # first party
-from runs.commands import (change_description, correlate, flags, kill, lookup,
-                           ls, mv, new, new_from_spec, reproduce, rm, table)
+from runs.commands import (change_description, correlate, flags, kill, lookup, ls, mv, new, new_from_spec, reproduce,
+                           rm, table)
 from runs.logger import Logger
 
 MAIN = 'main'

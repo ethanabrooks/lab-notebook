@@ -10,8 +10,7 @@ from runs.file_system import FileSystem
 from runs.logger import UI
 from runs.run_entry import RunEntry
 from runs.shell import Bash
-from runs.transaction.change_description import (ChangeDescriptionTransaction,
-                                                 DescriptionChange)
+from runs.transaction.change_description import ChangeDescriptionTransaction, DescriptionChange
 from runs.transaction.kill import KillTransaction
 from runs.transaction.move import Move, MoveTransaction
 from runs.transaction.new import NewRunTransaction

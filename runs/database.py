@@ -1,9 +1,9 @@
 # stdlib
-import sqlite3
 from collections import namedtuple
 from copy import copy
 from functools import wraps
 from pathlib import Path
+import sqlite3
 from typing import Iterable, List, Union
 
 # first party

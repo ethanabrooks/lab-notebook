@@ -1,7 +1,7 @@
 # stdlib
 import argparse
-import pickle
 from pathlib import Path, PurePath
+import pickle
 
 # third party
 import yaml

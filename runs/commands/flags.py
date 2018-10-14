@@ -1,6 +1,6 @@
 # stdlib
-import re
 from collections import defaultdict
+import re
 from typing import List
 
 # first party

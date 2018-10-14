@@ -1,12 +1,11 @@
 # stdlib
-import re
-import sqlite3
 from collections import defaultdict
 from copy import copy
+import re
+import sqlite3
 
 # first party
-from runs.database import (DEFAULT_QUERY_FLAGS, DataBase, QueryArgs,
-                           add_query_flags)
+from runs.database import DEFAULT_QUERY_FLAGS, DataBase, QueryArgs, add_query_flags
 from runs.transaction.transaction import Transaction
 from runs.util import PurePath
 
