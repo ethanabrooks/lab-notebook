@@ -2,8 +2,8 @@ import sqlite3
 from collections import namedtuple
 from copy import copy
 from functools import wraps
-from pathlib import Path, PurePath
-from typing import List, Sequence, Union
+from pathlib import Path
+from typing import List, Sequence, Union, Sized
 
 from runs.logger import Logger
 from runs.run_entry import RunEntry
@@ -11,18 +11,19 @@ from runs.tmux_session import TMUXSession
 from runs.util import PurePath
 
 PathLike = Union[str, PurePath, PurePath, Path]
+Patterns = Union[dict, Sized]
 
 DEFAULT_QUERY_FLAGS = {
     'patterns':
-    dict(nargs='*', type=PurePath, help='Look up runs matching these patterns'),
+        dict(nargs='*', type=PurePath, help='Look up runs matching these patterns'),
     '--unless':
-    dict(nargs='*', type=PurePath, help='Exclude these paths from the search.'),
+        dict(nargs='*', type=PurePath, help='Exclude these paths from the search.'),
     '--active':
-    dict(action='store_true', help='Include all active runs in query.'),
+        dict(action='store_true', help='Include all active runs in query.'),
     '--descendants':
-    dict(action='store_true', help='Include all descendants of pattern.'),
+        dict(action='store_true', help='Include all descendants of pattern.'),
     '--sort':
-    dict(default='datetime', choices=RunEntry.fields(), help='Sort query by this field.')
+        dict(default='datetime', choices=RunEntry.fields(), help='Sort query by this field.')
 }
 
 
@@ -55,7 +56,7 @@ class DataBase:
     @staticmethod
     def bundle_query_args(func):
         @wraps(func)
-        def bundle_query_args_wrapper(logger, db, patterns, descendants, unless, active,
+        def bundle_query_args_wrapper(logger: Logger, db: DataBase, patterns, descendants, unless, active,
                                       *args, **kwargs):
             if active:
                 patterns = TMUXSession.active_runs(logger)
@@ -75,7 +76,7 @@ class DataBase:
     @staticmethod
     def query(func):
         @wraps(func)
-        def query_wrapper(db, query_args: QueryArgs, *args, **kwargs):
+        def query_wrapper(db: DataBase, query_args: QueryArgs, *args, **kwargs):
             runs = db.get(**(query_args._asdict()))
             return func(*args, **kwargs, runs=runs, db=db)
 
@@ -107,21 +108,21 @@ class DataBase:
         self.conn.commit()
         self.conn.close()
 
-    def where(self, conditions):
-        if isinstance(conditions, dict):
-            keys = conditions.keys()
+    def where(self, patterns: Patterns):
+        if isinstance(patterns, dict):
+            keys = patterns.keys()
         else:
-            keys = [self.key] * len(conditions)
+            keys = [self.key] * len(patterns)
         return ' WHERE ' + ' OR '.join(f'{k} LIKE ?' for k in keys)
 
-    def select(self, arg='*', like=None, unless=None, order=None):
+    def select(self, arg='*', patterns: Patterns = None, unless=None, order=None):
         string = f"""
         SELECT {arg} FROM {self.table_name}
         """
-        if like:
-            string += self.where(conditions=like)
+        if patterns:
+            string += self.where(patterns=patterns)
         if unless:
-            string += f' EXCEPT {self.select(like=unless)}'
+            string += f' EXCEPT {self.select(patterns=unless)}'
         if order:
             if order not in self.fields:
                 self.logger.exit('The following keys are invalid: '
@@ -144,7 +145,7 @@ class DataBase:
         return self.conn.execute(command, values)
 
     def __contains__(self, *patterns: PathLike) -> bool:
-        return bool(self.execute(self.select(like=patterns), patterns).fetchone())
+        return bool(self.execute(self.select(patterns=patterns), patterns).fetchone())
 
     def get(self,
             patterns: Sequence[PathLike],
@@ -155,7 +156,7 @@ class DataBase:
             patterns = [f'{pattern}%' for pattern in patterns]
         return [
             RunEntry(PurePath(p), *e) for (p, *e) in self.execute(
-                command=self.select(like=patterns, unless=unless, order=order),
+                command=self.select(patterns=patterns, unless=unless, order=order),
                 patterns=patterns,
                 unless=unless,
             ).fetchall()
@@ -164,7 +165,7 @@ class DataBase:
     def __getitem__(self, patterns: Sequence[PathLike]) -> List[RunEntry]:
         return [
             RunEntry(PurePath(p), *e)
-            for (p, *e) in self.execute(self.select(like=patterns), patterns).fetchall()
+            for (p, *e) in self.execute(self.select(patterns=patterns), patterns).fetchall()
         ]
 
     def __delitem__(self, *patterns: PathLike):
@@ -197,7 +198,7 @@ class DataBase:
         """)
 
     def entry(self, path: PathLike):
-        entries = self[path, ]
+        entries = self[path,]
         if len(entries) == 0:
             self.logger.exit(
                 f"Found no entries for {path}. Current entries:",
