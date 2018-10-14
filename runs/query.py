@@ -29,7 +29,7 @@ class Predicate(Condition):
         self.value = value
 
     def values(self):
-        return self.value
+        return [self.value]
 
     @abstractmethod
     def __str__(self):
@@ -49,6 +49,9 @@ class Equals(Predicate):
 class In(Predicate):
     def __str__(self):
         return f'{self.column} IN ({",".join(["?" for _ in self.value])})'
+
+    def values(self):
+        return self.value
 
 
 class Operator(Condition):

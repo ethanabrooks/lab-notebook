@@ -153,7 +153,7 @@ class DataBase:
 
         condition = DataBase.pattern_match(*patterns)
         if active:
-            condition = condition and In('path', TMUXSession.active_runs(self.logger))
+            condition = condition & In('path', TMUXSession.active_runs(self.logger))
 
         return [
             RunEntry(PurePath(p), *e) for (p, *e) in self.select(
