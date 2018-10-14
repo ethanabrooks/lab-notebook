@@ -1,7 +1,6 @@
 # stdlib
 from collections import defaultdict
 from copy import copy
-import re
 import sqlite3
 
 # first party
@@ -49,25 +48,6 @@ def cli(query_args: QueryArgs, destination: str, kill_tmux: bool,
         transaction=transaction)
 
 
-def add_root(path):
-    return './' + re.sub('\A\./', '', str(path))
-
-
-def add_slash(path):
-    return str(path).rstrip('/') + '/'
-
-
-def like(a: str, b: str) -> bool:
-    conn = sqlite3.connect(":memory:")
-    try:
-        c = conn.cursor()
-        c.execute("SELECT ? LIKE ?", (a, b))
-        result, = c.fetchone()
-        return bool(result)
-    finally:
-        conn.close()
-
-
 def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Transaction,
          db: DataBase):
     dest_path_is_dir = any(
@@ -105,3 +85,14 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
                 transaction.move(src=src, dest=dest, kill_tmux=kill_tmux)
                 if dest in db:
                     transaction.remove(dest)
+
+
+def like(a: str, b: str) -> bool:
+    conn = sqlite3.connect(":memory:")
+    try:
+        c = conn.cursor()
+        c.execute("SELECT ? LIKE ?", (a, b))
+        result, = c.fetchone()
+        return bool(result)
+    finally:
+        conn.close()
