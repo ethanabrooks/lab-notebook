@@ -16,6 +16,6 @@ COPY runs-git .
 COPY runs runs/
 RUN pip3 install -e .
 
-CMD ["nosetests", "-v", "-s"]
- #, "runs/tests.py:test_move_dirs"]
+CMD ["nosetests", "-s"]
+ #, "-v", "runs/tests.py:test_move_dirs"]
 
