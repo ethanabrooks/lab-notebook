@@ -22,7 +22,6 @@ def add_subparser(subparsers):
 @DataBase.query
 def cli(transaction: Transaction, runs: List[RunEntry], description: Optional[str], *args,
         **kwargs):
-
     for run in runs:
         transaction.change_description(
             path=run.path,

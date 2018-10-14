@@ -79,7 +79,6 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
         dest_path = add_slash(dest_path)
 
     for src_pattern in query_args.patterns:
-
         dest_to_src = defaultdict(list)
         src_entries = db.get(**query_args._replace(patterns=[src_pattern])._asdict())
         for entry in src_entries:

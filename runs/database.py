@@ -146,12 +146,14 @@ class DataBase:
             active: bool = False,
     ) -> List[RunEntry]:
 
-        condition = DataBase.pattern_match(*patterns)
-        if active:
-            condition = condition and In('path', TMUXSession.active_runs(self.logger))
         if descendants:
             patterns = list(map(str, patterns))
             patterns += [f'{str(pattern).rstrip("/%")}/%' for pattern in patterns]
+
+        condition = DataBase.pattern_match(*patterns)
+        if active:
+            condition = condition and In('path', TMUXSession.active_runs(self.logger))
+
         return [
             RunEntry(PurePath(p), *e) for (p, *e) in self.select(
                 condition=condition,
