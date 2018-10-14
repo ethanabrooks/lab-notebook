@@ -1,7 +1,7 @@
 # stdlib
 import math
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 # first party

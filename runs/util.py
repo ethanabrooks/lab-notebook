@@ -1,10 +1,10 @@
 # stdlib
 import argparse
-from datetime import datetime
-from pathlib import Path, PurePath
 import re
 import shutil
 import subprocess
+from datetime import datetime
+from pathlib import Path, PurePath
 
 RED = "\033[1;31m"
 BLUE = "\033[1;34m"

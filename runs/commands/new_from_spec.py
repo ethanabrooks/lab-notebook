@@ -1,6 +1,6 @@
 # stdlib
-from collections.__init__ import namedtuple
 import json
+from collections.__init__ import namedtuple
 from pathlib import Path
 from typing import List
 

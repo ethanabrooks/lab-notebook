@@ -1,8 +1,8 @@
 # stdlib
-from argparse import ArgumentParser
-from datetime import datetime
 import itertools
 import re
+from argparse import ArgumentParser
+from datetime import datetime
 from typing import List
 
 # first party

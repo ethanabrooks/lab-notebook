@@ -1,13 +1,14 @@
 # stdlib
-from contextlib import contextmanager
-from fnmatch import fnmatch
 import os
-from pathlib import Path
 import shutil
 import subprocess
+from contextlib import contextmanager
+from fnmatch import fnmatch
+from pathlib import Path
 
 # third party
-from nose.tools import assert_false, assert_in, assert_is_instance, assert_not_in, assert_raises, eq_, ok_
+from nose.tools import (assert_false, assert_in, assert_is_instance,
+                        assert_not_in, assert_raises, eq_, ok_)
 
 # first party
 from runs import main

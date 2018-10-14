@@ -1,6 +1,7 @@
 # first party
-from runs.run import Run
 import tensorflow as tf
+
+from runs.run import Run
 
 
 def summarize_run(run_path: str, summary_path: str):

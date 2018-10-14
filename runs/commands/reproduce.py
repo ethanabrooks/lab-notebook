@@ -1,6 +1,6 @@
 # stdlib
-from collections import defaultdict
 import json
+from collections import defaultdict
 from typing import List, Optional
 
 # first party
