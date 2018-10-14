@@ -111,7 +111,7 @@ class DataBase:
         self.conn.close()
 
     def check_field(self, field: str):
-        if field not in self.fields + [None]:
+        if field not in list(self.fields) + [None]:
             self.logger.exit(
                 f'{field} must be one of the following values: {self.fields}')
 
