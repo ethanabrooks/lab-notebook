@@ -1,7 +1,7 @@
 from collections import namedtuple
 from functools import wraps
 from pathlib import PurePath
-from typing import List
+from typing import List, Iterable
 
 from runs.database import DataBase
 from runs.file_system import FileSystem
@@ -109,11 +109,12 @@ class Transaction:
     def kill(self, path: PurePath):
         self.sub_transactions.kill.add(path)
 
-    def change_description(self, path: PurePath, command: str, old_description: str,
+    def change_description(self, paths: Iterable[PurePath], command: str, old_description: str,
                            new_description: str):
-        self.sub_transactions.description_change.add(
-            DescriptionChange(
-                path=path,
-                command=command,
-                old_description=old_description,
-                new_description=new_description))
+        for path in paths:
+            self.sub_transactions.description_change.add(
+                DescriptionChange(
+                    paths=path,
+                    command=command,
+                    old_description=old_description,
+                    new_description=new_description))

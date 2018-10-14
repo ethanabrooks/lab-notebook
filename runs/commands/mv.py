@@ -2,10 +2,11 @@ import re
 import sqlite3
 from collections import defaultdict
 from copy import copy
-from pathlib import PurePath
+from typing import List
 
-from runs.database import (DEFAULT_QUERY_FLAGS, DataBase, QueryArgs,
+from runs.database import (DEFAULT_QUERY_FLAGS, DataBase,
                            add_query_flags)
+from runs.run_entry import RunEntry
 from runs.transaction.transaction import Transaction
 from runs.util import PurePath
 
@@ -38,11 +39,11 @@ def add_subparser(subparsers):
 
 
 @Transaction.wrapper
-@DataBase.bundle_query_args
-def cli(query_args: QueryArgs, destination: PurePath, kill_tmux: bool,
+@DataBase.query
+def cli(runs: List[RunEntry], destination: str, kill_tmux: bool,
         transaction: Transaction, db: DataBase, *args, **kwargs):
     move(
-        query_args=query_args,
+        runs=runs,
         db=db,
         dest_path=destination,
         kill_tmux=kill_tmux,
@@ -68,7 +69,7 @@ def like(a: str, b: str) -> bool:
         conn.close()
 
 
-def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Transaction,
+def move(runs: List[RunEntry], dest_path: str, kill_tmux: bool, transaction: Transaction,
          db: DataBase):
     dest_path_is_dir = any([
         dest_path == PurePath('.'), f'{dest_path}/%' in db,
@@ -77,34 +78,24 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
     if dest_path_is_dir:
         dest_path = add_slash(dest_path)
 
-    for src_pattern in query_args.patterns:
-        dest_to_src = defaultdict(list)
-        src_entries = db.get(**query_args._replace(patterns=[src_pattern])._asdict())
-        for entry in src_entries:
-            parents = [entry.path] + [str(p) + '/' for p in entry.path.parents]
-            matching = None
-            for p in parents:
-                if like(str(p), str(src_pattern) + '%'):
-                    matching = PurePath(p)
-            if matching is None:
-                raise RuntimeError(
-                    f'Somehow, {entry.path} does not match with {src_pattern}.')
+    dest_to_src = defaultdict(list)
+    for run in runs:
 
-            part_to_replace = add_root(matching)
+        part_to_replace = add_root(matching)
 
-            if dest_path_is_dir:
-                part_to_replace = add_root(add_slash(src_pattern.parent))
-            path = add_root(entry.path)
+        if dest_path_is_dir:
+            part_to_replace = add_root(add_slash(src_pattern.parent))
+        path = add_root(run.path)
 
-            dest = path.replace(str(part_to_replace), str(dest_path))
-            dest_to_src[dest] += [entry.path]
+        dest = path.replace(str(part_to_replace), str(dest_path))
+        dest_to_src[dest] += [run.path]
 
-        for dest, srcs in dest_to_src.items():
-            for i, src in enumerate(srcs):
-                if len(srcs) > 1:
-                    dest = PurePath(dest, str(i))
-                else:
-                    dest = PurePath(dest)
-                transaction.move(src=src, dest=dest, kill_tmux=kill_tmux)
-                if dest in db:
-                    transaction.remove(dest)
+    for dest, srcs in dest_to_src.items():
+        for i, src in enumerate(srcs):
+            if len(srcs) > 1:
+                dest = PurePath(dest, str(i))
+            else:
+                dest = PurePath(dest)
+            transaction.move(src=src, dest=dest, kill_tmux=kill_tmux)
+            if dest in db:
+                transaction.remove(dest)

@@ -1,11 +1,12 @@
 import sqlite3
-from collections import namedtuple
 from copy import copy
 from functools import wraps
 from pathlib import Path
-from typing import List, Sequence, Union, Sized
+from typing import Union, Iterable, List
 
+from runs import query
 from runs.logger import Logger
+from runs.query import Condition, In, Like
 from runs.run_entry import RunEntry
 from runs.tmux_session import TMUXSession
 from runs.util import PurePath
@@ -38,10 +39,10 @@ def add_query_flags(
         parser.add_argument(arg_name, **kwargs)
 
 
-QueryArgs = namedtuple('QueryArgs', 'patterns unless order descendants')
-
-
 class DataBase:
+    def pattern_match(*patterns: str):
+        return query.Any(*[Like('path', pattern) for pattern in patterns])
+
     @staticmethod
     def open(func):
         @wraps(func)
@@ -53,33 +54,22 @@ class DataBase:
         return open_wrapper
 
     @staticmethod
-    def bundle_query_args(func):
-        @wraps(func)
-        def bundle_query_args_wrapper(logger: Logger, db: DataBase, patterns, descendants, unless, active,
-                                      *args, **kwargs):
-            if active:
-                patterns = TMUXSession.active_runs(logger)
-            sort = kwargs['sort'] if 'sort' in kwargs else None
-            query_args = QueryArgs(
-                patterns=patterns, unless=unless, order=sort, descendants=descendants)
-            return func(
-                *args,
-                **kwargs,
-                query_args=query_args,
-                patterns=patterns,
-                logger=logger,
-                db=db)
-
-        return bundle_query_args_wrapper
-
-    @staticmethod
     def query(func):
         @wraps(func)
-        def query_wrapper(db: DataBase, query_args: QueryArgs, *args, **kwargs):
-            runs = db.get(**(query_args._asdict()))
-            return func(*args, **kwargs, runs=runs, db=db)
+        def query_wrapper(logger: Logger, db: DataBase, patterns: Iterable[str], unless: Iterable[str],
+                          descendants: bool, active: bool,  order: str = None, *args, **kwargs):
+            if descendants:
+                patterns = [f'{pattern}/%' for pattern in patterns]
+            condition = DataBase.pattern_match(*patterns)
+            if active:
+                condition = condition and In('path', TMUXSession.active_runs(logger))
+            if unless is not None:
+                unless = query.Any([Like('path', pattern) for pattern in unless])
+            runs = [RunEntry(PurePath(p), *e) for (p, *e) in
+                    db.select(condition=condition, unless=unless, order=order).fetchall()]
+            return func(*args, **kwargs, logger=logger, runs=runs, db=db)
 
-        return DataBase.bundle_query_args(query_wrapper)
+        return query_wrapper
 
     def __init__(self, path, logger: Logger):
         self.logger = logger
@@ -89,9 +79,9 @@ class DataBase:
         self.columns = set(RunEntry.fields())
         self.key = 'path'
         self.fields = RunEntry.fields()
-        self.condition = f"""
-        FROM {self.table_name} WHERE {self.key} LIKE
-        """
+        # self.condition = f"""
+        # FROM {self.table_name} WHERE {self.key} LIKE
+        # """
 
     def __enter__(self):
         self.conn = sqlite3.connect(str(self.path))
@@ -107,102 +97,104 @@ class DataBase:
         self.conn.commit()
         self.conn.close()
 
-    def where(self, patterns: Sized):
-        if isinstance(patterns, dict):
-            raise DeprecationWarning
-        keys = [self.key] * len(patterns)
-        return ' WHERE ' + ' OR '.join(f'{k} LIKE ?' for k in keys)
+    # def select(self, columns='*', condition: Sized = None, unless=None, order=None):
+    #     string = f"""
+    #     SELECT {columns} FROM {self.table_name}
+    #     """
+    #     if condition:
+    #         string += self.where(patterns=condition)
+    #     if unless:
+    #         string += f' EXCEPT {self.select(condition=unless)}'
+    #     if order:
+    #         if order not in self.fields:
+    #             self.logger.exit('The following keys are invalid: '
+    #                              f'{", ".join(invalid_keys)}')
+    #
+    #         string += f' ORDER BY "{order}"'
+    #     return string
 
-    def select(self, arg='*', patterns: Sized = None, unless=None, order=None):
+    def check_field(self, field: str):
+        if field not in self.fields + [None]:
+            self.logger.exit(f'{field} must be one of the following values: {self.fields}')
+
+    def select(self, columns: Iterable = None, condition: Condition = None, unless: Condition = None,
+               order: str = None) -> sqlite3.Cursor:
+        if columns is None:
+            columns = ['*']
         string = f"""
-        SELECT {arg} FROM {self.table_name}
+        SELECT {','.join(columns)} FROM {self.table_name}
         """
-        if patterns:
-            string += self.where(patterns=patterns)
-        if unless:
-            string += f' EXCEPT {self.select(patterns=unless)}'
-        if order:
-            if order not in self.fields:
-                self.logger.exit('The following keys are invalid: '
-                                 f'{", ".join(invalid_keys)}')
-
+        values = []
+        if condition is not None:
+            string += f'WHERE {condition}'
+            values += condition.values()
+        if unless is not None:
+            string += f' EXCEPT {condition}'
+            values += unless.values()
+        if order is not None:
+            self.check_field(order)
             string += f' ORDER BY "{order}"'
-        return string
+        return self.execute(string, values)
 
-    def execute(self,
-                command: str,
-                patterns: Sequence[PathLike] = None,
-                unless: Sequence[PathLike] = None) -> sqlite3.Cursor:
-        if patterns is None:
-            patterns = []
+    def get(self, patterns: Iterable[PurePath], unless: Iterable[PurePath] = None, order: bool = None) -> List[RunEntry]:
         if unless is None:
             unless = []
-        values = tuple(map(str, patterns))
-        if unless:
-            values += tuple(map(str, unless))
-        return self.conn.execute(command, values)
+        return [RunEntry(PurePath(p), *e) for (p, *e) in
+                self.select(condition=DataBase.pattern_match(*patterns),
+                            unless=DataBase.pattern_match(*unless),
+                            order=order).fetchall()]
+
+    def __getitem__(self, patterns) -> List[RunEntry]:
+        if not isinstance(patterns, Iterable):
+            patterns = [patterns]
+        return self.get(patterns)
+
+    def execute(self, sql: str, parameters: Iterable):
+        return self.conn.execute(sql, tuple(map(str, parameters)))
 
     def __contains__(self, *patterns: PathLike) -> bool:
-        return bool(self.execute(command=self.select(patterns=patterns),
-                                 patterns=patterns).fetchone())
-
-    def get(self,
-            patterns: Sequence[PathLike],
-            unless: Sequence[PathLike] = None,
-            order: str = None,
-            descendants: bool = False) -> List[RunEntry]:
-        if descendants:
-            patterns = [f'{pattern}%' for pattern in patterns]
-        return [
-            RunEntry(PurePath(p), *e) for (p, *e) in self.execute(
-                command=self.select(patterns=patterns, unless=unless, order=order),
-                patterns=patterns,
-                unless=unless,
-            ).fetchall()
-        ]
-
-    def __getitem__(self, patterns: Sequence[PathLike]) -> List[RunEntry]:
-        return [
-            RunEntry(PurePath(p), *e)
-            for (p, *e) in self.execute(self.select(patterns=patterns), patterns).fetchall()
-        ]
+        return bool(self.select(condition=DataBase.pattern_match(*patterns)).fetchone())
 
     def __delitem__(self, *patterns: PathLike):
-        self.execute(f'DELETE FROM {self.table_name} {self.where(patterns)}', patterns)
+        self.execute(f'DELETE FROM {self.table_name} WHERE {DataBase.pattern_match(*patterns)}', patterns)
 
     def append(self, run: RunEntry):
-        placeholders = ','.join('?' for _ in run)
-        self.conn.execute(
+        placeholders = ','.join('?' * len(run))
+        self.execute(
             f"""
         INSERT INTO {self.table_name} ({self.fields}) VALUES ({placeholders})
-        """, [str(x) for x in run])
+        """, run)
 
-    def all(self, unless=None, order=None):
+    def all(self, unless: Condition = None, order: str = None):
+        self.check_field(order)
         return [
-            RunEntry(*e) for e in self.execute(
-                self.select(unless=unless, order=order), unless).fetchall()
+            RunEntry(*e) for e in self.select(unless=unless, order=order).fetchall()
         ]
+
+    def all_paths(self):
+        return self.select(columns=['path'])
 
     def update(self, *patterns: PathLike, **kwargs):
         update_placeholders = ','.join([f'{k} = ?' for k in kwargs])
-        self.execute(
+        condition = query.Any(*[Like(self.key, p) for p in patterns])
+        self.conn.execute(
             f"""
-        UPDATE {self.table_name} SET {update_placeholders} {self.where(patterns)}
+        UPDATE {self.table_name} SET {update_placeholders} WHERE {condition}
         """,
-            list(kwargs.values()) + list(patterns))
+            list(kwargs.values()) + condition.values())
 
     def delete(self):
         self.conn.execute(f"""
         DROP TABLE IF EXISTS {self.table_name}
         """)
 
-    def entry(self, path: PathLike):
-        entries = self[path,]
-        if len(entries) == 0:
-            self.logger.exit(
-                f"Found no entries for {path}. Current entries:",
-                *[e.path for e in self.all()],
-                sep='\n')
-        if len(entries) > 1:
-            self.logger.exit(f"Found multiple entries for {path}:", *entries, sep='\n')
-        return entries[0]
+    # def entry(self, path: PathLike):
+    #     entries = self[path,]
+    #     if len(entries) == 0:
+    #         self.logger.exit(
+    #             f"Found no entries for {path}. Current entries:",
+    #             self.all_paths(),
+    #             sep='\n')
+    #     if len(entries) > 1:
+    #         self.logger.exit(f"Found multiple entries for {path}:", *entries, sep='\n')
+    #     return entries[0]
