@@ -64,8 +64,8 @@ class DataBase:
         @wraps(func)
         def query_wrapper(logger: Logger,
                           db: DataBase,
-                          patterns: Iterable[str],
-                          unless: Iterable[str],
+                          patterns: Iterable[PurePath],
+                          unless: Iterable[PurePath],
                           descendants: bool,
                           active: bool,
                           order: str = None,
@@ -77,11 +77,12 @@ class DataBase:
                 order=order,
                 descendants=descendants,
                 active=active)
-            condition = DataBase.pattern_match(*patterns)
-            if active:
-                condition = condition and In('path', TMUXSession.active_runs(logger))
             runs = db.get(
-                patterns=patterns, unless=unless, order=order, descendants=descendants)
+                patterns=patterns,
+                unless=unless,
+                order=order,
+                descendants=descendants,
+                active=active)
             return func(
                 *args, **kwargs, logger=logger, runs=runs, db=db, query_args=query_args)
 
