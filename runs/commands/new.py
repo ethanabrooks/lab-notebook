@@ -1,9 +1,11 @@
-import itertools
-import re
+# stdlib
 from argparse import ArgumentParser
 from datetime import datetime
+import itertools
+import re
 from typing import List
 
+# first party
 from runs.logger import UI
 from runs.transaction.transaction import Transaction
 from runs.util import PurePath, interpolate_keywords

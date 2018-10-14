@@ -1,15 +1,16 @@
+# stdlib
 from collections import namedtuple
 from functools import wraps
 from pathlib import PurePath
-from typing import List, Iterable
+from typing import Iterable, List
 
+# first party
 from runs.database import DataBase
 from runs.file_system import FileSystem
 from runs.logger import UI
 from runs.run_entry import RunEntry
 from runs.shell import Bash
-from runs.transaction.change_description import (ChangeDescriptionTransaction,
-                                                 DescriptionChange)
+from runs.transaction.change_description import ChangeDescriptionTransaction, DescriptionChange
 from runs.transaction.kill import KillTransaction
 from runs.transaction.move import Move, MoveTransaction
 from runs.transaction.new import NewRunTransaction
@@ -109,8 +110,8 @@ class Transaction:
     def kill(self, path: PurePath):
         self.sub_transactions.kill.add(path)
 
-    def change_description(self, paths: Iterable[PurePath], command: str, old_description: str,
-                           new_description: str):
+    def change_description(self, paths: Iterable[PurePath], command: str,
+                           old_description: str, new_description: str):
         for path in paths:
             self.sub_transactions.description_change.add(
                 DescriptionChange(

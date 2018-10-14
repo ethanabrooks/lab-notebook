@@ -1,7 +1,10 @@
+# stdlib
 from typing import List
 
+# third party
 from tabulate import tabulate
 
+# first party
 from runs.database import DataBase, add_query_flags
 from runs.logger import Logger
 from runs.run_entry import RunEntry

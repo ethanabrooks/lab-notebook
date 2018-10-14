@@ -1,8 +1,9 @@
+# stdlib
 from copy import copy
-from pathlib import PurePath
-from typing import Optional, List
+from typing import List, Optional
 
-from runs.database import DEFAULT_QUERY_FLAGS, add_query_flags, DataBase
+# first party
+from runs.database import DEFAULT_QUERY_FLAGS, DataBase, add_query_flags
 from runs.run_entry import RunEntry
 from runs.transaction.transaction import Transaction
 
@@ -10,7 +11,8 @@ from runs.transaction.transaction import Transaction
 def add_subparser(subparsers):
     parser = subparsers.add_parser('change-description', help='Edit description of run.')
     default_flags = copy(DEFAULT_QUERY_FLAGS)
-    default_flags['patterns'].update(help='Name of run whose description you want to edit.')
+    default_flags['patterns'].update(
+        help='Name of run whose description you want to edit.')
     add_query_flags(parser, with_sort=False, default_flags=default_flags)
     parser.add_argument(
         'description',

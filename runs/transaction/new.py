@@ -1,5 +1,7 @@
+# stdlib
 from collections import namedtuple
 
+# first party
 from runs.run_entry import RunEntry
 from runs.transaction.sub_transaction import SubTransaction
 from runs.util import highlight

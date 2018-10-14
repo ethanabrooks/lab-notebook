@@ -1,13 +1,15 @@
-import os
-import shutil
-import subprocess
+# stdlib
 from contextlib import contextmanager
 from fnmatch import fnmatch
+import os
 from pathlib import Path
+import shutil
+import subprocess
 
-from nose.tools import (assert_false, assert_in, assert_is_instance,
-                        assert_not_in, assert_raises, eq_, ok_)
+# third party
+from nose.tools import assert_false, assert_in, assert_is_instance, assert_not_in, assert_raises, eq_, ok_
 
+# first party
 from runs import main
 from runs.commands import lookup, ls, table
 from runs.database import DataBase

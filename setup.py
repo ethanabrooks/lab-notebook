@@ -1,6 +1,9 @@
 #! /usr/bin/env python
+# stdlib
+# stdlib
 import codecs
 
+# third party
 from setuptools import setup
 
 with codecs.open('README.rst', encoding='utf-8') as f:

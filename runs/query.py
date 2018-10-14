@@ -1,3 +1,4 @@
+# stdlib
 from abc import abstractmethod
 
 
@@ -57,9 +58,7 @@ class Operator(Condition):
         self.conditions = conditions
 
     def values(self):
-        return [value
-                for condition in self.conditions
-                for value in condition.values()]
+        return [value for condition in self.conditions for value in condition.values()]
 
     @abstractmethod
     def __str__(self):
@@ -86,5 +85,3 @@ class Not(Operator):
 
     def __str__(self):
         return f'NOT {self.conditions}'
-
-
