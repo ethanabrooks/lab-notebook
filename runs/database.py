@@ -11,7 +11,6 @@ from runs.tmux_session import TMUXSession
 from runs.util import PurePath
 
 PathLike = Union[str, PurePath, PurePath, Path]
-Patterns = Union[dict, Sized]
 
 DEFAULT_QUERY_FLAGS = {
     'patterns':
@@ -108,14 +107,13 @@ class DataBase:
         self.conn.commit()
         self.conn.close()
 
-    def where(self, patterns: Patterns):
+    def where(self, patterns: Sized):
         if isinstance(patterns, dict):
-            keys = patterns.keys()
-        else:
-            keys = [self.key] * len(patterns)
+            raise DeprecationWarning
+        keys = [self.key] * len(patterns)
         return ' WHERE ' + ' OR '.join(f'{k} LIKE ?' for k in keys)
 
-    def select(self, arg='*', patterns: Patterns = None, unless=None, order=None):
+    def select(self, arg='*', patterns: Sized = None, unless=None, order=None):
         string = f"""
         SELECT {arg} FROM {self.table_name}
         """
@@ -145,7 +143,8 @@ class DataBase:
         return self.conn.execute(command, values)
 
     def __contains__(self, *patterns: PathLike) -> bool:
-        return bool(self.execute(self.select(patterns=patterns), patterns).fetchone())
+        return bool(self.execute(command=self.select(patterns=patterns),
+                                 patterns=patterns).fetchone())
 
     def get(self,
             patterns: Sequence[PathLike],
