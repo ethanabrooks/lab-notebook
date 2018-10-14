@@ -29,7 +29,7 @@ class Predicate(Condition):
         self.value = value
 
     def values(self):
-        return [self.value]
+        return self.value
 
     @abstractmethod
     def __str__(self):
