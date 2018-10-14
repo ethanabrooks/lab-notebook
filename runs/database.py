@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, date
 from functools import wraps
 from pathlib import Path
 import sqlite3
-from time import strptime
 from typing import Iterable, List, Union
 
 # first party
@@ -19,11 +18,13 @@ import re
 
 PathLike = Union[str, PurePath, PurePath, Path]
 
+def parse_datetime(string:str):
+    return datetime.strptime(string, '%y-%m-%d')
 
 def parse_time_delta(string: str):
     match = re.match(r"(?:(\d+)weeks?)?(?:(\d+)days?)?(?:(\d+)hours?)?", string)
-    week, day, hour = map(int, match.group(1, 2, 3))
-    return timedelta(weeks=week, days=day, hours=hour)
+    week, day, hour = [int(n) if n else 0 for n in match.group(1, 2, 3)]
+    return datetime.now() - timedelta(weeks=week, days=day, hours=hour)
 
 
 DEFAULT_QUERY_FLAGS = {
@@ -40,7 +41,7 @@ DEFAULT_QUERY_FLAGS = {
     '--since':
     dict(
         default=None,
-        type=strptime,
+        type=parse_datetime,
         help='Only display runs since this date (use isoformat).'),
     '--from-last':
     dict(
@@ -182,10 +183,10 @@ class DataBase:
 
         condition = DataBase.pattern_match(*patterns)
         if since or from_last:
-            if from_last:
-                time = datetime.now() - from_last
             if since:
                 time = since
+            if from_last:
+                time = datetime.now() - from_last
             if since and from_last:
                 time = max(datetime.now() - from_last, since)
             condition = condition & GreaterThan('datetime', time)
