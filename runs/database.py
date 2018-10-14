@@ -153,20 +153,22 @@ class DataBase:
                order: str = None) -> sqlite3.Cursor:
         if columns is None:
             columns = ['*']
-        string = f"""
+        select = f"""
         SELECT {','.join(columns)} FROM {self.table_name}
         """
+        sql = select
         values = []
         if condition:
-            string += f'WHERE {condition}'
+            sql += f'WHERE {condition}'
             values += condition.values()
         if unless:
-            string += f' EXCEPT {condition}'
+            sql += f' EXCEPT {select} WHERE {condition}'
             values += unless.values()
         if order:
             self.check_field(order)
-            string += f' ORDER BY "{order}"'
-        return self.execute(string, values)
+            sql += f' ORDER BY "{order}"'
+        import ipdb; ipdb.set_trace()
+        return self.execute(sql, values)
 
     def get(
             self,
