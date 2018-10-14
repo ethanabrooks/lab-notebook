@@ -46,6 +46,16 @@ class Equals(Predicate):
         return f'{self.column} = ?'
 
 
+class GreaterThan(Predicate):
+    def __str__(self):
+        return f'{self.column} > ?'
+
+
+class LessThan(Predicate):
+    def __str__(self):
+        return f'{self.column} < ?'
+
+
 class In(Predicate):
     def __str__(self):
         return f'{self.column} IN ({",".join(["?" for _ in self.value])})'

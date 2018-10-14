@@ -1,20 +1,30 @@
 # stdlib
 from collections import namedtuple
 from copy import copy
+from datetime import datetime, timedelta, date
 from functools import wraps
 from pathlib import Path
 import sqlite3
+from time import strptime
 from typing import Iterable, List, Union
 
 # first party
 from runs import query
 from runs.logger import Logger
-from runs.query import Condition, In, Like
+from runs.query import Condition, In, Like, GreaterThan
 from runs.run_entry import RunEntry
 from runs.tmux_session import TMUXSession
 from runs.util import PurePath
+import re
 
 PathLike = Union[str, PurePath, PurePath, Path]
+
+
+def parse_time_delta(string: str):
+    match = re.match(r"(?:(\d+)weeks?)?(?:(\d+)days?)?(?:(\d+)hours?)?", string)
+    week, day, hour = map(int, match.group(1, 2, 3))
+    return timedelta(weeks=week, days=day, hours=hour)
+
 
 DEFAULT_QUERY_FLAGS = {
     'patterns':
@@ -26,7 +36,19 @@ DEFAULT_QUERY_FLAGS = {
     '--descendants':
     dict(action='store_true', help='Include all descendants of pattern.'),
     '--sort':
-    dict(default='datetime', choices=RunEntry.fields(), help='Sort query by this field.')
+    dict(default='datetime', choices=RunEntry.fields(), help='Sort query by this field.'),
+    '--since':
+    dict(
+        default=None,
+        type=strptime,
+        help='Only display runs since this date (use isoformat).'),
+    '--from-last':
+    dict(
+        default=None,
+        type=parse_time_delta,
+        help='Only display runs created in the given time delta. '
+        'Either use "months", "weeks", "days", "hours" to specify time, e.g.'
+        '"2weeks1day" or specify a date: month/day/year.')
 }
 
 
@@ -68,6 +90,8 @@ class DataBase:
                           unless: Iterable[PurePath],
                           descendants: bool,
                           active: bool,
+                          since: datetime,
+                          from_last: timedelta,
                           order: str = None,
                           *args,
                           **kwargs):
@@ -82,7 +106,10 @@ class DataBase:
                 unless=unless,
                 order=order,
                 descendants=descendants,
-                active=active)
+                active=active,
+                since=since,
+                from_last=from_last,
+            )
             return func(
                 *args, **kwargs, logger=logger, runs=runs, db=db, query_args=query_args)
 
@@ -145,6 +172,8 @@ class DataBase:
             order: bool = None,
             descendants: bool = False,
             active: bool = False,
+            since: datetime = None,
+            from_last: timedelta = None,
     ) -> List[RunEntry]:
 
         if descendants:
@@ -152,6 +181,14 @@ class DataBase:
             patterns += [f'{str(pattern).rstrip("/%")}/%' for pattern in patterns]
 
         condition = DataBase.pattern_match(*patterns)
+        if since or from_last:
+            if from_last:
+                time = datetime.now() - from_last
+            if since:
+                time = since
+            if since and from_last:
+                time = max(datetime.now() - from_last, since)
+            condition = condition & GreaterThan('datetime', time)
         if active:
             condition = condition & In('path', TMUXSession.active_runs(self.logger))
 
