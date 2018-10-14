@@ -167,7 +167,6 @@ class DataBase:
         if order:
             self.check_field(order)
             sql += f' ORDER BY "{order}"'
-        import ipdb; ipdb.set_trace()
         return self.execute(sql, values)
 
     def get(
