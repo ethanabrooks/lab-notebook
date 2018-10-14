@@ -14,21 +14,18 @@ def add_subparser(subparsers):
     default_flags['patterns'].update(
         help='Name of run whose description you want to edit.')
     add_query_flags(parser, with_sort=False, default_flags=default_flags)
-    parser.add_argument(
-        'description',
-        nargs='?',
-        default=None,
-        help='New description. If None, script will prompt for a description in Vim')
+    parser.add_argument('description', help='New description to assign to paths')
     return parser
 
 
-@DataBase.query
 @Transaction.wrapper
+@DataBase.query
 def cli(transaction: Transaction, runs: List[RunEntry], description: Optional[str], *args,
         **kwargs):
+
     for run in runs:
         transaction.change_description(
-            paths=run.path,
+            path=run.path,
             command=run.command,
             old_description=run.description,
             new_description=description)
