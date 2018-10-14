@@ -86,15 +86,22 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
             try:
                 matches = [p for p in parents if like(str(p), str(src_pattern) + '%')]
                 # get oldest ancestor that matches src_pattern
-                shortest_match = next(reversed(matches))
+                part_to_replace = PurePath(next(reversed(matches)))
             except StopIteration:
                 raise RuntimeError(
                     f'Somehow, {entry.path} does not match with {src_pattern}.')
+            # part_to_replace = add_root(part_to_replace).rstrip('/')
 
-            part_to_replace = add_root(shortest_match).rstrip('/')
-            dest_path = dest_path.rstrip('/')
-            dest = add_root(entry.path).replace(str(part_to_replace), str(dest_path))
-            dest_to_src[dest] += [entry.path]
+
+            import ipdb; ipdb.set_trace()
+            if dest_path_is_dir:
+                dest_to_src[PurePath(dest_path, part_to_replace)] += entry.path
+            else:
+                dest_to_src[str(entry.path).replace(part_to_replace, dest_path)] += [entry.path]
+
+            # dest_path = dest_path.rstrip('/')
+            # dest = add_root(entry.path).replace(str(part_to_replace), str(dest_path))
+            # dest_to_src[dest] += [entry.path]
 
         for dest, srcs in dest_to_src.items():
             for i, src in enumerate(srcs):
