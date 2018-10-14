@@ -16,8 +16,8 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'mv',
         help='Move a run from OLD to NEW. '
-        'Functionality is identical to Linux `mv` except that non-existent dirs'
-        'are created and empty dirs are removed automatically.')
+             'Functionality is identical to Linux `mv` except that non-existent dirs'
+             'are created and empty dirs are removed automatically.')
 
     default_flags = copy(DEFAULT_QUERY_FLAGS)
     del default_flags['--descendants']
@@ -50,7 +50,7 @@ def cli(query_args: QueryArgs, destination: str, kill_tmux: bool,
 
 
 def add_root(path):
-    return './' + re.sub('\A\.\/', '', str(path))
+    return './' + re.sub('\A\./', '', str(path))
 
 
 def add_slash(path):
@@ -74,9 +74,6 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
         [dest_path == '.', f'{dest_path}/%' in db,
          dest_path.endswith('/')])
 
-    if dest_path_is_dir:
-        dest_path = add_slash(dest_path)
-
     for src_pattern in query_args.patterns:
         dest_to_src = defaultdict(list)
         src_entries = db.get(**query_args._replace(patterns=[src_pattern])._asdict())
@@ -84,24 +81,19 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
         for entry in src_entries:
 
             # parent, grandparent, great-grandparent, etc.
-            parents = [entry.path] + [str(p) + '/' for p in entry.path.parents]
+            parents = [str(entry.path)] + [str(p) + '/' for p in entry.path.parents]
 
             try:
+                matches = [p for p in parents if like(str(p), str(src_pattern) + '%')]
                 # get oldest ancestor that matches src_pattern
-                matching = next(
-                    p for p in parents if like(str(p),
-                                               str(src_pattern) + '%'))
+                shortest_match = next(reversed(matches))
             except StopIteration:
                 raise RuntimeError(
                     f'Somehow, {entry.path} does not match with {src_pattern}.')
 
-            part_to_replace = add_root(matching)
-
-            if dest_path_is_dir:
-                part_to_replace = add_root(add_slash(src_pattern.parent))
-            path = add_root(entry.path)
-
-            dest = path.replace(str(part_to_replace), str(dest_path))
+            part_to_replace = add_root(shortest_match).rstrip('/')
+            dest_path = dest_path.rstrip('/')
+            dest = add_root(entry.path).replace(str(part_to_replace), str(dest_path))
             dest_to_src[dest] += [entry.path]
 
         for dest, srcs in dest_to_src.items():
