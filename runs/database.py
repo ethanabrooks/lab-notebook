@@ -18,13 +18,15 @@ import re
 
 PathLike = Union[str, PurePath, PurePath, Path]
 
-def parse_datetime(string:str):
+
+def parse_datetime(string: str):
     return datetime.strptime(string, '%y-%m-%d')
+
 
 def parse_time_delta(string: str):
     match = re.match(r"(?:(\d+)weeks?)?(?:(\d+)days?)?(?:(\d+)hours?)?", string)
     week, day, hour = [int(n) if n else 0 for n in match.group(1, 2, 3)]
-    return datetime.now() - timedelta(weeks=week, days=day, hours=hour)
+    return timedelta(weeks=week, days=day, hours=hour)
 
 
 DEFAULT_QUERY_FLAGS = {
