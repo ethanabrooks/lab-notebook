@@ -82,26 +82,16 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
 
             # parent, grandparent, great-grandparent, etc.
             parents = [str(entry.path)] + [str(p) + '/' for p in entry.path.parents]
+            matches = [p for p in reversed(parents) if like(str(p), str(src_pattern) + '%')]
 
-            try:
-                matches = [p for p in parents if like(str(p), str(src_pattern) + '%')]
-                # get oldest ancestor that matches src_pattern
-                part_to_replace = PurePath(next(reversed(matches)))
-            except StopIteration:
-                raise RuntimeError(
-                    f'Somehow, {entry.path} does not match with {src_pattern}.')
-            # part_to_replace = add_root(part_to_replace).rstrip('/')
+            head = next(iter(matches)) # a/b/% -> a/b
+            tail = PurePath(*[PurePath(m).name for m in matches]) # a/b/% -> c/d
 
-
-            import ipdb; ipdb.set_trace()
             if dest_path_is_dir:
-                dest_to_src[PurePath(dest_path, part_to_replace)] += entry.path
+                dest = PurePath(dest_path, tail)
             else:
-                dest_to_src[str(entry.path).replace(part_to_replace, dest_path)] += [entry.path]
-
-            # dest_path = dest_path.rstrip('/')
-            # dest = add_root(entry.path).replace(str(part_to_replace), str(dest_path))
-            # dest_to_src[dest] += [entry.path]
+                dest = str(entry.path).replace(head.rstrip('/'), dest_path, 1)
+            dest_to_src[dest] += [entry.path]
 
         for dest, srcs in dest_to_src.items():
             for i, src in enumerate(srcs):
