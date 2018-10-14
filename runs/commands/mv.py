@@ -70,10 +70,9 @@ def like(a: str, b: str) -> bool:
 
 def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Transaction,
          db: DataBase):
-    dest_path_is_dir = any([
-        dest_path == PurePath('.'), f'{dest_path}/%' in db,
-        str(dest_path).endswith('/')
-    ])
+    dest_path_is_dir = any(
+        [dest_path == '.', f'{dest_path}/%' in db,
+         dest_path.endswith('/')])
 
     if dest_path_is_dir:
         dest_path = add_slash(dest_path)
@@ -81,13 +80,18 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
     for src_pattern in query_args.patterns:
         dest_to_src = defaultdict(list)
         src_entries = db.get(**query_args._replace(patterns=[src_pattern])._asdict())
+
         for entry in src_entries:
+
+            # parent, grandparent, great-grandparent, etc.
             parents = [entry.path] + [str(p) + '/' for p in entry.path.parents]
-            matching = None
-            for p in parents:
-                if like(str(p), str(src_pattern) + '%'):
-                    matching = PurePath(p)
-            if matching is None:
+
+            try:
+                # get oldest ancestor that matches src_pattern
+                matching = next(
+                    p for p in parents if like(str(p),
+                                               str(src_pattern) + '%'))
+            except StopIteration:
                 raise RuntimeError(
                     f'Somehow, {entry.path} does not match with {src_pattern}.')
 
