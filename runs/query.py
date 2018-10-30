@@ -63,7 +63,6 @@ class In(Predicate):
     def values(self):
         return self.value
 
-
 class Operator(Condition):
     def __init__(self, *conditions):
         for condition in conditions:
@@ -80,12 +79,12 @@ class Operator(Condition):
 
 class Or(Operator):
     def __str__(self):
-        return ' OR '.join(map(str, self.conditions))
+        return ' OR '.join([str(c) for c in self.conditions if c.values()])
 
 
 class And(Operator):
     def __str__(self):
-        return ' AND '.join(map(str, self.conditions))
+        return ' AND '.join([str(c) for c in self.conditions if c.values()])
 
 
 Any = Or
