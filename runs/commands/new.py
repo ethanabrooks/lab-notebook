@@ -97,7 +97,7 @@ def parse_flag(flag: str, delims: str = '=| ') -> List[str]:
     """
     :return: a list of [--flag=value] strings
     """
-    pattern = f'([^{delims}]*)({delims})(.*)'
+    pattern = f'(?:--)?([^{delims}]*)({delims})(.*)'
     match = re.match(pattern, flag)
     if match:
         key, delim, values = match.groups()
