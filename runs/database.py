@@ -158,15 +158,22 @@ class DataBase:
         """
         sql = select
         values = []
+
+        def check():
+            assert sql.count('?') == len(values)
+
         if condition:
             sql += f'WHERE {condition}'
             values += condition.values()
+            check()
         if unless:
-            sql += f' EXCEPT {select} WHERE {condition}'
+            sql += f' EXCEPT {select} WHERE {unless}'
             values += unless.values()
+            check()
         if order:
             self.check_field(order)
             sql += f' ORDER BY "{order}"'
+        check()
         return self.execute(sql, values)
 
     def get(
@@ -183,7 +190,6 @@ class DataBase:
         if descendants:
             patterns = list(map(str, patterns))
             patterns += [f'{str(pattern).rstrip("/%")}/%' for pattern in patterns]
-
         condition = DataBase.pattern_match(*patterns)
         if since or from_last:
             if since:
@@ -194,13 +200,13 @@ class DataBase:
                 time = max(datetime.now() - from_last, since)
             condition = condition & GreaterThan('datetime', time)
         if active:
-            condition = condition & In('path', TMUXSession.active_runs(self.logger))
+            condition = condition & In('path', *TMUXSession.active_runs(self.logger))
+        if unless:
+            unless = DataBase.pattern_match(*unless)
 
         return [
             RunEntry(PurePath(p), *e) for (p, *e) in self.select(
-                condition=condition,
-                unless=DataBase.pattern_match(*unless) if unless else unless,
-                order=order).fetchall()
+                condition=condition, unless=unless, order=order).fetchall()
         ]
 
     def __getitem__(self, patterns) -> List[RunEntry]:

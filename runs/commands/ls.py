@@ -13,10 +13,7 @@ from runs.util import PurePath, natural_order
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('ls', help='Print paths in run database.')
-
-    default_flags = deepcopy(DEFAULT_QUERY_FLAGS)
-    default_flags['patterns'].update(default='%', nargs='*')
-    add_query_flags(parser, with_sort=True, default_flags=default_flags)
+    add_query_flags(parser, with_sort=True, default_flags=DEFAULT_QUERY_FLAGS)
 
     parser.add_argument(
         '--show-attrs',

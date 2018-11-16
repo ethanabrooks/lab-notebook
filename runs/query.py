@@ -14,86 +14,111 @@ class Condition:
     def __invert__(self):
         return Not(self)
 
-    @abstractmethod
+    def __bool__(self):
+        return bool(self.values())
+
     def __str__(self):
+        return self._str() if self.values() else ''
+
+    def values(self):
+        return [str(v) for v in self._values() if v]
+
+    def _placeholders(self):
+        return ','.join('?' * len(self.values()))
+
+    @abstractmethod
+    def _str(self):
         raise NotImplementedError
 
     @abstractmethod
-    def values(self):
+    def _values(self):
         raise NotImplementedError
 
 
-class Predicate(Condition):
-    def __init__(self, column, value):
+class OneToManyPredicate(Condition):
+    def __init__(self, column, *values):
         self.column = column
-        self.value = value
+        self.__values = values
 
-    def values(self):
-        return [self.value]
+    def _values(self):
+        return self.__values
+
+    def _str(self):
+        return f'{self.column} {self._keyword()} ({self._placeholders()})'
 
     @abstractmethod
-    def __str__(self):
+    def _keyword(self):
         raise NotImplementedError
 
 
-class Like(Predicate):
-    def __str__(self):
-        return f'{self.column} LIKE ?'
+class Like(OneToManyPredicate):
+    def _keyword(self):
+        return 'LIKE'
 
 
-class Equals(Predicate):
-    def __str__(self):
-        return f'{self.column} = ?'
+class In(OneToManyPredicate):
+    def _keyword(self):
+        return 'IN'
 
 
-class GreaterThan(Predicate):
-    def __str__(self):
-        return f'{self.column} > ?'
+class OneToOnePredicate(OneToManyPredicate):
+    def __init__(self, column, value):
+        super().__init__(self, column, value)
 
 
-class LessThan(Predicate):
-    def __str__(self):
-        return f'{self.column} < ?'
+class Equals(OneToOnePredicate):
+    def _keyword(self):
+        return '='
 
 
-class In(Predicate):
-    def __str__(self):
-        return f'{self.column} IN ({",".join(["?" for _ in self.value])})'
+class GreaterThan(OneToOnePredicate):
+    def _keyword(self):
+        return '>'
 
-    def values(self):
-        return self.value
 
-class Operator(Condition):
+class LessThan(OneToOnePredicate):
+    def _keyword(self):
+        return '<'
+
+
+class ManyToManyPredicate(Condition):
     def __init__(self, *conditions):
         for condition in conditions:
-            assert isinstance(condition, (Operator, Predicate))
-        self.conditions = conditions
+            assert isinstance(condition, Condition)
+        self.conditions = [c for c in conditions if c]
 
-    def values(self):
+    def _values(self):
         return [value for condition in self.conditions for value in condition.values()]
 
+    def _str(self):
+        return f' {self._keyword()} '.join(map(str, self.conditions))
+
     @abstractmethod
-    def __str__(self):
-        pass
+    def _keyword(self):
+        raise NotImplementedError
 
 
-class Or(Operator):
-    def __str__(self):
-        return ' OR '.join([str(c) for c in self.conditions if c.values()])
+class Or(ManyToManyPredicate):
+    def _keyword(self):
+        return 'OR'
 
 
-class And(Operator):
-    def __str__(self):
-        return ' AND '.join([str(c) for c in self.conditions if c.values()])
+class And(ManyToManyPredicate):
+    def _keyword(self):
+        return 'AND'
 
 
 Any = Or
 All = And
 
 
-class Not(Operator):
+class Not(Condition):
     def __init__(self, condition):
-        super().__init__(condition)
+        assert isinstance(condition, Condition)
+        self.condition = condition
 
-    def __str__(self):
-        return f'NOT {self.conditions}'
+    def _str(self):
+        return f'NOT {self.condition}'
+
+    def _values(self):
+        return self.condition.values()
