@@ -1,6 +1,6 @@
 # stdlib
 from collections import defaultdict
-from copy import copy
+from copy import deepcopy
 from itertools import zip_longest
 from typing import List
 
@@ -14,7 +14,7 @@ from runs.util import PurePath, natural_order
 def add_subparser(subparsers):
     parser = subparsers.add_parser('ls', help='Print paths in run database.')
 
-    default_flags = copy(DEFAULT_QUERY_FLAGS)
+    default_flags = deepcopy(DEFAULT_QUERY_FLAGS)
     default_flags['patterns'].update(default='%', nargs='*')
     add_query_flags(parser, with_sort=True, default_flags=default_flags)
 

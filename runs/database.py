@@ -1,6 +1,6 @@
 # stdlib
 from collections import namedtuple
-from copy import copy
+from copy import deepcopy
 from datetime import datetime, timedelta, date
 from functools import wraps
 from pathlib import Path
@@ -61,7 +61,7 @@ def add_query_flags(
         default_flags: dict = DEFAULT_QUERY_FLAGS,
 ):
     if not with_sort:
-        default_flags = copy(default_flags)
+        default_flags = deepcopy(default_flags)
         del default_flags['--sort']
     for arg_name, kwargs in default_flags.items():
         parser.add_argument(arg_name, **kwargs)

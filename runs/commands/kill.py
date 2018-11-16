@@ -1,5 +1,5 @@
 # stdlib
-from copy import copy
+from copy import deepcopy
 from typing import List
 
 # first party
@@ -10,7 +10,7 @@ from runs.transaction.transaction import Transaction
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('kill', help="Kill selected TMUX sessions.")
-    default_flags = copy(DEFAULT_QUERY_FLAGS)
+    default_flags = deepcopy(DEFAULT_QUERY_FLAGS)
     default_flags['patterns'].update(help='Pattern of runs to kill')
     add_query_flags(parser, with_sort=False, default_flags=default_flags)
     return parser

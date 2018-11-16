@@ -1,6 +1,6 @@
 # stdlib
 from collections import defaultdict
-from copy import copy
+from copy import deepcopy
 import sqlite3
 
 # first party
@@ -18,7 +18,7 @@ def add_subparser(subparsers):
         'Functionality is identical to Linux `mv` except that non-existent dirs'
         'are created and empty dirs are removed automatically.')
 
-    default_flags = copy(DEFAULT_QUERY_FLAGS)
+    default_flags = deepcopy(DEFAULT_QUERY_FLAGS)
     del default_flags['--descendants']
     add_query_flags(parser, with_sort=False, default_flags=default_flags)
 

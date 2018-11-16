@@ -1,5 +1,5 @@
 # stdlib
-from copy import copy
+from copy import deepcopy
 from typing import List
 
 # first party
@@ -13,7 +13,7 @@ def add_subparser(subparsers):
         'rm',
         help="Delete runs from the database (and all associated tensorboard "
         "and checkpoint files).")
-    default_flags = copy(DEFAULT_QUERY_FLAGS)
+    default_flags = deepcopy(DEFAULT_QUERY_FLAGS)
     default_flags['patterns'].update(
         help=
         'This script will only delete entries in the database whose names are a complete '
