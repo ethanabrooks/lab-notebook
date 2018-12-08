@@ -128,6 +128,9 @@ class DataBase:
         self.fields = RunEntry.fields()
 
     def __enter__(self):
+        if not self.path.parent.exists():
+            self.logger.exit(
+                f'parent directory of database does not exist: {self.path.parent}')
         self.conn = sqlite3.connect(str(self.path))
         # noinspection PyUnresolvedReferences
         fields = [f"'{f}' text NOT NULL" for f in self.fields]
