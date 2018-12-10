@@ -72,15 +72,13 @@ def strings(runs: List[RunEntry], flags: List[str], prefix: str, db: DataBase,
                 str(new_path), subcommand, description
                 or entry.description.strip('"').strip("'")
             ])
-            if len(entries) == 1:
-                command_string += f' {new_path} {subcommand} --description={_description}'
-            else:
-                command_string = ' \\\n  '.join([
-                    command_string,
-                    f'--path={new_path}',
-                    f'--command={subcommand}',
-                    f'--description={_description}',
-                ])
+            join_string = ' ' if len(entries) == 1 else ' \\\n'
+            command_string = join_string.join([
+                command_string,
+                f'--path={new_path}',
+                f'--command={subcommand}',
+                f'--description={_description}',
+            ])
         return_strings.append(command_string)
     return return_strings
 
