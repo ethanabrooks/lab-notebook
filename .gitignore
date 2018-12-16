@@ -8,3 +8,4 @@ build/
 .pyre/
 .pyre_configuration
 .watchmanconfig
+.mypy_cache
