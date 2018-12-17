@@ -9,14 +9,14 @@
 import codecs
 
 # third party
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with codecs.open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
     name='lab-notebook',
-    version='3.3.1',
+    version='3.3.2',
     description='A utility for tracking, documenting, and reproducing software runs.',
     long_description=long_description,
     url='https://github.com/lobachevzky/lab-notebook',
@@ -31,7 +31,7 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     keywords='tensorflow utilities development',
-    packages=['runs'],
+    packages=find_packages(),
     entry_points={
         'console_scripts': [
             'runs = runs.main:main',
