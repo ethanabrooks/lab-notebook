@@ -16,7 +16,7 @@ with codecs.open('README.rst', encoding='utf-8') as f:
 
 setup(
     name='lab-notebook',
-    version='3.3.2',
+    version='3.3.3',
     description='A utility for tracking, documenting, and reproducing software runs.',
     long_description=long_description,
     url='https://github.com/lobachevzky/lab-notebook',
@@ -40,6 +40,6 @@ setup(
     },
     scripts=['runs-git'],
     install_requires=[
-        'tabulate==0.8.1',
-        'nose==1.3.7',
+        'tabulate>=0.8.1',
+        'nose>=1.3.7',
     ])
