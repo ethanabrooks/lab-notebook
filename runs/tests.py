@@ -11,7 +11,7 @@ from nose.tools import assert_false, assert_in, assert_is_instance, assert_not_i
 
 # first party
 from runs import main
-from runs.commands import lookup, ls, table
+from runs.commands import lookup, ls
 from runs.database import DataBase
 from runs.logger import UI
 from runs.shell import Bash
@@ -198,12 +198,6 @@ def check_list_sad(pattern):
         eq_(string, '')
 
 
-def check_table(table):
-    assert_is_instance(table, str)
-    for member in [COMMAND, DESCRIPTION, TEST_RUN]:
-        assert_in(member, table)
-
-
 def check_move(path, new_path, dir_names=None, flags=None):
     if dir_names is None:
         dir_names = []
@@ -240,12 +234,6 @@ def test_list():
                 yield check_list_happy, pattern
             for pattern in ['x%', 'x']:
                 yield check_list_sad, pattern
-
-
-def test_table():
-    with _setup(TEST_RUN), DB as db:
-        string = table.string(runs=db.all(), porcelain=True)
-        yield check_table, string
 
 
 def test_lookup():

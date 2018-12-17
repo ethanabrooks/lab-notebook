@@ -40,6 +40,5 @@ setup(
     },
     scripts=['runs-git'],
     install_requires=[
-        'tabulate>=0.8.1',
-        'nose>=1.3.7',
+        'nose',
     ])

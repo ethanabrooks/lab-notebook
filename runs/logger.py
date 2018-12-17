@@ -23,7 +23,7 @@ class Logger:
 
     def exit_no_match(self, db, pattern):
         self.exit(f'No runs match pattern "{pattern}". Recorded runs:\n'
-                  f'{runs.commands.table.string(db)}')
+                  f'{runs.commands.ls.string(db)}')
 
 
 class UI(Logger):

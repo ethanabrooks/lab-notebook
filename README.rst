@@ -114,7 +114,6 @@ Get an overview of what runs are in the database:
   runs ls
   runs ls 'tra*'
   runs ls --show-attrs
-  runs table --column-width=15
 
 Query information about current runs:
 

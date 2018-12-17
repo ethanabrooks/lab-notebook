@@ -10,8 +10,8 @@ import sys
 from typing import List
 
 # first party
-from runs.commands import (change_description, correlate, flags, kill, lookup, ls, mv, new, new_from_spec, reproduce,
-                           rm, table)
+from runs.commands import (change_description, correlate, flags, kill, lookup, ls, mv,
+                           new, new_from_spec, reproduce, rm)
 from runs.logger import Logger
 
 MAIN = 'main'
@@ -95,7 +95,6 @@ def main(argv=sys.argv[1:]):
                 rm.add_subparser,
                 mv.add_subparser,
                 ls.add_subparser,
-                table.add_subparser,
                 lookup.add_subparser,
                 flags.add_subparser,
                 change_description.add_subparser,

@@ -7,7 +7,7 @@ import pickle
 import yaml
 
 # first party
-from runs.commands import table
+from runs.commands import ls
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
@@ -49,7 +49,7 @@ def main():
         for run in yaml_to_run_entry(data):
             db.append(run)
 
-        print(table.string(db=db))
+        print(ls.string(db=db))
 
 
 if __name__ == '__main__':

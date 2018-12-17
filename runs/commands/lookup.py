@@ -2,7 +2,6 @@
 from typing import Dict, List
 
 # first party
-from runs.commands import table
 from runs.database import DataBase, add_query_flags
 from runs.logger import Logger
 from runs.run_entry import RunEntry
@@ -37,11 +36,8 @@ def string(runs: List[RunEntry], key: str, porcelain: bool = True) -> str:
 
 def strings(runs: List[RunEntry], key: str, porcelain: bool) -> List[str]:
     if key == 'all':
-        if porcelain:
-            for entry in runs:
-                yield str(entry)
-        else:
-            yield table.string(runs=runs, porcelain=porcelain)
+        for entry in runs:
+            yield str(entry)
     else:
         attr_dict = get_dict(runs=runs, key=key)
         if porcelain:
