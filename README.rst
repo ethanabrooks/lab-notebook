@@ -3,9 +3,9 @@
     
 Lab Notebook
 ============
-Researchers in computer science often need to compare difference versions of a process and compare the results.
-``Lab Notebook`` helps document, track, and organize process runs.
-This is essential for reproducibility of runs and helps researchers figure out what changes in code led to different outcomes.
+Researchers in computer science often need to compare results between different versions of a process.
+``Lab Notebook`` helps document, track, and organize process these kinds of runs.
+This is essential for reproducibility and helps researchers figure out what changes in code led to different outcomes.
 The goals of ``Lab Notebook`` are reproducibility, modularity, and organization.
 Specifically, ``Lab Notebook`` provides the following functionality:
 
