@@ -15,7 +15,8 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser('correlate', help='Rank flags by Pearson correlation.')
     add_query_flags(parser, with_sort=False)
     parser.add_argument(
-        'path_to_value',
+        '--value-path',
+        required=True,
         type=Path,
         help='The command will look for a file at this path containing '
         'a scalar value. It will calculate the pearson correlation between '
@@ -26,8 +27,8 @@ def add_subparser(subparsers):
 
 @DataBase.open
 @DataBase.query
-def cli(logger: Logger, runs: List[RunEntry], path_to_value: Path, *args, **kwargs):
-    logger.print(*strings(runs=runs, path_to_value=path_to_value), sep='\n')
+def cli(logger: Logger, runs: List[RunEntry], value_path: Path, *args, **kwargs):
+    logger.print(*strings(runs=runs, value_path=value_path), sep='\n')
 
 
 def strings(*args, **kwargs):
@@ -43,14 +44,14 @@ def get_flags(command: str) -> List[str]:
 
 def correlations(
         runs: List[RunEntry],
-        path_to_value: Path,
+        value_path: Path,
 ) -> Dict[str, float]:
     def mean(f: Callable) -> float:
         return sum(map(f, runs)) / float(len(runs))
 
     def get_value(path: PurePath) -> Optional[float]:
         try:
-            with Path(str(path_to_value).replace('<path>', str(path))).open() as f:
+            with Path(str(value_path).replace('<path>', str(path))).open() as f:
                 return float(f.read())
         except (ValueError, FileNotFoundError):
             return
