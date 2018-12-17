@@ -39,6 +39,4 @@ setup(
         ],
     },
     scripts=['runs-git'],
-    install_requires=[
-        'nose',
-    ])
+)

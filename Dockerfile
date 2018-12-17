@@ -9,7 +9,7 @@ RUN git config --global user.email "you@example.com"
 RUN git config --global user.name "Your Name"
 
 WORKDIR /usr/local/lab-notebook
-RUN pip3 install tabulate ipdb
+RUN pip3 install ipdb nose
 COPY setup.py .
 COPY README.rst .
 COPY runs-git .
