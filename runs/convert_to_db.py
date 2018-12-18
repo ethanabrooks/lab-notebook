@@ -7,7 +7,7 @@ import pickle
 import yaml
 
 # first party
-from runs.commands import ls
+from runs.subcommands import ls
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry

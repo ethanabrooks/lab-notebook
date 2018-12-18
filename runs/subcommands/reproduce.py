@@ -13,7 +13,7 @@ from runs.util import PurePath, highlight, interpolate_keywords
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'reproduce',
-        help='Print commands to reproduce a run or runs. This command '
+        help='Print subcommands to reproduce a run or runs. This command '
         'does not have side-effects (besides printing).')
     add_query_flags(parser, with_sort=False)
     parser.add_argument(

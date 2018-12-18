@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import List
 
 # first party
-from runs.commands.new import build_command, new
+from runs.command import Command
+from runs.subcommands.new import build_command, new
 from runs.logger import UI
 from runs.transaction.transaction import Transaction
 from runs.util import PurePath
@@ -20,19 +21,20 @@ def add_subparser(subparsers):
         'spec',
         type=Path,
         help='JSON file that contains either a single or an array of JSON objects'
-        'each with a "command" key and a "flags" key. The "command" value'
-        'is a single string and the "flags" value is a JSON object such that'
-        '"a: b," becomes "--a=b" for example.',
+             'each with a "command" key and a "flags" key. The "command" value'
+             'is a single string and the "flags" value is a JSON object such that'
+             '"a: b," becomes "--a=b" for example.',
     )
     parser.add_argument(
         'description',
         help='Description of this run. Explain what this run was all about or '
-        'write whatever your heart desires. If this argument is `commit-message`,'
-        'it will simply use the last commit message.')
+             'write whatever your heart desires. If this argument is `commit-message`,'
+             'it will simply use the last commit message.')
     parser.add_argument(
         '--prefix',
         type=str,
-        help="String to prepend to all main commands, for example, sourcing a virtualenv")
+        help="String to prepend to all main subcommands, for example, sourcing a "
+             "virtualenv")
     parser.add_argument(
         '--flag',
         '-f',
@@ -90,8 +92,10 @@ def cli(prefix: str, path: PurePath, spec: Path, flags: List[str], logger: UI,
         for spec in spec_objs:
             flags = [process_flags(*f) for f in spec.flags]
             for flag_set in itertools.product(*flags):
-                yield build_command(
-                    command=spec.command, path=path, prefix=prefix, flags=flag_set)
+                yield Command(prefix=prefix,
+                              positional=spec.command,
+                              nonpositional=flag_set,
+                              path=path)
 
     commands = list(command_generator())
     for i, command in enumerate(commands):

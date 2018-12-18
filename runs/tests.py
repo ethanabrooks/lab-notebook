@@ -11,7 +11,7 @@ from nose.tools import assert_false, assert_in, assert_is_instance, assert_not_i
 
 # first party
 from runs import main
-from runs.commands import lookup, ls
+from runs.subcommands import lookup, ls
 from runs.database import DataBase
 from runs.logger import UI
 from runs.shell import Bash

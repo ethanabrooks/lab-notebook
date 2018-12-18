@@ -27,7 +27,7 @@ class NewRunTransaction(SubTransaction):
         for dir_path in self.file_system.dir_paths(run.path):
             dir_path.mkdir(exist_ok=True, parents=True)
 
-        tmux.new(window_name=run.description, command=run.command)
+        tmux.new(window_name=run.description, command=str(run.command))
         self.db.append(run)
         self.ui.print(
             highlight('Path:'),

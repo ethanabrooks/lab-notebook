@@ -10,7 +10,7 @@ import sys
 from typing import List
 
 # first party
-from runs.commands import change_description, correlate, flags, kill, lookup, ls, mv, new, new_from_spec, reproduce, rm
+from runs.subcommands import change_description, correlate, flags, kill, lookup, ls, mv, new, new_from_spec, reproduce, rm
 from runs.logger import Logger
 
 MAIN = 'main'
@@ -126,7 +126,7 @@ def main(argv=sys.argv[1:]):
     with open(config_filename, 'w') as f:
         config.write(f)
 
-    module = import_module('runs.commands.' + args.dest.replace('-', '_'))
+    module = import_module('runs.subcommands.' + args.dest.replace('-', '_'))
     kwargs = {k: v for k, v in vars(args).items()}
     try:
         # pluralize flags

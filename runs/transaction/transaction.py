@@ -5,6 +5,7 @@ from pathlib import PurePath
 from typing import List
 
 # first party
+from runs.command import Command
 from runs.database import DataBase
 from runs.file_system import FileSystem
 from runs.logger import UI
@@ -91,7 +92,7 @@ class Transaction:
                 if sub_transaction.queue:
                     process(sub_transaction)
 
-    def add_run(self, path: PurePath, command: str, commit: str, datetime: str,
+    def add_run(self, path: PurePath, command: Command, commit: str, datetime: str,
                 description: str):
         self.sub_transactions.new_run.add(
             RunEntry(
