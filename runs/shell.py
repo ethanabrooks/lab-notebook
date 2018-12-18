@@ -22,11 +22,11 @@ class Bash:
         return stdout.strip()
 
     def last_commit(self):
-        try:
-            return self.cmd('git rev-parse HEAD'.split())
-        except OSError:
+        commit = self.cmd('git rev-parse HEAD'.split(), fail_ok=True)
+        if not commit:
             self.logger.exit(
                 'Could not detect last commit. Perhaps you have not committed yet?')
+        return commit
 
     def dirty_repo(self):
         return self.cmd('git status --porcelain'.split()) is not ''
