@@ -31,7 +31,7 @@ def add_subparser(subparsers):
         metavar='PATH')
     parser.add_argument(
         '--command',
-        dest='subcommands',
+        dest='commands',
         action='append',
         type=str,
         help='Command to be sent to TMUX for each path.'
