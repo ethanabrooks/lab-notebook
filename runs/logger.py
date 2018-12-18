@@ -35,6 +35,7 @@ class UI(Logger):
         if self.assume_yes:
             return True
         question = sep.join(map(str, question)).rstrip(sep) + sep
+
         response = input(question)
         while True:
             response = response.lower()

@@ -10,8 +10,7 @@ import sys
 from typing import List
 
 # first party
-from runs.commands import (change_description, correlate, flags, kill, lookup, ls, mv,
-                           new, new_from_spec, reproduce, rm)
+from runs.commands import change_description, correlate, flags, kill, lookup, ls, mv, new, new_from_spec, reproduce, rm
 from runs.logger import Logger
 
 MAIN = 'main'

@@ -1,20 +1,20 @@
 # stdlib
 from collections import namedtuple
 from copy import deepcopy
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
+import re
 import sqlite3
 from typing import Iterable, List, Union
 
 # first party
 from runs import query
 from runs.logger import Logger
-from runs.query import Condition, In, Like, GreaterThan
+from runs.query import Condition, GreaterThan, In, Like
 from runs.run_entry import RunEntry
 from runs.tmux_session import TMUXSession
 from runs.util import PurePath
-import re
 
 PathLike = Union[str, PurePath, PurePath, Path]
 

@@ -1,11 +1,11 @@
 # stdlib
-from collections.__init__ import namedtuple
+import itertools
 import json
 from pathlib import Path
 from typing import List
 
 # first party
-from runs.commands.new import new
+from runs.commands.new import build_command, new
 from runs.logger import UI
 from runs.transaction.transaction import Transaction
 from runs.util import PurePath
@@ -45,14 +45,14 @@ def add_subparser(subparsers):
     #     help='Path where Tensorflow summary of run is to be written.')
 
 
-Flag = namedtuple('Flag', 'key values')
-
-
 class SpecObj:
-    def __init__(self, command: str, flags: List[Flag], delimiter: str = '='):
+    def __init__(self, command: str, flags: dict, delimiter: str = '='):
         self.command = command
-        self.flags = [Flag(*f) for f in flags]
+        self.flags = flags
         self.delimiter = delimiter
+
+
+FLAG_KWD = '<flag>'
 
 
 @Transaction.wrapper
@@ -63,29 +63,40 @@ def cli(prefix: str, path: PurePath, spec: Path, flags: List[str], logger: UI,
         obj = json.load(f, object_pairs_hook=lambda pairs: pairs)
     try:
         try:
-            array = [SpecObj(**dict(obj))]
+            spec_objs = [SpecObj(**dict(obj))]
         except TypeError:
-            array = [SpecObj(**dict(o)) for o in obj]
+            spec_objs = [SpecObj(**dict(o)) for o in obj]
     except TypeError:
         logger.exit(f'Each object in {spec} must have a '
                     f'"command" field and a "flags" field.')
 
-    for i, obj in enumerate(array):
-        new_path = path if len(array) == 1 else PurePath(path, str(i))
+    def process_flag(key, value, delim='='):
+        if key == '':
+            if value == '':
+                return ''
+            return process_flag(key=value, value='', delim='')
+        if not key.startswith('-'):
+            key = f'--{key}'
+        return key + delim + value
 
-        def parse_flag(flag: Flag):
-            values = flag.values if isinstance(flag.values, list) else [flag.values]
-            null_keys = ['null', '', 'none', 'None']
-            return [
-                f'--{v}' if flag.key in null_keys else f'--{flag.key}="{v}"'
-                for v in values
-            ]
+    def process_flags(k, v):
+        if isinstance(v, (list, tuple)):
+            for value in v:
+                yield process_flag(k, value)
+        else:
+            yield process_flag(k, v)
 
-        flags = [[f] for f in flags]
-        flags += list(map(parse_flag, obj.flags))
+    def command_generator():
+        for spec in spec_objs:
+            flags = [process_flags(*f) for f in spec.flags]
+            for flag_set in itertools.product(*flags):
+                yield build_command(
+                    command=spec.command, path=path, prefix=prefix, flags=flag_set)
+
+    commands = list(command_generator())
+    for i, command in enumerate(commands):
+        new_path = path if len(commands) == 1 else PurePath(path, str(i))
         new(path=new_path,
-            prefix=prefix,
-            command=obj.command,
+            command=command,
             description=description,
-            flags=flags,
             transaction=transaction)

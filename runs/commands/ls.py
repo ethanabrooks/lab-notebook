@@ -1,6 +1,5 @@
 # stdlib
 from collections import defaultdict
-from copy import deepcopy
 from itertools import zip_longest
 from typing import List
 

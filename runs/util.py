@@ -5,6 +5,7 @@ from pathlib import Path, PurePath
 import re
 import shutil
 import subprocess
+from typing import List
 
 RED = "\033[1;31m"
 BLUE = "\033[1;34m"
@@ -72,3 +73,16 @@ def interpolate_keywords(path, string):
 
 def natural_order(text):
     return [int(c) if c.isdigit() else c for c in re.split('(\d+)', text)]
+
+
+def parse_flag(flag: str, delims: str = '=| ') -> List[str]:
+    """
+    :return: a list of [--flag=value] strings
+    """
+    pattern = f'(?:--)?([^{delims}]*)({delims})(.*)'
+    match = re.match(pattern, flag)
+    if match:
+        key, delim, values = match.groups()
+        return [f'--{key}={value}' for value in values.split('|')]
+    else:
+        return flag.split('|')

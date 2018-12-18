@@ -2,8 +2,7 @@
 from argparse import ArgumentParser
 from datetime import datetime
 import itertools
-import re
-from typing import List
+from typing import Iterator, List
 
 # first party
 from runs.logger import UI
@@ -63,7 +62,6 @@ def add_subparser(subparsers):
 @Transaction.wrapper
 def cli(prefix: str, paths: List[PurePath], commands: List[str], flags: List[str],
         logger: UI, descriptions: List[str], transaction: Transaction, *args, **kwargs):
-    flags = list(map(parse_flag, flags))
     n = len(commands)
     if not len(paths) in [1, n]:
         logger.exit('There must either be 1 or n paths '
@@ -85,55 +83,32 @@ def cli(prefix: str, paths: List[PurePath], commands: List[str], flags: List[str
         if len(descriptions) == 1:
             description = descriptions[0]
 
-        new(path=path,
-            prefix=prefix,
-            command=command,
+        new(command=build_command(command=command, path=path, prefix=prefix, flags=flags),
             description=description,
-            flags=flags,
+            path=path,
             transaction=transaction)
 
 
-def parse_flag(flag: str, delims: str = '=| ') -> List[str]:
-    """
-    :return: a list of [--flag=value] strings
-    """
-    pattern = f'(?:--)?([^{delims}]*)({delims})(.*)'
-    match = re.match(pattern, flag)
-    if match:
-        key, delim, values = match.groups()
-        return [f'--{key}={value}' for value in values.split('|')]
-    else:
-        return flag.split('|')
+def new(command, description, path, transaction):
+    bash = transaction.bash
+    if description is None:
+        description = ''
+    if description == 'commit-message':
+        description = bash.cmd('git log -1 --pretty=%B'.split())
+    if path in transaction.db:
+        transaction.remove(path)
+    transaction.add_run(
+        path=path,
+        command=command,
+        commit=bash.last_commit(),
+        datetime=datetime.now().isoformat(),
+        description=description)
 
 
-def build_command(command: str, path: PurePath, prefix: str, flags: List[str]) -> str:
+def build_command(command: str, path: PurePath, prefix: str, flags: Iterator[str]) -> str:
     if prefix:
         command = f'{prefix} {command}'
     flags = ' '.join(interpolate_keywords(path, f) for f in flags)
     if flags:
         command = f"{command} {flags}"
     return command
-
-
-def new(path: PurePath, prefix: str, command: str, description: str,
-        flags: List[List[str]], transaction: Transaction):
-    bash = transaction.bash
-    if description is None:
-        description = ''
-    if description == 'commit-message':
-        description = bash.cmd('git log -1 --pretty=%B'.split())
-
-    flag_sets = list(itertools.product(*flags))
-    for i, flag_set in enumerate(flag_sets):
-        new_path = path if len(flag_sets) == 1 else PurePath(path, str(i))
-        if new_path in transaction.db:
-            transaction.remove(new_path)
-
-        full_command = build_command(
-            command=command, path=new_path, prefix=prefix, flags=flag_set)
-        transaction.add_run(
-            path=new_path,
-            command=full_command,
-            commit=bash.last_commit(),
-            datetime=datetime.now().isoformat(),
-            description=description)
