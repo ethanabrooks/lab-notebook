@@ -90,12 +90,11 @@ def cli(prefix: str, path: PurePath, spec: Path, flags: List[str], logger: UI,
 
     def command_generator():
         for spec in spec_objs:
-            flags = [process_flags(*f) for f in spec.flags]
-            for flag_set in itertools.product(*flags):
+            for flag_set in itertools.product(*[process_flags(*f) for f in spec.flags]):
                 yield Command(
                     prefix=prefix,
                     positional=spec.command,
-                    nonpositional=flag_set,
+                    nonpositional=flag_set + tuple(flags),
                     path=path)
 
     commands = list(command_generator())

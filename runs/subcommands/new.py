@@ -16,9 +16,9 @@ def add_subparser(subparsers):
         'new',
         help='Start a new run.',
         epilog='When there are multiple paths/subcommands/descriptions, '
-               'they get collated. If there is one path but multiple subcommands, '
-               'each path gets appended with a number. Similarly if there is one '
-               'description, it gets broadcasted to all paths/subcommands.')
+        'they get collated. If there is one path but multiple subcommands, '
+        'each path gets appended with a number. Similarly if there is one '
+        'description, it gets broadcasted to all paths/subcommands.')
     assert isinstance(parser, ArgumentParser)
 
     parser.add_argument(
@@ -27,7 +27,7 @@ def add_subparser(subparsers):
         action='append',
         type=PurePath,
         help='Unique path for each run. '
-             'Number of paths and number of subcommands must be equal.',
+        'Number of paths and number of subcommands must be equal.',
         metavar='PATH')
     parser.add_argument(
         '--command',
@@ -35,20 +35,20 @@ def add_subparser(subparsers):
         action='append',
         type=str,
         help='Command to be sent to TMUX for each path.'
-             'Number of paths and number of subcommands must be equal.',
+        'Number of paths and number of subcommands must be equal.',
         metavar='COMMAND')
     parser.add_argument(
         '--description',
         dest='descriptions',
         action='append',
         help='Description of this run. Explain what this run was all about or '
-             'write whatever your heart desires. If this argument is `commit-message`,'
-             'it will simply use the last commit message.')
+        'write whatever your heart desires. If this argument is `commit-message`,'
+        'it will simply use the last commit message.')
     parser.add_argument(
         '--prefix',
         type=str,
         help="String to prepend to all main subcommands, for example, sourcing a "
-             "virtualenv")
+        "virtualenv")
     parser.add_argument(
         '--flag',
         '-f',
@@ -85,10 +85,8 @@ def cli(prefix: str, paths: List[PurePath], commands: List[str], flags: List[str
         if len(descriptions) == 1:
             description = descriptions[0]
 
-        new(command=Command(prefix=prefix,
-                            positional=command,
-                            nonpositional=flags,
-                            path=path),
+        new(command=Command(
+            prefix=prefix, positional=command, nonpositional=flags, path=path),
             description=description,
             path=path,
             transaction=transaction)
