@@ -21,15 +21,15 @@ def add_subparser(subparsers):
         'spec',
         type=Path,
         help='JSON file that contains either a single or an array of JSON objects'
-             'each with a "command" key and a "flags" key. The "command" value'
-             'is a single string and the "flags" value is a JSON object such that'
-             '"a: b," becomes "--a=b" for example.',
+        'each with a "command" key and a "flags" key. The "command" value'
+        'is a single string and the "flags" value is a JSON object such that'
+        '"a: b," becomes "--a=b" for example.',
     )
     parser.add_argument(
         'description',
         help='Description of this run. Explain what this run was all about or '
-             'write whatever your heart desires. If this argument is `commit-message`,'
-             'it will simply use the last commit message.')
+        'write whatever your heart desires. If this argument is `commit-message`,'
+        'it will simply use the last commit message.')
     parser.add_argument(
         '--prefix',
         type=str,
@@ -88,19 +88,15 @@ def cli(prefix: str, path: PurePath, spec: Path, flags: List[str], logger: UI,
         else:
             yield process_flag(k, v)
 
-    def command_generator():
+    def flag_assignments():
         for spec in spec_objs:
             for flag_set in itertools.product(*[process_flags(*f) for f in spec.flags]):
-                yield Command(
-                    prefix,
-                    spec.command,
-                    flag_set, flags,
-                    path=path)
+                yield spec.command, flag_set
 
-    commands = list(command_generator())
-    for i, command in enumerate(commands):
-        new_path = path if len(commands) == 1 else PurePath(path, str(i))
+    assignments = list(flag_assignments())
+    for i, (command, flag_set) in enumerate(assignments):
+        new_path = path if len(assignments) == 1 else PurePath(path, str(i))
         new(path=new_path,
-            command=command,
+            command=Command(prefix, command, *flag_set, *flags, path=new_path),
             description=description,
             transaction=transaction)
