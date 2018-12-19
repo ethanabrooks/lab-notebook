@@ -34,7 +34,13 @@ def add_subparser(subparsers):
         '--prefix',
         type=str,
         help="String to prepend to all main subcommands, for example, sourcing a "
-             "virtualenv")
+        "virtualenv")
+    parser.add_argument(
+        '--flag',
+        '-f',
+        default=[],
+        action='append',
+        help="directories to create and sync automatically with each run")
     return parser
     # new_parser.add_argument(
     #     '--summary-path',
@@ -52,7 +58,7 @@ FLAG_KWD = '<flag>'
 
 
 @Transaction.wrapper
-def cli(prefix: str, path: PurePath, spec: Path, logger: UI,
+def cli(prefix: str, path: PurePath, spec: Path, flags: List[str], logger: UI,
         description: str, transaction: Transaction, *args, **kwargs):
     # spec: Path
     with spec.open() as f:
@@ -73,7 +79,7 @@ def cli(prefix: str, path: PurePath, spec: Path, logger: UI,
             return process_flag(key=value, value='', delim='')
         if not key.startswith('-'):
             key = f'--{key}'
-        return key + delim + value
+        return f'{key}{delim}"{value}"'
 
     def process_flags(k, v):
         if isinstance(v, (list, tuple)):
@@ -84,9 +90,12 @@ def cli(prefix: str, path: PurePath, spec: Path, logger: UI,
 
     def command_generator():
         for spec in spec_objs:
-            flags = [process_flags(*f) for f in spec.flags]
-            for flag_set in itertools.product(*flags):
-                yield Command(prefix, spec.command, *flag_set, path=path)
+            for flag_set in itertools.product(*[process_flags(*f) for f in spec.flags]):
+                yield Command(
+                    prefix,
+                    spec.command,
+                    flag_set, flags,
+                    path=path)
 
     commands = list(command_generator())
     for i, command in enumerate(commands):
