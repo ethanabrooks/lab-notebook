@@ -85,10 +85,7 @@ def cli(prefix: str, paths: List[PurePath], commands: List[str], flags: List[str
         if len(descriptions) == 1:
             description = descriptions[0]
 
-        new(command=Command(prefix=prefix,
-                            positional=command,
-                            nonpositional=flags,
-                            path=path),
+        new(command=Command(prefix, command, *flags, path=path),
             description=description,
             path=path,
             transaction=transaction)
@@ -109,11 +106,3 @@ def new(command, description, path, transaction):
         datetime=datetime.now().isoformat(),
         description=description)
 
-
-def build_command(command: str, path: PurePath, prefix: str, flags: Iterator[str]) -> str:
-    if prefix:
-        command = f'{prefix} {command}'
-    flags = ' '.join(interpolate_keywords(path, f) for f in flags)
-    if flags:
-        command = f"{command} {flags}"
-    return command

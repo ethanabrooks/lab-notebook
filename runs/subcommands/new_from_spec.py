@@ -6,8 +6,8 @@ from typing import List
 
 # first party
 from runs.command import Command
-from runs.subcommands.new import build_command, new
 from runs.logger import UI
+from runs.subcommands.new import new
 from runs.transaction.transaction import Transaction
 from runs.util import PurePath
 
@@ -35,12 +35,6 @@ def add_subparser(subparsers):
         type=str,
         help="String to prepend to all main subcommands, for example, sourcing a "
              "virtualenv")
-    parser.add_argument(
-        '--flag',
-        '-f',
-        default=[],
-        action='append',
-        help="directories to create and sync automatically with each run")
     return parser
     # new_parser.add_argument(
     #     '--summary-path',
@@ -58,7 +52,7 @@ FLAG_KWD = '<flag>'
 
 
 @Transaction.wrapper
-def cli(prefix: str, path: PurePath, spec: Path, flags: List[str], logger: UI,
+def cli(prefix: str, path: PurePath, spec: Path, logger: UI,
         description: str, transaction: Transaction, *args, **kwargs):
     # spec: Path
     with spec.open() as f:
@@ -92,10 +86,7 @@ def cli(prefix: str, path: PurePath, spec: Path, flags: List[str], logger: UI,
         for spec in spec_objs:
             flags = [process_flags(*f) for f in spec.flags]
             for flag_set in itertools.product(*flags):
-                yield Command(prefix=prefix,
-                              positional=spec.command,
-                              nonpositional=flag_set,
-                              path=path)
+                yield Command(prefix, spec.command, *flag_set, path=path)
 
     commands = list(command_generator())
     for i, command in enumerate(commands):
