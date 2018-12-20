@@ -56,15 +56,14 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
     for nonpositional in nonpositionals():
         try:
             key, value = re.match('(-{1,2}[^=]*)=(.*)', nonpositional).groups()
+            key = key.lstrip('--')
             if key not in exclude:
-                if 'dumb' in key:
-                    import ipdb;
-                    ipdb.set_trace()
-                flags[key].add(value.lstrip('--'))
+                flags[key].add(value)
         except AttributeError:
             value, = re.match('(-{1,2}.*)', nonpositional).groups()
+            value = value.lstrip('--')
             if value not in exclude:
-                flags[''].add(value.lstrip('--'))
+                flags[''].add(value)
                 for command in commands:
                     if bare_command or nonpositional not in command.arg_groups[1]:
                         flags[''].add('')
