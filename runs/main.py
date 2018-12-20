@@ -10,7 +10,8 @@ import sys
 from typing import List
 
 # first party
-from runs.subcommands import change_description, correlate, flags, kill, lookup, ls, mv, new, new_from_spec, reproduce, rm
+from runs.subcommands import change_description, correlate, flags, kill, lookup, ls, mv, \
+    new, new_from_spec, reproduce, rm, diff
 from runs.logger import Logger
 
 MAIN = 'main'
@@ -100,6 +101,7 @@ def main(argv=sys.argv[1:]):
                 reproduce.add_subparser,
                 correlate.add_subparser,
                 kill.add_subparser,
+                diff.add_subparser,
             ]
     ]:
         assert isinstance(subparser, argparse.ArgumentParser)
