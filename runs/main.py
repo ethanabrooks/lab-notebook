@@ -10,9 +10,9 @@ import sys
 from typing import List
 
 # first party
-from runs.subcommands import change_description, correlate, flags, kill, lookup, ls, mv, \
-    new, new_from_spec, reproduce, rm, diff
 from runs.logger import Logger
+from runs.subcommands import (change_description, correlate, diff, flags, kill, lookup, ls, mv, new, new_from_spec,
+                              reproduce, rm)
 
 MAIN = 'main'
 FLAGS = 'flags'

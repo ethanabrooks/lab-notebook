@@ -1,7 +1,7 @@
+from enum import Enum, auto
 import itertools
 import re
-from enum import Enum, auto
-from typing import List, Set, Union, Generator
+from typing import Generator, List, Set, Union
 
 
 class Type(Enum):
@@ -24,7 +24,6 @@ class Command:
         self.arg_groups = [set(v) if k else list(v) for k, v in groupby]
 
     def __str__(self):
-
         def iterator() -> Generator[str, None, None]:
             for v in self.arg_groups:
                 yield from v
@@ -33,18 +32,18 @@ class Command:
 
     def diff(self, other):
         def regroup(groups: List[Union[List[str], Set[str]]]):
-            for positional, nonpositional in zip(groups[0::2], groups[1::2]):
-                assert isinstance(positional, list), \
+            for pos, nonpos in zip(groups[0::2], groups[1::2]):
+                assert isinstance(pos, list), \
                     "Command should not start with a nonpositional argument (Command: " \
                     f"{self})"
-                for positional1, positional2 in itertools.zip_longest(positional,
-                                                                      positional[1:]):
-                    yield positional1, nonpositional if positional2 is None else set()
+                for pos1, pos2 in itertools.zip_longest(
+                        pos, pos[1:]):
+                    yield pos1, nonpos if pos2 is None else set()
 
         assert isinstance(other, Command)
 
-        for (positional1, nonpositional1), (positional2, nonpositional2) in zip(regroup(
-                self.arg_groups), regroup(other.arg_groups)):
+        for (positional1, nonpositional1), (positional2, nonpositional2) in zip(
+                regroup(self.arg_groups), regroup(other.arg_groups)):
             if positional1 == positional2:
                 yield positional1, Type.UNCHANGED
             else:
