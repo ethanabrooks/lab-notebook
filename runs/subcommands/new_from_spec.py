@@ -53,6 +53,9 @@ class SpecObj:
         self.flags = flags
         self.delimiter = delimiter
 
+    def dict(self):
+        return dict(command=self.command, flags=self.flags)
+
 
 FLAG_KWD = '<flag>'
 

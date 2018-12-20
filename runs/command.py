@@ -22,6 +22,10 @@ class Command:
 
         groupby = itertools.groupby(iterator(), lambda s: s.startswith('-'))
         self.arg_groups = [set(v) if k else list(v) for k, v in groupby]
+        self.stem = self.arg_groups[0]
+        assert isinstance(self.stem, list), \
+            "Command should not start with a nonpositional argument (Command: " \
+            f"{self})"
 
     def __str__(self):
         def iterator() -> Generator[str, None, None]:
@@ -30,12 +34,19 @@ class Command:
 
         return ' '.join(iterator()).replace('<path>', str(self.path))
 
+    @staticmethod
+    def from_run(run):
+        return Command(run.command, path=run.path)
+
+    @staticmethod
+    def from_db(db, path):
+        run, = db[path]
+        assert path == run.path
+        return Command.from_run(run)
+
     def diff(self, other):
         def regroup(groups: List[Union[List[str], Set[str]]]):
             for pos, nonpos in zip(groups[0::2], groups[1::2]):
-                assert isinstance(pos, list), \
-                    "Command should not start with a nonpositional argument (Command: " \
-                    f"{self})"
                 for pos1, pos2 in itertools.zip_longest(
                         pos, pos[1:]):
                     yield pos1, nonpos if pos2 is None else set()

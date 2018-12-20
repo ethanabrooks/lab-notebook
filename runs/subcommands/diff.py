@@ -7,7 +7,10 @@ from runs.util import GREEN, RED, RESET, PurePath
 
 
 def add_subparser(subparsers):
-    parser = subparsers.add_parser('diff', help='Rank flags by Pearson correlation.')
+    parser = subparsers.add_parser('diff', help='Compare commands associated with two '
+                                                'runs, highlighting additions in the '
+                                                'first in green and deletions from the '
+                                                'second in red.')
     parser.add_argument('path1', type=PurePath, help='Path to compare with path2')
     parser.add_argument('path2', type=PurePath, help='Path to compare with path1')
     return parser
@@ -15,12 +18,8 @@ def add_subparser(subparsers):
 
 @DataBase.open
 def cli(db: DataBase, path1: PurePath, path2: PurePath, *args, **kwargs):
-    def command(path):
-        run, = db[path]
-        return Command(run.command, path=path)
-
-    c1 = command(path1)
-    c2 = command(path2)
+    c1 = Command.from_db(db, path1)
+    c2 = Command.from_db(db, path2)
     for element, blob_type in c1.diff(c2):
         if blob_type == Type.ADDED:
             print(GREEN, element, RESET, end='')
