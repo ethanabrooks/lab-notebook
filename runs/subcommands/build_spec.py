@@ -4,7 +4,7 @@
 import re
 from collections import defaultdict
 from pprint import pprint
-from typing import List
+from typing import List, Set
 
 from runs.command import Command
 from runs.database import DataBase, add_query_flags
@@ -17,13 +17,16 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser('build-spec',
                                    help='Print json spec that reproduces crossproduct '
                                         'of flags in given patterns.')
+    parser.add_argument('--exclude', nargs='*', default=set(),
+                        help='Keys of flags to exclude.')
     add_query_flags(parser, with_sort=False)
     return parser
 
 
 @DataBase.open
 @DataBase.query
-def cli(runs: List[RunEntry], logger: Logger, *args, **kwargs):
+def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *args, **kwargs):
+    exclude = set(exclude)
     commands = [Command.from_run(run) for run in runs]
     for command in commands:
         for group in command.arg_groups[1:]:
@@ -35,10 +38,10 @@ def cli(runs: List[RunEntry], logger: Logger, *args, **kwargs):
     if not len(stems) == 1:
         logger.exit("Commands do not start with the same positional arguments:",
                     *commands, sep='\n')
-    pprint(get_spec_obj(commands).dict())
+    pprint(get_spec_obj(commands, exclude).dict())
 
 
-def get_spec_obj(commands: List[Command]):
+def get_spec_obj(commands: List[Command], exclude: Set[str]):
     stem = ' '.join(commands[0].stem)
 
     def nonpositionals():
@@ -53,13 +56,18 @@ def get_spec_obj(commands: List[Command]):
     for nonpositional in nonpositionals():
         try:
             key, value = re.match('(-{1,2}[^=]*)=(.*)', nonpositional).groups()
-            flags[key].add(value.lstrip('--'))
+            if key not in exclude:
+                if 'dumb' in key:
+                    import ipdb;
+                    ipdb.set_trace()
+                flags[key].add(value.lstrip('--'))
         except AttributeError:
             value, = re.match('(-{1,2}.*)', nonpositional).groups()
-            flags[''].add(value.lstrip('--'))
-            for command in commands:
-                if bare_command or nonpositional not in command.arg_groups[1]:
-                    flags[''].add('')
+            if value not in exclude:
+                flags[''].add(value.lstrip('--'))
+                for command in commands:
+                    if bare_command or nonpositional not in command.arg_groups[1]:
+                        flags[''].add('')
 
     flags = {k: v.pop() if len(v) == 0 else list(v) for k, v in flags.items()}
     return SpecObj(command=stem, flags=flags)
