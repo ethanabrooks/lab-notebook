@@ -14,11 +14,12 @@ from runs.subcommands.new_from_spec import SpecObj
 
 
 def add_subparser(subparsers):
-    parser = subparsers.add_parser('build-spec',
-                                   help='Print json spec that reproduces crossproduct '
-                                        'of flags in given patterns.')
-    parser.add_argument('--exclude', nargs='*', default=set(),
-                        help='Keys of flags to exclude.')
+    parser = subparsers.add_parser(
+        'build-spec',
+        help='Print json spec that reproduces crossproduct '
+        'of flags in given patterns.')
+    parser.add_argument(
+        '--exclude', nargs='*', default=set(), help='Keys of flags to exclude.')
     add_query_flags(parser, with_sort=False)
     return parser
 
@@ -36,8 +37,10 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *args, **kwarg
                             f"positional argument group")
     stems = {' '.join(command.stem) for command in commands}
     if not len(stems) == 1:
-        logger.exit("Commands do not start with the same positional arguments:",
-                    *commands, sep='\n')
+        logger.exit(
+            "Commands do not start with the same positional arguments:",
+            *commands,
+            sep='\n')
     pprint(get_spec_obj(commands, exclude).dict())
 
 
@@ -55,8 +58,14 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
     bare_command = any(len(command.arg_groups) == 1 for command in commands)
     for nonpositional in nonpositionals():
         try:
-            key, value = re.match('(-{1,2}[^=]*)=(.*)', nonpositional).groups()
+            key, value = re.match('(-{1,2}[^=]*)="?([^"]*)"?', nonpositional).groups()
             key = key.lstrip('--')
+            try:
+                value = float(value)
+                if value % 1 == 0:
+                    value = int(value)
+            except ValueError:
+                pass
             if key not in exclude:
                 flags[key].add(value)
         except AttributeError:
@@ -68,5 +77,5 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
                     if bare_command or nonpositional not in command.arg_groups[1]:
                         flags[''].add('')
 
-    flags = {k: v.pop() if len(v) == 0 else list(v) for k, v in flags.items()}
+    flags = {k: v.pop() if len(v) == 1 else list(v) for k, v in flags.items()}
     return SpecObj(command=stem, flags=flags)
