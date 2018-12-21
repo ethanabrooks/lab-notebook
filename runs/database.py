@@ -12,7 +12,7 @@ from runs.logger import Logger
 from runs.query import Condition, GreaterThan, In, Like
 from runs.run_entry import RunEntry
 from runs.tmux_session import TMUXSession
-from utils.util import PurePath
+from runs.utils.util import PurePath
 
 PathLike = Union[str, PurePath, PurePath, Path]
 

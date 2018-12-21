@@ -9,7 +9,7 @@ from runs.logger import UI
 from runs.subcommands.new import new
 from runs.transaction.transaction import Transaction
 from runs.utils.command import Command
-from utils.util import PurePath
+from runs.utils.util import PurePath
 
 
 def add_subparser(subparsers):

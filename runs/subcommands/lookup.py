@@ -6,7 +6,7 @@ from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
 from runs.utils.arguments import add_query_flags
-from utils.util import PurePath, highlight
+from runs.utils.util import PurePath, highlight
 
 
 def add_subparser(subparsers):

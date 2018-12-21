@@ -17,7 +17,7 @@ from runs.transaction.new import NewRunTransaction
 from runs.transaction.removal import RemovalTransaction
 from runs.transaction.sub_transaction import SubTransaction
 from runs.utils.command import Command
-from utils.util import natural_order
+from runs.utils.util import natural_order
 
 TransactionType = namedtuple('TransactionType', [
     'description_change',

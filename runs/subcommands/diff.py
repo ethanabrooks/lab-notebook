@@ -3,7 +3,7 @@
 # first party
 from runs.database import DataBase
 from runs.utils.command import Command, Type
-from utils.util import GREEN, RED, RESET, PurePath
+from runs.utils.util import GREEN, RED, RESET, PurePath
 
 
 def add_subparser(subparsers):
