@@ -7,10 +7,10 @@ import pickle
 import yaml
 
 # first party
-from runs.subcommands import ls
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
+from runs.subcommands import ls
 
 
 def yaml_to_run_entry(node, *parts):
