@@ -35,7 +35,7 @@ def add_subparser(subparsers):
 @DataBase.open
 @DataBase.query
 def cli(runs: List[RunEntry], args: List[str], logger: Logger, db: DataBase, prefix: str,
-        path: Optional[PurePath], description: str, *args, **kwargs):
+        path: Optional[PurePath], description: str, *_, **__):
     for string in strings(
             db=db,
             runs=runs,
@@ -68,7 +68,7 @@ def strings(runs: List[RunEntry], args: List[str], prefix: str, db: DataBase,
                 path=PurePath(new_path),
                 prefix=prefix,
                 command=entry.command,
-                args=flags)
+                args=args)
             new_path, subcommand, _description = map(json.dumps, [
                 str(new_path), subcommand, description
                 or entry.description.strip('"').strip("'")
@@ -85,9 +85,9 @@ def strings(runs: List[RunEntry], args: List[str], prefix: str, db: DataBase,
 
 
 def get_command_string(path: PurePath, prefix: str, command: str,
-                       flags: List[str]) -> str:
-    flags = [interpolate_keywords(path, f) for f in flags]
-    for s in flags + [prefix]:
+                       args: List[str]) -> str:
+    args = [interpolate_keywords(path, f) for f in args]
+    for s in args + [prefix]:
         command = command.replace(s, '')
     return command
     # command_string = f"runs new {new_path} '{command}' --description='Reproduce {entry.path}. "

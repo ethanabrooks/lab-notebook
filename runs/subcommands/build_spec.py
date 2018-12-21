@@ -10,7 +10,7 @@ from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
 from runs.subcommands.new_from_spec import SpecObj
-from runs.utils.arguments import add_query_flags
+from runs.utils.arguments import add_query_args
 from runs.utils.command import Command
 
 
@@ -18,16 +18,16 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'build-spec',
         help='Print json spec that reproduces crossproduct '
-        'of flags in given patterns.')
+        'of args in given patterns.')
     parser.add_argument(
-        '--exclude', nargs='*', default=set(), help='Keys of flags to exclude.')
-    add_query_flags(parser, with_sort=False)
+        '--exclude', nargs='*', default=set(), help='Keys of args to exclude.')
+    add_query_args(parser, with_sort=False)
     return parser
 
 
 @DataBase.open
 @DataBase.query
-def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *args, **kwargs):
+def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *_, **__):
     exclude = set(exclude)
     commands = [Command.from_run(run) for run in runs]
     for command in commands:
@@ -55,7 +55,7 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
             except IndexError:
                 pass
 
-    flags = defaultdict(set)
+    args = defaultdict(set)
     bare_command = any(len(command.arg_groups) == 1 for command in commands)
     for nonpositional in nonpositionals():
         match = re.match('(-{1,2}[^=]*)=(.*)', nonpositional).groups()
@@ -63,15 +63,15 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
             key, value = match
             key = key.lstrip('--')
             if key not in exclude:
-                flags[key].add(value)
+                args[key].add(value)
         else:
             value, = re.match('(-{1,2}.*)', nonpositional).groups()
             value = value.lstrip('--')
             if value not in exclude:
-                flags[''].add(value)
+                args[''].add(value)
                 for command in commands:
                     if bare_command or nonpositional not in command.arg_groups[1]:
-                        flags[''].add('')
+                        args[''].add('')
 
-    flags = {k: v.pop() if len(v) == 1 else list(v) for k, v in flags.items()}
-    return SpecObj(command=stem, flags=flags)
+    args = {k: v.pop() if len(v) == 1 else list(v) for k, v in args.items()}
+    return SpecObj(command=stem, args=args)

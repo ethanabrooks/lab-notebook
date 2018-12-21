@@ -42,13 +42,13 @@ DEFAULT_QUERY_FLAGS = {
 }
 
 
-def add_query_flags(
+def add_query_args(
         parser,
         with_sort: bool,
-        default_flags: dict = DEFAULT_QUERY_FLAGS,
+        default_args: dict = DEFAULT_QUERY_FLAGS,
 ):
     if not with_sort:
-        default_flags = deepcopy(default_flags)
-        del default_flags['--sort']
-    for arg_name, kwargs in default_flags.items():
+        default_args = deepcopy(default_args)
+        del default_args['--sort']
+    for arg_name, kwargs in default_args.items():
         parser.add_argument(arg_name, **kwargs)

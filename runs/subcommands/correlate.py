@@ -28,7 +28,7 @@ def add_subparser(subparsers):
 
 @DataBase.open
 @DataBase.query
-def cli(logger: Logger, runs: List[RunEntry], value_path: Path, *args, **kwargs):
+def cli(logger: Logger, runs: List[RunEntry], value_path: Path, *_, **__):
     logger.print(*strings(runs=runs, value_path=value_path), sep='\n')
 
 

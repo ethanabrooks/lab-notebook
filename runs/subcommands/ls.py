@@ -7,13 +7,13 @@ from typing import List
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.utils.arguments import DEFAULT_QUERY_FLAGS, add_query_flags
+from runs.utils.arguments import DEFAULT_QUERY_FLAGS, add_query_args
 from runs.utils.util import PurePath, natural_order
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('ls', help='Print paths in run database.')
-    add_query_flags(parser, with_sort=True, default_flags=DEFAULT_QUERY_FLAGS)
+    add_query_args(parser, with_sort=True, default_args=DEFAULT_QUERY_FLAGS)
 
     parser.add_argument(
         '--show-attrs',
@@ -30,7 +30,7 @@ def add_subparser(subparsers):
 
 @DataBase.open
 @DataBase.query
-def cli(runs: List[RunEntry], logger: Logger, pprint: bool, depth, *args, **kwargs):
+def cli(runs: List[RunEntry], logger: Logger, pprint: bool, depth, *_, **__):
     logger.print(string(
         runs=runs,
         pprint=pprint,

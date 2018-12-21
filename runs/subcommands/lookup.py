@@ -5,7 +5,7 @@ from typing import Dict, List
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.utils.arguments import add_query_flags
+from runs.utils.arguments import add_query_args
 from runs.utils.util import PurePath, highlight
 
 
@@ -16,7 +16,7 @@ def add_subparser(subparsers):
         'key',
         choices=RunEntry.fields() + ('all', ),
         help='Key that value is associated with.')
-    add_query_flags(parser, with_sort=True)
+    add_query_args(parser, with_sort=True)
     parser.add_argument(
         '--porcelain',
         action='store_true',
@@ -27,7 +27,7 @@ def add_subparser(subparsers):
 @DataBase.open
 @DataBase.query
 def cli(runs: List[RunEntry], db: DataBase, logger: Logger, key: str, porcelain: bool,
-        *args, **kwargs):
+        *_, **__):
     logger.print(string(runs=runs, key=key, porcelain=porcelain))
 
 

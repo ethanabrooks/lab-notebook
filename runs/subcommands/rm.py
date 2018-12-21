@@ -6,7 +6,7 @@ from typing import List
 from runs.database import DataBase
 from runs.run_entry import RunEntry
 from runs.transaction.transaction import Transaction
-from runs.utils.arguments import DEFAULT_QUERY_FLAGS, add_query_flags
+from runs.utils.arguments import DEFAULT_QUERY_FLAGS, add_query_args
 
 
 def add_subparser(subparsers):
@@ -14,17 +14,17 @@ def add_subparser(subparsers):
         'rm',
         help="Delete runs from the database (and all associated tensorboard "
         "and checkpoint files).")
-    default_flags = deepcopy(DEFAULT_QUERY_FLAGS)
-    default_flags['patterns'].update(
+    default_args = deepcopy(DEFAULT_QUERY_FLAGS)
+    default_args['patterns'].update(
         help=
         'This script will only delete entries in the database whose names are a complete '
         '(not partial) match of this sql pattern.')
-    add_query_flags(parser, with_sort=False, default_flags=default_flags)
+    add_query_args(parser, with_sort=False, default_args=default_args)
     return parser
 
 
 @Transaction.wrapper
 @DataBase.query
-def cli(runs: List[RunEntry], transaction, *args, **kwargs):
+def cli(runs: List[RunEntry], transaction, *_, **__):
     for path in set(run.path for run in runs):
         transaction.remove(path)

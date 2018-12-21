@@ -6,23 +6,23 @@ from typing import List, Optional
 from runs.database import DataBase
 from runs.run_entry import RunEntry
 from runs.transaction.transaction import Transaction
-from runs.utils.arguments import DEFAULT_QUERY_FLAGS, add_query_flags
+from runs.utils.arguments import DEFAULT_QUERY_FLAGS, add_query_args
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('change-description', help='Edit description of run.')
-    default_flags = deepcopy(DEFAULT_QUERY_FLAGS)
-    default_flags['patterns'].update(
+    default_args = deepcopy(DEFAULT_QUERY_FLAGS)
+    default_args['patterns'].update(
         help='Name of run whose description you want to edit.')
-    add_query_flags(parser, with_sort=False, default_flags=default_flags)
+    add_query_args(parser, with_sort=False, default_args=default_args)
     parser.add_argument('description', help='New description to assign to paths')
     return parser
 
 
 @Transaction.wrapper
 @DataBase.query
-def cli(transaction: Transaction, runs: List[RunEntry], description: Optional[str], *args,
-        **kwargs):
+def cli(transaction: Transaction, runs: List[RunEntry], description: Optional[str], *_,
+        **__):
     for run in runs:
         transaction.change_description(
             path=run.path,

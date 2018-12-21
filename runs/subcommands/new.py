@@ -50,7 +50,7 @@ def add_subparser(subparsers):
         help="String to prepend to all main subcommands, for example, sourcing a "
         "virtualenv")
     parser.add_argument(
-        '--flag',
+        '--arg',
         '-f',
         default=[],
         action='append',
@@ -62,8 +62,8 @@ def add_subparser(subparsers):
 
 
 @Transaction.wrapper
-def cli(prefix: str, paths: List[PurePath], commands: List[str], flags: List[str],
-        logger: UI, descriptions: List[str], transaction: Transaction, *args, **kwargs):
+def cli(prefix: str, paths: List[PurePath], commands: List[str], args: List[str],
+        logger: UI, descriptions: List[str], transaction: Transaction, *_, **__):
     n = len(commands)
     if not len(paths) in [1, n]:
         logger.exit('There must either be 1 or n paths '
@@ -85,7 +85,7 @@ def cli(prefix: str, paths: List[PurePath], commands: List[str], flags: List[str
         if len(descriptions) == 1:
             description = descriptions[0]
 
-        new(command=Command(prefix, command, *flags, path=path),
+        new(command=Command(prefix, command, *args, path=path),
             description=description,
             path=path,
             transaction=transaction)

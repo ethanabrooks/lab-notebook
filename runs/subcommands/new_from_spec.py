@@ -21,8 +21,8 @@ def add_subparser(subparsers):
         'spec',
         type=Path,
         help='JSON file that contains either a single or an array of JSON objects'
-        'each with a "command" key and a "flags" key. The "command" value'
-        'is a single string and the "flags" value is a JSON object such that'
+        'each with a "command" key and a "args" key. The "command" value'
+        'is a single string and the "args" value is a JSON object such that'
         '"a: b," becomes "--a=b" for example.',
     )
     parser.add_argument(
@@ -36,7 +36,7 @@ def add_subparser(subparsers):
         help="String to prepend to all main subcommands, for example, sourcing a "
         "virtualenv")
     parser.add_argument(
-        '--flag',
+        '--arg',
         '-f',
         default=[],
         action='append',
@@ -48,21 +48,21 @@ def add_subparser(subparsers):
 
 
 class SpecObj:
-    def __init__(self, command: str, flags: dict, delimiter: str = '='):
+    def __init__(self, command: str, args: dict, delimiter: str = '='):
         self.command = command
-        self.flags = flags
+        self.args = args
         self.delimiter = delimiter
 
     def dict(self):
-        return dict(command=self.command, flags=self.flags)
+        return dict(command=self.command, args=self.args)
 
 
-FLAG_KWD = '<flag>'
+FLAG_KWD = '<arg>'
 
 
 @Transaction.wrapper
-def cli(prefix: str, path: PurePath, spec: Path, flags: List[str], logger: UI,
-        description: str, transaction: Transaction, *args, **kwargs):
+def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
+        description: str, transaction: Transaction, *_, **__):
     # spec: Path
     with spec.open() as f:
         obj = json.load(f, object_pairs_hook=lambda pairs: pairs)
@@ -73,33 +73,33 @@ def cli(prefix: str, path: PurePath, spec: Path, flags: List[str], logger: UI,
             spec_objs = [SpecObj(**dict(o)) for o in obj]
     except TypeError:
         logger.exit(f'Each object in {spec} must have a '
-                    f'"command" field and a "flags" field.')
+                    f'"command" field and a "args" field.')
 
-    def process_flag(key, value, delim='='):
+    def process_arg(key, value, delim='='):
         if key == '':
             if value == '':
                 return ''
-            return process_flag(key=value, value='', delim='')
+            return process_arg(key=value, value='', delim='')
         if not key.startswith('-'):
             key = f'--{key}'
         return f'{key}{delim}"{value}"'
 
-    def process_flags(k, v):
+    def process_args(k, v):
         if isinstance(v, (list, tuple)):
             for value in v:
-                yield process_flag(k, value)
+                yield process_arg(k, value)
         else:
-            yield process_flag(k, v)
+            yield process_arg(k, v)
 
-    def flag_assignments():
+    def arg_assignments():
         for spec in spec_objs:
-            for flag_set in itertools.product(*[process_flags(*f) for f in spec.flags]):
-                yield spec.command, flag_set
+            for arg_set in itertools.product(*[process_args(*f) for f in spec.args]):
+                yield spec.command, arg_set
 
-    assignments = list(flag_assignments())
-    for i, (command, flag_set) in enumerate(assignments):
+    assignments = list(arg_assignments())
+    for i, (command, arg_set) in enumerate(assignments):
         new_path = path if len(assignments) == 1 else PurePath(path, str(i))
         new(path=new_path,
-            command=Command(prefix, command, *flag_set, *flags, path=new_path),
+            command=Command(prefix, command, *arg_set, *args, path=new_path),
             description=description,
             transaction=transaction)

@@ -19,7 +19,7 @@ def add_subparser(subparsers):
 
 
 @DataBase.open
-def cli(db: DataBase, path1: PurePath, path2: PurePath, *args, **kwargs):
+def cli(db: DataBase, path1: PurePath, path2: PurePath, *_, **__):
     c1 = Command.from_db(db, path1)
     c2 = Command.from_db(db, path2)
     for element, blob_type in c1.diff(c2):
