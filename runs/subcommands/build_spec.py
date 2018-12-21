@@ -7,7 +7,8 @@ from pprint import pprint
 from typing import List, Set
 
 from runs.command import Command
-from runs.database import DataBase, add_query_flags
+from runs.database import DataBase
+from runs.arguments import add_query_flags
 from runs.logger import Logger
 from runs.run_entry import RunEntry
 from runs.subcommands.new_from_spec import SpecObj

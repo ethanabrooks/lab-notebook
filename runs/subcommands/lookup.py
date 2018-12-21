@@ -2,7 +2,8 @@
 from typing import Dict, List
 
 # first party
-from runs.database import DataBase, add_query_flags
+from runs.database import DataBase
+from runs.arguments import add_query_flags
 from runs.logger import Logger
 from runs.run_entry import RunEntry
 from runs.util import PurePath, highlight
