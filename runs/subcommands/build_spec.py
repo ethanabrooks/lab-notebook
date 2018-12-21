@@ -54,12 +54,13 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
     flags = defaultdict(set)
     bare_command = any(len(command.arg_groups) == 1 for command in commands)
     for nonpositional in nonpositionals():
-        try:
-            key, value = re.match('(-{1,2}[^=]*)=(.*)', nonpositional).groups()
+        match = re.match('(-{1,2}[^=]*)=(.*)', nonpositional).groups()
+        if match is not None:
+            key, value = match
             key = key.lstrip('--')
             if key not in exclude:
                 flags[key].add(value)
-        except AttributeError:
+        else:
             value, = re.match('(-{1,2}.*)', nonpositional).groups()
             value = value.lstrip('--')
             if value not in exclude:
