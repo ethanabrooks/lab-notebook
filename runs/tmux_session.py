@@ -6,8 +6,12 @@ from runs.shell import Bash
 
 
 class TMUXSession:
+    replacements = {'.': '<,>', ':': '<;>'}
+
     def __init__(self, bash: Bash, path: PurePath = None):
-        self.name = str(path).replace('.', ',').replace(':', ';')
+        self.name = str(path)
+        for k, v in TMUXSession.replacements.items():
+            self.name = self.name.replace(k, v)
         self.cmd = bash.cmd
 
     def new(self, window_name, command):
@@ -33,5 +37,8 @@ class TMUXSession:
 
     @staticmethod
     def active_runs(logger):
-        runs = TMUXSession.list(logger)
-        return [r.replace(',', '%') for r in runs]
+        paths = TMUXSession.list(logger)
+        for path in paths:
+            for k, v in TMUXSession.replacements.items():
+                path = path.replace(v, k)
+            yield path
