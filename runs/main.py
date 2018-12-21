@@ -12,7 +12,7 @@ from typing import List
 
 # first party
 from runs.logger import UI
-from runs.subcommands import (build_spec, change_description, correlate, diff, args, kill, lookup, ls, mv, new,
+from runs.subcommands import (build_spec, change_description, correlate, diff, kill, lookup, ls, mv, new,
                               new_from_spec, reproduce, rm)
 
 MAIN = 'main'
@@ -106,7 +106,6 @@ def main(argv=sys.argv[1:]):
                 mv.add_subparser,
                 ls.add_subparser,
                 lookup.add_subparser,
-                args.add_subparser,
                 change_description.add_subparser,
                 reproduce.add_subparser,
                 correlate.add_subparser,
