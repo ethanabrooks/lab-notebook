@@ -31,7 +31,7 @@ class UI(Logger):
         super().__init__(quiet=quiet)
         self.assume_yes = assume_yes
 
-    def get_permission(self, *question, sep):
+    def get_permission(self, *question, sep=' '):
         if self.assume_yes:
             return True
         question = sep.join(map(str, question)).rstrip(sep) + sep

@@ -3,26 +3,21 @@
 # stdlib
 import argparse
 import codecs
+import pprint
+import sys
 from configparser import ConfigParser, ExtendedInterpolation
 from importlib import import_module
 from pathlib import Path, PurePath
-import sys
 from typing import List
 
 # first party
-from runs.logger import Logger
+from runs.logger import UI
 from runs.subcommands import (change_description, correlate, diff, flags, kill, lookup,
                               ls, mv, new, new_from_spec,
                               reproduce, rm, build_spec)
 
 MAIN = 'main'
 FLAGS = 'flags'
-
-
-class ConfigObj:
-    def __init__(self, root=None, db_path=None):
-        self.root = root
-        self.db_path = db_path
 
 
 def find_up(filename):
@@ -79,24 +74,32 @@ def main(argv=sys.argv[1:]):
             _pure_path=PurePath,
             _pure_path_list=pure_path_list,
             _flag_list=flag_list))
-    config_filename = '.runsrc'
+    config_filename = Path('.runsrc')
     config_path = find_up(config_filename)
-
+    missing_config_keys = []
+    default_values = dict(
+        root=str(Path('.runs').absolute()),
+        db_path=str(Path('runs.db').absolute()),
+        dir_names=[],
+        flags=[]
+    )
     if config_path:
         config.read(str(config_path))
-        main_config = vars(ConfigObj(**dict(config[MAIN])))
-    else:
-        main_config = dict(
-            root=Path('.runs').absolute(),
-            db_path=Path('runs.db').absolute(),
-        )
-        config[MAIN] = main_config
 
-    main_config.update(
+    if MAIN not in config:
+        config[MAIN] = {}
+
+    for k, v in default_values.items():
+        if k not in config[MAIN]:
+            missing_config_keys.append(k)
+            config[MAIN][k] = v
+
+    main_config = dict(
         root=config[MAIN].get_path('root'),
         db_path=config[MAIN].get_path('db_path'),
-        dir_names=config[MAIN].get_pure_path_list('dir_names', []),
-        flags=(config[MAIN].get_flag_list(FLAGS, [])))
+        dir_names=config[MAIN].get_pure_path_list('dir_names'),
+        flags=(config[MAIN].get_flag_list(FLAGS))
+    )
 
     for subparser in [parser] + [
         adder(subparsers) for adder in [
@@ -124,24 +127,23 @@ def main(argv=sys.argv[1:]):
             subparser.set_defaults(**config[config_section])
 
     args = parser.parse_args(args=argv)
-    logger = Logger(quiet=args.quiet)
+    ui = UI(assume_yes=args.assume_yes, quiet=args.quiet)
 
-    for k, v in main_config.items():
-        if v is None:
-            logger.exit(f'`.runsrc` is missing a value for "{k}".')
+    def write_config():
+        if ui.get_permission(f'Write new config to {config_filename.absolute()}?'):
+            with config_filename.open('w') as f:
+                config.write(f)
+        else:
+            ui.exit()
 
     if not config_path:
-        logger.print('Config file not found. Using default settings:\n')
-        for section in config.sections():
-            for k, v in config[section].items():
-                logger.print('{:20}{}'.format(k + ':', v))
-        logger.print()
-        msg = 'Writing default settings to ' + config_filename
-        logger.print(msg)
-        logger.print('-' * len(msg))
-
-    with open(config_filename, 'w') as f:
-        config.write(f)
+        ui.print('Config not found. Using default config:',
+                 pprint.pformat(dict(config[MAIN])), sep='\n')
+        write_config()
+    elif missing_config_keys:
+        for key in missing_config_keys:
+            ui.print(f'Using default value for {key}: {main_config[key]}')
+        write_config()
 
     module = import_module('runs.subcommands.' + args.dest.replace('-', '_'))
     kwargs = {k: v for k, v in vars(args).items()}
