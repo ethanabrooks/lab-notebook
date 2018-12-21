@@ -19,6 +19,12 @@ MAIN = 'main'
 FLAGS = 'flags'
 
 
+class ConfigObj:
+    def __init__(self, root=None, db_path=None):
+        self.root = root
+        self.db_path = db_path
+
+
 def find_up(filename):
     dirpath = Path('.').resolve()
     while not dirpath.match(dirpath.root):
@@ -37,28 +43,9 @@ def flag_list(flags_string: str) -> List[List[str]]:
 
 
 def main(argv=sys.argv[1:]):
-    config = ConfigParser(
-        delimiters=[':'],
-        allow_no_value=True,
-        interpolation=ExtendedInterpolation(),
-        converters=dict(
-            _path=Path,
-            _pure_path=PurePath,
-            _pure_path_list=pure_path_list,
-            _flag_list=flag_list))
-    config_filename = '.runsrc'
-    config_path = find_up(config_filename)
-    if config_path:
-        config.read(str(config_path))
-    else:
-        config[MAIN] = dict(
-            root=Path('.runs').absolute(),
-            db_path=Path('runs.db').absolute(),
-        )
-
     parser = argparse.ArgumentParser(
         epilog="The script will ask permission before running, deleting, moving, or "
-        "permanently changing anything.")
+               "permanently changing anything.")
     parser.add_argument(
         '--quiet', '-q', action='store_true', help='Suppress print output')
     parser.add_argument(
@@ -67,8 +54,9 @@ def main(argv=sys.argv[1:]):
         type=Path)
     parser.add_argument(
         '--root',
-        help='Custom path to directory where config directories (if any) are automatically '
-        'created',
+        help='Custom path to directory where config directories (if any) are '
+             'automatically '
+             'created',
         type=Path)
     parser.add_argument(
         '--dir-names',
@@ -82,7 +70,28 @@ def main(argv=sys.argv[1:]):
 
     subparsers = parser.add_subparsers(dest='dest')
 
-    main_config = dict(config[MAIN])
+    config = ConfigParser(
+        delimiters=[':'],
+        allow_no_value=True,
+        interpolation=ExtendedInterpolation(),
+        converters=dict(
+            _path=Path,
+            _pure_path=PurePath,
+            _pure_path_list=pure_path_list,
+            _flag_list=flag_list))
+    config_filename = '.runsrc'
+    config_path = find_up(config_filename)
+
+    if config_path:
+        config.read(str(config_path))
+        main_config = vars(ConfigObj(**dict(config[MAIN])))
+    else:
+        main_config = dict(
+            root=Path('.runs').absolute(),
+            db_path=Path('runs.db').absolute(),
+        )
+        config[MAIN] = main_config
+
     main_config.update(
         root=config[MAIN].get_path('root'),
         db_path=config[MAIN].get_path('db_path'),
@@ -90,21 +99,21 @@ def main(argv=sys.argv[1:]):
         flags=(config[MAIN].get_flag_list(FLAGS, [])))
 
     for subparser in [parser] + [
-            adder(subparsers) for adder in [
-                new.add_subparser,
-                new_from_spec.add_subparser,
-                rm.add_subparser,
-                mv.add_subparser,
-                ls.add_subparser,
-                lookup.add_subparser,
-                flags.add_subparser,
-                change_description.add_subparser,
-                reproduce.add_subparser,
-                correlate.add_subparser,
-                kill.add_subparser,
-                diff.add_subparser,
-                build_spec.add_subparser,
-            ]
+        adder(subparsers) for adder in [
+            new.add_subparser,
+            new_from_spec.add_subparser,
+            rm.add_subparser,
+            mv.add_subparser,
+            ls.add_subparser,
+            lookup.add_subparser,
+            flags.add_subparser,
+            change_description.add_subparser,
+            reproduce.add_subparser,
+            correlate.add_subparser,
+            kill.add_subparser,
+            diff.add_subparser,
+            build_spec.add_subparser,
+        ]
     ]:
         assert isinstance(subparser, argparse.ArgumentParser)
         config_section = subparser.prog.split()[-1]
@@ -115,8 +124,12 @@ def main(argv=sys.argv[1:]):
             subparser.set_defaults(**config[config_section])
 
     args = parser.parse_args(args=argv)
-
     logger = Logger(quiet=args.quiet)
+
+    for k, v in main_config.items():
+        if v is None:
+            logger.exit(f'`.runsrc` is missing a value for "{k}".')
+
     if not config_path:
         logger.print('Config file not found. Using default settings:\n')
         for section in config.sections():
