@@ -7,7 +7,7 @@ from typing import List, Optional
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.utils.arguments import add_query_flags
+from runs.utils.arguments import add_query_args
 from runs.utils.util import PurePath, highlight, interpolate_keywords
 
 
@@ -16,7 +16,7 @@ def add_subparser(subparsers):
         'reproduce',
         help='Print subcommands to reproduce a run or runs. This command '
         'does not have side-effects (besides printing).')
-    add_query_flags(parser, with_sort=False)
+    add_query_args(parser, with_sort=False)
     parser.add_argument(
         '--path',
         type=PurePath,
@@ -34,12 +34,12 @@ def add_subparser(subparsers):
 
 @DataBase.open
 @DataBase.query
-def cli(runs: List[RunEntry], flags: List[str], logger: Logger, db: DataBase, prefix: str,
+def cli(runs: List[RunEntry], args: List[str], logger: Logger, db: DataBase, prefix: str,
         path: Optional[PurePath], description: str, *args, **kwargs):
     for string in strings(
             db=db,
             runs=runs,
-            flags=flags,
+            args=args,
             prefix=prefix,
             path=path,
             description=description,
@@ -47,7 +47,7 @@ def cli(runs: List[RunEntry], flags: List[str], logger: Logger, db: DataBase, pr
         logger.print(string)
 
 
-def strings(runs: List[RunEntry], flags: List[str], prefix: str, db: DataBase,
+def strings(runs: List[RunEntry], args: List[str], prefix: str, db: DataBase,
             path: Optional[PurePath], description: Optional[str]):
     entry_dict = defaultdict(list)
     return_strings = [highlight('To reproduce:')]
@@ -68,7 +68,7 @@ def strings(runs: List[RunEntry], flags: List[str], prefix: str, db: DataBase,
                 path=PurePath(new_path),
                 prefix=prefix,
                 command=entry.command,
-                flags=flags)
+                args=flags)
             new_path, subcommand, _description = map(json.dumps, [
                 str(new_path), subcommand, description
                 or entry.description.strip('"').strip("'")

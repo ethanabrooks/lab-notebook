@@ -75,14 +75,14 @@ def natural_order(text):
     return [int(c) if c.isdigit() else c for c in re.split('(\d+)', text)]
 
 
-def parse_flag(flag: str, delims: str = '=| ') -> List[str]:
+def parse_arg(arg: str, delims: str = '=| ') -> List[str]:
     """
-    :return: a list of [--flag=value] strings
+    :return: a list of [--arg=value] strings
     """
     pattern = f'(?:--)?([^{delims}]*)({delims})(.*)'
-    match = re.match(pattern, flag)
+    match = re.match(pattern, arg)
     if match:
         key, delim, values = match.groups()
         return [f'--{key}={value}' for value in values.split('|')]
     else:
-        return flag.split('|')
+        return arg.split('|')

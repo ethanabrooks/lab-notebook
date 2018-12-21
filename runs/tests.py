@@ -53,22 +53,22 @@ def quote(string):
 
 
 class ParamGenerator:
-    def __init__(self, paths=None, dir_names=None, flags=None):
+    def __init__(self, paths=None, dir_names=None, args=None):
         if paths is None:
             paths = [TEST_RUN]
         if dir_names is None:
             dir_names = [[], ['checkpoints', 'tensorboard']]
-        if flags is None:
-            flags = [[], ['--option=1'], ['--option=1', '--option=2']]
+        if args is None:
+            args = [[], ['--option=1'], ['--option=1', '--option=2']]
         self.paths = paths
         self.dir_names = dir_names
-        self.flags = flags
+        self.args = args
 
     def __iter__(self):
         for path in self.paths:
             for dir_names in self.dir_names:
-                for flags in self.flags:
-                    yield path, dir_names, flags
+                for args in self.args:
+                    yield path, dir_names, args
 
     def __next__(self):
         return next(iter(self))
@@ -76,7 +76,7 @@ class ParamGenerator:
     def __add__(self, other):
         assert isinstance(other, ParamGenerator)
         return ParamGenerator(self.paths + other.paths, self.dir_names + other.dir_names,
-                              self.flags + other.flags)
+                              self.args + other.args)
 
 
 class SimpleParamGenerator(ParamGenerator):
@@ -103,25 +103,25 @@ def run_main(*args):
 
 
 @contextmanager
-def _setup(path, dir_names=None, flags=None):
+def _setup(path, dir_names=None, args=None):
     if dir_names is None:
         dir_names = []
-    if flags is None:
-        flags = []
+    if args is None:
+        args = []
     assert_is_instance(path, str)
     assert_is_instance(dir_names, list)
-    assert_is_instance(flags, list)
+    assert_is_instance(args, list)
     Path(WORK_DIR).mkdir(exist_ok=True)
     os.chdir(WORK_DIR)
-    if any([dir_names, flags]):
-        flag_string = '\n\t'.join(flags)
+    if any([dir_names, args]):
+        arg_string = '\n\t'.join(args)
         with Path(WORK_DIR, '.runsrc').open('w') as f:
             f.write(f"""\
 [main]
 root : {ROOT}
 db_path : {DB_PATH}
 dir_names : {' '.join(dir_names)}
-flags : {flag_string}
+args : {arg_string}
 """)
     BASH.cmd(['git', 'init', '-q'], cwd=WORK_DIR)
     with Path(WORK_DIR, '.gitignore').open('w') as f:
@@ -141,7 +141,7 @@ def check_tmux(path):
     assert_in(quote(path), sessions())
 
 
-def check_db(path, flags):
+def check_db(path, args):
     with DB as db:
         # check known values
         runs = db.get(path + '%')
@@ -157,8 +157,8 @@ def check_db(path, flags):
             runs=runs,
             key='path',
         ))
-        for flag in flags:
-            assert_in(flag, lookup.string(
+        for arg in args:
+            assert_in(arg, lookup.string(
                 runs=runs,
                 key='command',
             ))
@@ -198,28 +198,28 @@ def check_list_sad(pattern):
         eq_(string, '')
 
 
-def check_move(path, new_path, dir_names=None, flags=None):
+def check_move(path, new_path, dir_names=None, args=None):
     if dir_names is None:
         dir_names = []
-    if flags is None:
-        flags = []
+    if args is None:
+        args = []
     check_del_entry(path)
     check_rm_files(path)
-    check_db(new_path, flags)
+    check_db(new_path, args)
     check_files(new_path, dir_names)
 
 
 def test_new():
-    for path, dir_names, flags in ParamGenerator():
-        with _setup(path, dir_names, flags):
+    for path, dir_names, args in ParamGenerator():
+        with _setup(path, dir_names, args):
             yield check_tmux, path
-            yield check_db, path, flags
+            yield check_db, path, args
             yield check_files, path, dir_names
 
 
 def test_rm():
-    for path, dir_names, flags in ParamGenerator() + ParamGeneratorWithSubdir():
-        with _setup(path, dir_names, flags):
+    for path, dir_names, args in ParamGenerator() + ParamGeneratorWithSubdir():
+        with _setup(path, dir_names, args):
             run_main('rm', path)
             yield check_tmux_killed, path
             yield check_del_entry, path
@@ -228,8 +228,8 @@ def test_rm():
 
 def test_list():
     path = TEST_RUN
-    for _, dir_names, flags in ParamGenerator():
-        with _setup(path, dir_names, flags):
+    for _, dir_names, args in ParamGenerator():
+        with _setup(path, dir_names, args):
             for pattern in ['%', 'test%']:
                 yield check_list_happy, pattern
             for pattern in ['x%', 'x']:
@@ -254,12 +254,12 @@ def test_chdesc():
 
 def test_move():
     generator = ParamGenerator() + ParamGeneratorWithSubdir()
-    for path, dir_names, flags in generator:
+    for path, dir_names, args in generator:
         for new_path in generator.paths:
-            with _setup(path, dir_names, flags):
+            with _setup(path, dir_names, args):
                 if path != new_path:
                     run_main('mv', path, new_path)
-                    yield check_move, path, new_path, dir_names, flags
+                    yield check_move, path, new_path, dir_names, args
                     yield check_tmux, new_path
 
 
@@ -315,7 +315,7 @@ def test_move_dirs():
         # dest is dir and src is dir -> move node into dest
         yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
 
-    with _setup('test_run1', flags=['--run1']), _setup('test_run2', flags=['run2']):
+    with _setup('test_run1', args=['--run1']), _setup('test_run2', args=['run2']):
         move('test_run1', 'test_run2')
         # dest is run -> overwrite dest
         yield check_move, 'test_run1', 'test_run2'

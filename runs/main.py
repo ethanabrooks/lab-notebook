@@ -12,11 +12,11 @@ from typing import List
 
 # first party
 from runs.logger import UI
-from runs.subcommands import (build_spec, change_description, correlate, diff, flags, kill, lookup, ls, mv, new,
+from runs.subcommands import (build_spec, change_description, correlate, diff, args, kill, lookup, ls, mv, new,
                               new_from_spec, reproduce, rm)
 
 MAIN = 'main'
-FLAGS = 'flags'
+ARGS = 'args'
 
 
 def find_up(filename):
@@ -32,8 +32,8 @@ def pure_path_list(paths: str) -> List[PurePath]:
     return [PurePath(path) for path in paths.split()]
 
 
-def flag_list(flags_string: str) -> List[List[str]]:
-    return codecs.decode(flags_string, encoding='unicode_escape').strip('\n').split('\n')
+def arg_list(args_string: str) -> List[List[str]]:
+    return codecs.decode(args_string, encoding='unicode_escape').strip('\n').split('\n')
 
 
 def main(argv=sys.argv[1:]):
@@ -72,7 +72,7 @@ def main(argv=sys.argv[1:]):
             _path=Path,
             _pure_path=PurePath,
             _pure_path_list=pure_path_list,
-            _flag_list=flag_list))
+            _arg_list=arg_list))
     config_filename = Path('.runsrc')
     config_path = find_up(config_filename)
     missing_config_keys = []
@@ -80,7 +80,7 @@ def main(argv=sys.argv[1:]):
         root=str(Path('.runs').absolute()),
         db_path=str(Path('runs.db').absolute()),
         dir_names=[],
-        flags=[])
+        args=[])
     if config_path:
         config.read(str(config_path))
 
@@ -96,7 +96,7 @@ def main(argv=sys.argv[1:]):
         root=config[MAIN].get_path('root'),
         db_path=config[MAIN].get_path('db_path'),
         dir_names=config[MAIN].get_pure_path_list('dir_names'),
-        flags=(config[MAIN].get_flag_list(FLAGS)))
+        args=(config[MAIN].get_arg_list(ARGS)))
 
     for subparser in [parser] + [
             adder(subparsers) for adder in [
@@ -106,7 +106,7 @@ def main(argv=sys.argv[1:]):
                 mv.add_subparser,
                 ls.add_subparser,
                 lookup.add_subparser,
-                flags.add_subparser,
+                args.add_subparser,
                 change_description.add_subparser,
                 reproduce.add_subparser,
                 correlate.add_subparser,
@@ -147,8 +147,8 @@ def main(argv=sys.argv[1:]):
     module = import_module('runs.subcommands.' + args.dest.replace('-', '_'))
     kwargs = {k: v for k, v in vars(args).items()}
     try:
-        # pluralize flags
-        kwargs[FLAGS] = list(set(args.flag) | set(main_config[FLAGS]))
+        # pluralize args
+        kwargs[ARGS] = list(set(args.arg) | set(main_config[ARGS]))
     except AttributeError:
         pass
 

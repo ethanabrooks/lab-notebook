@@ -10,7 +10,7 @@ The goals of ``Lab Notebook`` are reproducibility, modularity, and organization.
 Specifically, ``Lab Notebook`` provides the following functionality:
 
 * Maintain metadata about each run, including a description, a timestamp, and a git commit.
-* Automatically set up runs, building flags and directories with unique name corresponding to each run and launching runs in tmux.
+* Automatically set up runs, building args and directories with unique name corresponding to each run and launching runs in tmux.
 * Organize runs into hierarchical categories.
 * Synchronize runs with directories, so that directories are moved and deleted when runs are moved and deleted.
 
@@ -45,13 +45,13 @@ Here is an example ``.runsrc`` file:
     prefix = Source ~/virtualenvs/demo-lab-notebook/bin/activate;
     nice
 
-    [flags]
+    [args]
     --log-dir=${main:root}/tensorboard/<path>
 
     [new]
     description = demo lab-notebook
 
-This will pass the flag ``--logdir=/Users/ethan/baselines/.runs/tensorboard/<path>``
+This will pass the arg ``--logdir=/Users/ethan/baselines/.runs/tensorboard/<path>``
 to any program launched with ``run``, where ``<path>`` will be replaced by the ``path`` argument given by the user.
 
 ``runs-git``

@@ -8,20 +8,20 @@ from typing import Callable, Dict, List, Optional
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.utils.arguments import add_query_flags
+from runs.utils.arguments import add_query_args
 from runs.utils.util import PurePath
 
 
 def add_subparser(subparsers):
-    parser = subparsers.add_parser('correlate', help='Rank flags by Pearson correlation.')
-    add_query_flags(parser, with_sort=False)
+    parser = subparsers.add_parser('correlate', help='Rank args by Pearson correlation.')
+    add_query_args(parser, with_sort=False)
     parser.add_argument(
         '--value-path',
         required=True,
         type=Path,
         help='The command will look for a file at this path containing '
         'a scalar value. It will calculate the pearson correlation between '
-        'flags and this value. The keyword <path> will be replaced '
+        'args and this value. The keyword <path> will be replaced '
         'by the path of the run.')
     return parser
 
@@ -38,7 +38,7 @@ def strings(*args, **kwargs):
     return [f'{cor[k]}, {k}' for k in keys]
 
 
-def get_flags(command: str) -> List[str]:
+def get_args(command: str) -> List[str]:
     findall = re.findall('(?:[A-Z]*=\S* )*\S* (\S*)', command)
     return findall
 
@@ -63,17 +63,17 @@ def correlations(
     value_mean = mean(lambda run: get_value(run.path))
     value_std_dev = math.sqrt(mean(lambda run: (get_value(run.path) - value_mean)**2))
 
-    def get_correlation(flag: str) -> float:
-        def contains_flag(run: RunEntry) -> float:
-            return float(flag in get_flags(run.command))
+    def get_correlation(arg: str) -> float:
+        def contains_arg(run: RunEntry) -> float:
+            return float(arg in get_args(run.command))
 
-        flag_mean = mean(contains_flag)
+        arg_mean = mean(contains_arg)
 
         covariance = mean(
-            lambda run: (contains_flag(run) - flag_mean) * (get_value(run.path) - value_mean)
+            lambda run: (contains_arg(run) - arg_mean) * (get_value(run.path) - value_mean)
         )
 
-        std_dev = math.sqrt(mean(lambda run: (contains_flag(run) - flag_mean)**2))
+        std_dev = math.sqrt(mean(lambda run: (contains_arg(run) - arg_mean)**2))
 
         # return covariance
         denominator = std_dev * value_std_dev
@@ -82,8 +82,8 @@ def correlations(
         else:
             return math.inf
 
-    flags = {flag for run in runs for flag in get_flags(run.command)}
+    args = {arg for run in runs for arg in get_args(run.command)}
     return {
-        flag: get_correlation(flag)
-        for flag in flags if get_correlation(flag) < math.inf
+        arg: get_correlation(arg)
+        for arg in args if get_correlation(arg) < math.inf
     }
