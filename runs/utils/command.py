@@ -47,8 +47,7 @@ class Command:
     def diff(self, other):
         def regroup(groups: List[Union[List[str], Set[str]]]):
             for pos, nonpos in zip(groups[0::2], groups[1::2]):
-                for pos1, pos2 in itertools.zip_longest(
-                        pos, pos[1:]):
+                for pos1, pos2 in itertools.zip_longest(pos, pos[1:]):
                     yield pos1, nonpos if pos2 is None else set()
 
         assert isinstance(other, Command)

@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import List
 
 # first party
-from runs.command import Command
 from runs.logger import UI
 from runs.subcommands.new import new
 from runs.transaction.transaction import Transaction
-from runs.util import PurePath
+from runs.utils.command import Command
+from utils.util import PurePath
 
 
 def add_subparser(subparsers):

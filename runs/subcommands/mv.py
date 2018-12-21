@@ -5,9 +5,9 @@ import sqlite3
 
 # first party
 from runs.database import DataBase, QueryArgs
-from runs.arguments import DEFAULT_QUERY_FLAGS, add_query_flags
 from runs.transaction.transaction import Transaction
-from runs.util import PurePath
+from runs.utils.arguments import DEFAULT_QUERY_FLAGS, add_query_flags
+from utils.util import PurePath
 
 path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
 

@@ -1,7 +1,7 @@
-import re
 from copy import deepcopy
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from pathlib import PurePath
+import re
 
 from runs.run_entry import RunEntry
 

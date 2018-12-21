@@ -3,18 +3,17 @@
 # stdlib
 import argparse
 import codecs
-import pprint
-import sys
 from configparser import ConfigParser, ExtendedInterpolation
 from importlib import import_module
 from pathlib import Path, PurePath
+import pprint
+import sys
 from typing import List
 
 # first party
 from runs.logger import UI
-from runs.subcommands import (change_description, correlate, diff, flags, kill, lookup,
-                              ls, mv, new, new_from_spec,
-                              reproduce, rm, build_spec)
+from runs.subcommands import (build_spec, change_description, correlate, diff, flags, kill, lookup, ls, mv, new,
+                              new_from_spec, reproduce, rm)
 
 MAIN = 'main'
 FLAGS = 'flags'
@@ -40,7 +39,7 @@ def flag_list(flags_string: str) -> List[List[str]]:
 def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser(
         epilog="The script will ask permission before running, deleting, moving, or "
-               "permanently changing anything.")
+        "permanently changing anything.")
     parser.add_argument(
         '--quiet', '-q', action='store_true', help='Suppress print output')
     parser.add_argument(
@@ -50,8 +49,8 @@ def main(argv=sys.argv[1:]):
     parser.add_argument(
         '--root',
         help='Custom path to directory where config directories (if any) are '
-             'automatically '
-             'created',
+        'automatically '
+        'created',
         type=Path)
     parser.add_argument(
         '--dir-names',
@@ -81,8 +80,7 @@ def main(argv=sys.argv[1:]):
         root=str(Path('.runs').absolute()),
         db_path=str(Path('runs.db').absolute()),
         dir_names=[],
-        flags=[]
-    )
+        flags=[])
     if config_path:
         config.read(str(config_path))
 
@@ -98,25 +96,24 @@ def main(argv=sys.argv[1:]):
         root=config[MAIN].get_path('root'),
         db_path=config[MAIN].get_path('db_path'),
         dir_names=config[MAIN].get_pure_path_list('dir_names'),
-        flags=(config[MAIN].get_flag_list(FLAGS))
-    )
+        flags=(config[MAIN].get_flag_list(FLAGS)))
 
     for subparser in [parser] + [
-        adder(subparsers) for adder in [
-            new.add_subparser,
-            new_from_spec.add_subparser,
-            rm.add_subparser,
-            mv.add_subparser,
-            ls.add_subparser,
-            lookup.add_subparser,
-            flags.add_subparser,
-            change_description.add_subparser,
-            reproduce.add_subparser,
-            correlate.add_subparser,
-            kill.add_subparser,
-            diff.add_subparser,
-            build_spec.add_subparser,
-        ]
+            adder(subparsers) for adder in [
+                new.add_subparser,
+                new_from_spec.add_subparser,
+                rm.add_subparser,
+                mv.add_subparser,
+                ls.add_subparser,
+                lookup.add_subparser,
+                flags.add_subparser,
+                change_description.add_subparser,
+                reproduce.add_subparser,
+                correlate.add_subparser,
+                kill.add_subparser,
+                diff.add_subparser,
+                build_spec.add_subparser,
+            ]
     ]:
         assert isinstance(subparser, argparse.ArgumentParser)
         config_section = subparser.prog.split()[-1]
@@ -137,8 +134,10 @@ def main(argv=sys.argv[1:]):
             ui.exit()
 
     if not config_path:
-        ui.print('Config not found. Using default config:',
-                 pprint.pformat(dict(config[MAIN])), sep='\n')
+        ui.print(
+            'Config not found. Using default config:',
+            pprint.pformat(dict(config[MAIN])),
+            sep='\n')
         write_config()
     elif missing_config_keys:
         for key in missing_config_keys:

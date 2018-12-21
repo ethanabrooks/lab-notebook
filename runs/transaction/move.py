@@ -3,7 +3,7 @@ from collections import namedtuple
 
 # first party
 from runs.transaction.sub_transaction import SubTransaction
-from runs.util import highlight
+from utils.util import highlight
 
 Move = namedtuple('Move', ['src', 'dest', 'kill_tmux'])
 
