@@ -57,7 +57,7 @@ class SpecObj:
         return dict(command=self.command, args=self.args)
 
 
-FLAG_KWD = '<arg>'
+ARG_KWD = '<arg>'
 
 
 @Transaction.wrapper

@@ -6,7 +6,7 @@ import sqlite3
 # first party
 from runs.database import DataBase, QueryArgs
 from runs.transaction.transaction import Transaction
-from runs.arguments import DEFAULT_QUERY_FLAGS, add_query_args
+from runs.arguments import DEFAULT_QUERY_ARGS, add_query_args
 from runs.util import PurePath
 
 path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
@@ -19,7 +19,7 @@ def add_subparser(subparsers):
         'Functionality is identical to Linux `mv` except that non-existent dirs'
         'are created and empty dirs are removed automatically.')
 
-    default_args = deepcopy(DEFAULT_QUERY_FLAGS)
+    default_args = deepcopy(DEFAULT_QUERY_ARGS)
     del default_args['--descendants']
     add_query_args(parser, with_sort=False, default_args=default_args)
 

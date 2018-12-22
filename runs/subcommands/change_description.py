@@ -6,12 +6,12 @@ from typing import List, Optional
 from runs.database import DataBase
 from runs.run_entry import RunEntry
 from runs.transaction.transaction import Transaction
-from runs.arguments import DEFAULT_QUERY_FLAGS, add_query_args
+from runs.arguments import DEFAULT_QUERY_ARGS, add_query_args
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('change-description', help='Edit description of run.')
-    default_args = deepcopy(DEFAULT_QUERY_FLAGS)
+    default_args = deepcopy(DEFAULT_QUERY_ARGS)
     default_args['patterns'].update(
         help='Name of run whose description you want to edit.')
     add_query_args(parser, with_sort=False, default_args=default_args)
