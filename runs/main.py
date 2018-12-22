@@ -13,8 +13,8 @@ from typing import List
 
 # first party
 from runs.logger import UI
-from runs.subcommands import (build_spec, change_description, correlate, diff, kill, lookup, ls, mv, new, new_from_spec,
-                              reproduce, rm)
+from runs.subcommands import (build_spec, change_description, correlate, diff, kill,
+                              lookup, ls, mv, new, new_from_spec, reproduce, rm)
 
 MAIN = 'main'
 ARGS = 'args'
