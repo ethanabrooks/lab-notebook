@@ -18,7 +18,7 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'build-spec',
         help='Print json spec that reproduces crossproduct '
-        'of args in given patterns.')
+             'of args in given patterns.')
     parser.add_argument(
         '--exclude', nargs='*', default=set(), help='Keys of args to exclude.')
     add_query_args(parser, with_sort=False)
@@ -49,18 +49,18 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
     stem = ' '.join(commands[0].stem)
 
     def group(pairs):
-        _dict = defaultdict(list)
+        d = defaultdict(list)
         for k, v in pairs:
-            _dict[k].append(v)
-        return _dict
+            d[k].append(v)
+        return d
 
     def get_args(command: Command):
         try:
             nonpositionals = command.arg_groups[1]
             for arg in nonpositionals:
-                match = re.match('(-{1,2}[^=]*)=(.*)', arg).groups()
+                match = re.match('(-{1,2}[^=]*)=(.*)', arg)
                 if match is not None:
-                    key, value = match
+                    key, value = match.groups()
                     key = key.lstrip('--')
                 else:
                     value, = re.match('(-{1,2}.*)', arg).groups()
@@ -71,15 +71,26 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
         except IndexError:
             yield None, None
 
-    def args():
-        for k, values in  group(group(get_args(command)) for command in commands).items():
-            for v in values:
-                if isinstance(v, list):
-                    yield from ((k, value) for value in v)
-                else:
-                    yield (k, v)
+    def squeeze(x):
+        if len(x) == 1:
+            return x[0]
+        return x
 
-    args = group(group(get_args(command)) for command in commands)
-    args = {k: v.pop() if len(v) == 1 and len(v[0]) == 1 else list(v) for k,
-                                                                      v in args.items()}
-    return SpecObj(command=stem, args=args)
+    def remove_duplicates(values):
+        values = set(map(tuple, values))
+        return list(map(list, values))
+
+    command_args = [group(get_args(c)) for c in commands]
+    keys = {k for args in command_args for k in args.keys()}
+    for args in command_args:
+        for k in keys:
+            if k not in args:
+                args[k] = [None]
+    grouped_args = group((pair for args in command_args for pair in args.items()))
+    flags = remove_duplicates(grouped_args.pop(None))
+    args = {
+        k: squeeze(remove_duplicates(v))
+        for k, v in grouped_args.items()
+    }
+
+    return SpecObj(command=stem, args=args, flags=flags)
