@@ -3,12 +3,11 @@
 # stdlib
 import argparse
 import codecs
-import copy
+import pprint
+import sys
 from configparser import ConfigParser, ExtendedInterpolation
 from importlib import import_module
 from pathlib import Path, PurePath
-import pprint
-import sys
 from typing import List
 
 # first party
@@ -95,7 +94,7 @@ def main(argv=sys.argv[1:]):
             missing_config_keys.append(k)
             config[MAIN][k] = v
 
-    main_config = copy.deepcopy(dict(config[MAIN]))
+    main_config = dict(config[MAIN]).copy()
     main_config.update(
         root=config[MAIN].get_path('root'),
         db_path=config[MAIN].get_path('db_path'),
