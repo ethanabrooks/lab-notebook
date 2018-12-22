@@ -5,9 +5,9 @@ import itertools
 from typing import List
 
 # first party
+from runs.command import Command
 from runs.logger import UI
 from runs.transaction.transaction import Transaction
-from runs.command import Command
 from runs.util import PurePath
 
 

@@ -1,8 +1,8 @@
 # stdlib
 
 # first party
-from runs.database import DataBase
 from runs.command import Command, Type
+from runs.database import DataBase
 from runs.util import GREEN, RED, RESET, PurePath
 
 

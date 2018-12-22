@@ -5,6 +5,7 @@ from pathlib import PurePath
 from typing import List
 
 # first party
+from runs.command import Command
 from runs.database import DataBase
 from runs.file_system import FileSystem
 from runs.logger import UI
@@ -16,7 +17,6 @@ from runs.transaction.move import Move, MoveTransaction
 from runs.transaction.new import NewRunTransaction
 from runs.transaction.removal import RemovalTransaction
 from runs.transaction.sub_transaction import SubTransaction
-from runs.command import Command
 from runs.util import natural_order
 
 TransactionType = namedtuple('TransactionType', [

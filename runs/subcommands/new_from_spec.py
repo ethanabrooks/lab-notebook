@@ -2,13 +2,13 @@
 import itertools
 import json
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Union
 
 # first party
+from runs.command import Command
 from runs.logger import UI
 from runs.subcommands.new import new
 from runs.transaction.transaction import Transaction
-from runs.command import Command
 from runs.util import PurePath
 
 
@@ -21,20 +21,20 @@ def add_subparser(subparsers):
         'spec',
         type=Path,
         help='JSON file that contains either a single or an array of JSON objects'
-        'each with a "command" key and a "args" key. The "command" value'
-        'is a single string and the "args" value is a JSON object such that'
-        '"a: b," becomes "--a=b" for example.',
+             'each with a "command" key and a "args" key. The "command" value'
+             'is a single string and the "args" value is a JSON object such that'
+             '"a: b," becomes "--a=b" for example.',
     )
     parser.add_argument(
         'description',
         help='Description of this run. Explain what this run was all about or '
-        'write whatever your heart desires. If this argument is `commit-message`,'
-        'it will simply use the last commit message.')
+             'write whatever your heart desires. If this argument is `commit-message`,'
+             'it will simply use the last commit message.')
     parser.add_argument(
         '--prefix',
         type=str,
         help="String to prepend to all main subcommands, for example, sourcing a "
-        "virtualenv")
+             "virtualenv")
     parser.add_argument(
         '--arg',
         '-f',
@@ -47,14 +47,26 @@ def add_subparser(subparsers):
     #     help='Path where Tensorflow summary of run is to be written.')
 
 
+Variadic = Union[str, List[str]]
+
+
 class SpecObj:
-    def __init__(self, command: str, args: dict, delimiter: str = '='):
+    def __init__(
+            self,
+            command: str,
+            args: Dict[str, Variadic],
+            flags: List[Variadic] = None,
+            delimiter: str = '=',
+    ):
         self.command = command
         self.args = args
+        self.flags = flags
         self.delimiter = delimiter
 
     def dict(self):
-        return dict(command=self.command, args=self.args)
+        _dict = vars(self)
+        del _dict['delimiter']
+        return _dict
 
 
 ARG_KWD = '<arg>'
@@ -75,26 +87,19 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
         logger.exit(f'Each object in {spec} must have a '
                     f'"command" field and a "args" field.')
 
-    def process_arg(key, value, delim='='):
-        if key == '':
-            if value == '':
-                return ''
-            return process_arg(key=value, value='', delim='')
-        if not key.startswith('-'):
-            key = f'--{key}'
-        return f'{key}{delim}"{value}"'
+    def group_args(spec):
+        def prepend(arg: str):
+            if arg.startswith('-'):
+                return arg
+            return f'--{arg}'
 
-    def process_args(k, v):
-        if isinstance(v, (list, tuple)):
-            for value in v:
-                yield process_arg(k, value)
-        else:
-            yield process_arg(k, v)
+        yield from (prepend(f'{k}={v}') for k, v in spec.args.items())
+        yield from (prepend(f) for f in spec.flags)
 
     def arg_assignments():
         for spec in spec_objs:
-            for arg_set in itertools.product(*[process_args(*f) for f in spec.args]):
-                yield spec.command, arg_set
+            arg_sets = itertools.product(*group_args(spec))
+            yield from ((spec.command, arg_set) for arg_set in arg_sets)
 
     assignments = list(arg_assignments())
     for i, (command, arg_set) in enumerate(assignments):

@@ -4,9 +4,9 @@ from copy import deepcopy
 import sqlite3
 
 # first party
+from runs.arguments import DEFAULT_QUERY_ARGS, add_query_args
 from runs.database import DataBase, QueryArgs
 from runs.transaction.transaction import Transaction
-from runs.arguments import DEFAULT_QUERY_ARGS, add_query_args
 from runs.util import PurePath
 
 path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '

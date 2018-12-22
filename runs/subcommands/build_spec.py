@@ -6,12 +6,12 @@ from pprint import pprint
 import re
 from typing import List, Set
 
+from runs.arguments import add_query_args
+from runs.command import Command
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
 from runs.subcommands.new_from_spec import SpecObj
-from runs.arguments import add_query_args
-from runs.command import Command
 
 
 def add_subparser(subparsers):

@@ -4,10 +4,10 @@ import json
 from typing import List, Optional
 
 # first party
+from runs.arguments import add_query_args
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.arguments import add_query_args
 from runs.util import PurePath, highlight, interpolate_keywords
 
 
@@ -65,10 +65,7 @@ def strings(runs: List[RunEntry], args: List[str], prefix: str, db: DataBase,
                 new_path = path
 
             subcommand = get_command_string(
-                path=PurePath(new_path),
-                prefix=prefix,
-                command=entry.command,
-                args=args)
+                path=PurePath(new_path), prefix=prefix, command=entry.command, args=args)
             new_path, subcommand, _description = map(json.dumps, [
                 str(new_path), subcommand, description
                 or entry.description.strip('"').strip("'")
@@ -84,8 +81,7 @@ def strings(runs: List[RunEntry], args: List[str], prefix: str, db: DataBase,
     return return_strings
 
 
-def get_command_string(path: PurePath, prefix: str, command: str,
-                       args: List[str]) -> str:
+def get_command_string(path: PurePath, prefix: str, command: str, args: List[str]) -> str:
     args = [interpolate_keywords(path, f) for f in args]
     for s in args + [prefix]:
         command = command.replace(s, '')

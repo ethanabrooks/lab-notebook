@@ -3,10 +3,10 @@ from copy import deepcopy
 from typing import List, Optional
 
 # first party
+from runs.arguments import DEFAULT_QUERY_ARGS, add_query_args
 from runs.database import DataBase
 from runs.run_entry import RunEntry
 from runs.transaction.transaction import Transaction
-from runs.arguments import DEFAULT_QUERY_ARGS, add_query_args
 
 
 def add_subparser(subparsers):
