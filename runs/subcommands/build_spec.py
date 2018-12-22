@@ -48,30 +48,38 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *_, **__):
 def get_spec_obj(commands: List[Command], exclude: Set[str]):
     stem = ' '.join(commands[0].stem)
 
-    def nonpositionals():
-        for command in commands:
-            try:
-                yield from command.arg_groups[1]
-            except IndexError:
-                pass
+    def group(pairs):
+        _dict = defaultdict(list)
+        for k, v in pairs:
+            _dict[k].append(v)
+        return _dict
 
-    args = defaultdict(set)
-    bare_command = any(len(command.arg_groups) == 1 for command in commands)
-    for nonpositional in nonpositionals():
-        match = re.match('(-{1,2}[^=]*)=(.*)', nonpositional).groups()
-        if match is not None:
-            key, value = match
-            key = key.lstrip('--')
-            if key not in exclude:
-                args[key].add(value)
-        else:
-            value, = re.match('(-{1,2}.*)', nonpositional).groups()
-            value = value.lstrip('--')
-            if value not in exclude:
-                args[''].add(value)
-                for command in commands:
-                    if bare_command or nonpositional not in command.arg_groups[1]:
-                        args[''].add('')
+    def get_args(command: Command):
+        try:
+            nonpositionals = command.arg_groups[1]
+            for arg in nonpositionals:
+                match = re.match('(-{1,2}[^=]*)=(.*)', arg).groups()
+                if match is not None:
+                    key, value = match
+                    key = key.lstrip('--')
+                else:
+                    value, = re.match('(-{1,2}.*)', arg).groups()
+                    value = value.lstrip('--')
+                    key = None
+                if key not in exclude:
+                    yield key, value
+        except IndexError:
+            yield None, None
 
-    args = {k: v.pop() if len(v) == 1 else list(v) for k, v in args.items()}
+    def args():
+        for k, values in  group(group(get_args(command)) for command in commands).items():
+            for v in values:
+                if isinstance(v, list):
+                    yield from ((k, value) for value in v)
+                else:
+                    yield (k, v)
+
+    args = group(group(get_args(command)) for command in commands)
+    args = {k: v.pop() if len(v) == 1 and len(v[0]) == 1 else list(v) for k,
+                                                                      v in args.items()}
     return SpecObj(command=stem, args=args)

@@ -85,21 +85,36 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
             spec_objs = [SpecObj(**dict(o)) for o in obj]
     except TypeError:
         logger.exit(f'Each object in {spec} must have a '
-                    f'"command" field and a "args" field.')
+                    '"command" field and a "args" field.')
+
+    def listify(x):
+        if isinstance(x, list):
+            return x
+        return [x]
+
+    def prepend(arg: str):
+        if arg.startswith('-') or arg == '':
+            return arg
+        return f'--{arg}'
+
+    def arg_alternatives(key, values):
+        for value in listify(values):
+            yield prepend(f'{key}={value}')
+
+    def flag_alternatives(values):
+        for value in listify(values):
+            yield prepend(value)
 
     def group_args(spec):
-        def prepend(arg: str):
-            if arg.startswith('-'):
-                return arg
-            return f'--{arg}'
-
-        yield from (prepend(f'{k}={v}') for k, v in spec.args.items())
-        yield from (prepend(f) for f in spec.flags)
+        for k, v in spec.args:
+            yield list(arg_alternatives(k, v))
+        for v in spec.flags:
+            yield list(flag_alternatives(v))
 
     def arg_assignments():
         for spec in spec_objs:
-            arg_sets = itertools.product(*group_args(spec))
-            yield from ((spec.command, arg_set) for arg_set in arg_sets)
+            for arg_set in itertools.product(*group_args(spec)):
+                yield spec.command, arg_set
 
     assignments = list(arg_assignments())
     for i, (command, arg_set) in enumerate(assignments):
