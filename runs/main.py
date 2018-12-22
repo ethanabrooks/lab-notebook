@@ -12,8 +12,8 @@ from typing import List
 
 # first party
 from runs.logger import UI
-from runs.subcommands import (build_spec, change_description, correlate, diff, kill, lookup, ls, mv, new,
-                              new_from_spec, reproduce, rm)
+from runs.subcommands import (build_spec, change_description, correlate, diff, kill,
+                              lookup, ls, mv, new, new_from_spec, reproduce, rm)
 
 MAIN = 'main'
 ARGS = 'args'
@@ -92,11 +92,12 @@ def main(argv=sys.argv[1:]):
             missing_config_keys.append(k)
             config[MAIN][k] = v
 
-    main_config = dict(
+    main_config = dict(config[MAIN])
+    main_config.update(
         root=config[MAIN].get_path('root'),
         db_path=config[MAIN].get_path('db_path'),
         dir_names=config[MAIN].get_pure_path_list('dir_names'),
-        args=(config[MAIN].get_arg_list(ARGS)))
+        args=config[MAIN].get_arg_list(ARGS))
 
     for subparser in [parser] + [
             adder(subparsers) for adder in [
