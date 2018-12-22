@@ -7,8 +7,8 @@ from typing import List
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.utils.arguments import DEFAULT_QUERY_FLAGS, add_query_args
-from runs.utils.util import PurePath, natural_order
+from runs.arguments import DEFAULT_QUERY_FLAGS, add_query_args
+from runs.util import PurePath, natural_order
 
 
 def add_subparser(subparsers):

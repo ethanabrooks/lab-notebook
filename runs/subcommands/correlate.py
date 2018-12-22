@@ -8,8 +8,8 @@ from typing import Callable, Dict, List, Optional
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.utils.arguments import add_query_args
-from runs.utils.util import PurePath
+from runs.arguments import add_query_args
+from runs.util import PurePath
 
 
 def add_subparser(subparsers):

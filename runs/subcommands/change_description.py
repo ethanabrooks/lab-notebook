@@ -6,7 +6,7 @@ from typing import List, Optional
 from runs.database import DataBase
 from runs.run_entry import RunEntry
 from runs.transaction.transaction import Transaction
-from runs.utils.arguments import DEFAULT_QUERY_FLAGS, add_query_args
+from runs.arguments import DEFAULT_QUERY_FLAGS, add_query_args
 
 
 def add_subparser(subparsers):

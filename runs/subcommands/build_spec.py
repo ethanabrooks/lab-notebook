@@ -10,8 +10,8 @@ from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
 from runs.subcommands.new_from_spec import SpecObj
-from runs.utils.arguments import add_query_args
-from runs.utils.command import Command
+from runs.arguments import add_query_args
+from runs.command import Command
 
 
 def add_subparser(subparsers):
