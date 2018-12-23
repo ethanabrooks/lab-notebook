@@ -21,20 +21,20 @@ def add_subparser(subparsers):
         'spec',
         type=Path,
         help='JSON file that contains either a single or an array of JSON objects'
-             'each with a "command" key and a "args" key. The "command" value'
-             'is a single string and the "args" value is a JSON object such that'
-             '"a: b," becomes "--a=b" for example.',
+        'each with a "command" key and a "args" key. The "command" value'
+        'is a single string and the "args" value is a JSON object such that'
+        '"a: b," becomes "--a=b" for example.',
     )
     parser.add_argument(
         'description',
         help='Description of this run. Explain what this run was all about or '
-             'write whatever your heart desires. If this argument is `commit-message`,'
-             'it will simply use the last commit message.')
+        'write whatever your heart desires. If this argument is `commit-message`,'
+        'it will simply use the last commit message.')
     parser.add_argument(
         '--prefix',
         type=str,
         help="String to prepend to all main subcommands, for example, sourcing a "
-             "virtualenv")
+        "virtualenv")
     parser.add_argument(
         '--arg',
         '-f',
@@ -106,9 +106,9 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
             yield prepend(value)
 
     def group_args(spec):
-        for k, v in spec.args:
+        for k, v in spec.args or []:
             yield list(arg_alternatives(k, v))
-        for v in spec.flags:
+        for v in spec.flags or []:
             yield list(flag_alternatives(v))
 
     def arg_assignments():
