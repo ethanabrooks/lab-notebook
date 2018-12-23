@@ -12,8 +12,8 @@ from typing import List
 
 # first party
 from runs.logger import UI
-from runs.subcommands import (build_spec, change_description, correlate, diff, kill,
-                              lookup, ls, mv, new, new_from_spec, reproduce, rm)
+from runs.subcommands import (to_spec, change_description, correlate, diff, kill,
+                              lookup, ls, mv, new, from_spec, reproduce, rm)
 from runs.util import MAIN, ARGS
 
 
@@ -102,7 +102,7 @@ def main(argv=sys.argv[1:]):
     for subparser in [parser] + [
             adder(subparsers) for adder in [
                 new.add_subparser,
-                new_from_spec.add_subparser,
+                from_spec.add_subparser,
                 rm.add_subparser,
                 mv.add_subparser,
                 ls.add_subparser,
@@ -112,7 +112,7 @@ def main(argv=sys.argv[1:]):
                 correlate.add_subparser,
                 kill.add_subparser,
                 diff.add_subparser,
-                build_spec.add_subparser,
+                to_spec.add_subparser,
             ]
     ]:
         assert isinstance(subparser, argparse.ArgumentParser)

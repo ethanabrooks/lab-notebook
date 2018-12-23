@@ -12,13 +12,13 @@ from runs.database import DataBase
 from runs.logger import Logger
 from runs.util import ARGS
 from runs.run_entry import RunEntry
-from runs.subcommands.new_from_spec import SpecObj
+from runs.subcommands.from_spec import SpecObj
 from collections.abc import Mapping
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'build-spec',
+        'to-spec',
         help='Print json spec that reproduces crossproduct '
         'of args in given patterns.')
     parser.add_argument(
