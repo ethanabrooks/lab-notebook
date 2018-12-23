@@ -13,6 +13,7 @@ from runs.logger import Logger
 from runs.util import ARGS
 from runs.run_entry import RunEntry
 from runs.subcommands.new_from_spec import SpecObj
+from collections.abc import Mapping
 
 
 def add_subparser(subparsers):
@@ -24,6 +25,20 @@ def add_subparser(subparsers):
         '--exclude', nargs='*', default=set(), help='Keys of args to exclude.')
     add_query_args(parser, with_sort=False)
     return parser
+
+
+class DuplicateDict(dict):
+    def __init__(self, *pairs):
+        self.pairs = list(pairs)
+
+    def __bool__(self):
+        return bool(self.pairs)
+
+    def __len__(self):
+        return len(self.pairs)
+
+    def items(self):
+        return self.pairs
 
 
 @DataBase.open
@@ -44,9 +59,9 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *_, **__):
             *commands,
             sep='\n')
     spec_dict = get_spec_obj(commands, exclude).dict()
-    spec_dict[ARGS] = [{k: v} for k, v in spec_dict[ARGS]]
-    string = pformat(spec_dict)
-    print(string)
+    spec_dict[ARGS] = DuplicateDict(*spec_dict[ARGS])
+    spec_dict = {k: v for k, v in spec_dict.items() if v}
+    pprint(spec_dict)
 
 
 def get_spec_obj(commands: List[Command], exclude: Set[str]):
@@ -62,9 +77,15 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
         try:
             nonpositionals = command.arg_groups[1]
             for arg in nonpositionals:
-                match = re.match('(-{1,2}[^=]*)=(.*)', arg)
+                match = re.match('(-{1,2}[^=]*)=[\'"]?([^"]*)[\'"]?', arg)
                 if match is not None:
                     key, value = match.groups()
+                    try:
+                        value = float(value)
+                        if value % 1. == 0:
+                            value = int(value)
+                    except ValueError:
+                        pass
                     key = key.lstrip('--')
                 else:
                     value, = re.match('(-{1,2}.*)', arg).groups()
@@ -94,5 +115,4 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
     flags = remove_duplicates(grouped_args.pop(None, []))
     args = [(k, squeeze(list(val_alternatives))) for k, v in grouped_args.items()
             for val_alternatives in zip(*remove_duplicates(v))]
-
     return SpecObj(command=stem, args=args, flags=flags or None)
