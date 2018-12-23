@@ -2,7 +2,7 @@
 
 # first party
 from collections import defaultdict
-from pprint import pprint
+from pprint import pprint, pformat
 import re
 from typing import List, Set
 
@@ -18,7 +18,7 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'build-spec',
         help='Print json spec that reproduces crossproduct '
-             'of args in given patterns.')
+        'of args in given patterns.')
     parser.add_argument(
         '--exclude', nargs='*', default=set(), help='Keys of args to exclude.')
     add_query_args(parser, with_sort=False)
@@ -42,7 +42,18 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *_, **__):
             "Commands do not start with the same positional arguments:",
             *commands,
             sep='\n')
-    pprint(get_spec_obj(commands, exclude).dict())
+
+    def dictify(x):
+        if not isinstance(x, list):
+            return x
+        import ipdb
+        ipdb.set_trace()
+        return '\n'.join([f'"{k}": {v}' for k, v in x])
+
+    json = get_spec_obj(commands, exclude).dict()
+    json = {k: v for k, v in json.items() if v}
+    for line in pformat(json).split('\n'):
+        print(line)
 
 
 def get_spec_obj(commands: List[Command], exclude: Set[str]):
@@ -87,10 +98,8 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
             if k not in args:
                 args[k] = [None]
     grouped_args = group((pair for args in command_args for pair in args.items()))
-    flags = remove_duplicates(grouped_args.pop(None))
-    args = {
-        k: squeeze(remove_duplicates(v))
-        for k, v in grouped_args.items()
-    }
+    flags = remove_duplicates(grouped_args.pop(None, []))
+    args = [(k, squeeze(list(val_alternatives))) for k, v in grouped_args.items()
+            for val_alternatives in zip(*remove_duplicates(v))]
 
-    return SpecObj(command=stem, args=args, flags=flags)
+    return SpecObj(command=stem, args=args, flags=flags or None)
