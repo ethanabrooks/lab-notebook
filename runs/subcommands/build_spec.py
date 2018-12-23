@@ -19,7 +19,7 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'build-spec',
         help='Print json spec that reproduces crossproduct '
-             'of args in given patterns.')
+        'of args in given patterns.')
     parser.add_argument(
         '--exclude', nargs='*', default=set(), help='Keys of args to exclude.')
     add_query_args(parser, with_sort=False)
@@ -91,10 +91,8 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
             if k not in args:
                 args[k] = [None]
     grouped_args = group((pair for args in command_args for pair in args.items()))
-    flags = remove_duplicates(grouped_args.pop(None))
-    args = {
-        k: squeeze(remove_duplicates(v))
-        for k, v in grouped_args.items()
-    }
+    flags = remove_duplicates(grouped_args.pop(None, []))
+    args = [(k, squeeze(list(val_alternatives))) for k, v in grouped_args.items()
+            for val_alternatives in zip(*remove_duplicates(v))]
 
-    return SpecObj(command=stem, args=args, flags=flags)
+    return SpecObj(command=stem, args=args, flags=flags or None)
