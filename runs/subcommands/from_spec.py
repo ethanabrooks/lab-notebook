@@ -99,7 +99,7 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
 
     def arg_alternatives(key, values):
         for value in listify(values):
-            yield prepend(f'{key}={value}')
+            yield prepend(f'{key}="{value}"')
 
     def flag_alternatives(values):
         for value in listify(values):
