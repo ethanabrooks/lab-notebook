@@ -2,7 +2,7 @@
 
 # first party
 from collections import defaultdict
-from pprint import pprint
+from pprint import pprint, pformat
 import re
 from typing import List, Set
 
@@ -10,6 +10,7 @@ from runs.arguments import add_query_args
 from runs.command import Command
 from runs.database import DataBase
 from runs.logger import Logger
+from runs.util import ARGS
 from runs.run_entry import RunEntry
 from runs.subcommands.new_from_spec import SpecObj
 
@@ -42,7 +43,10 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *_, **__):
             "Commands do not start with the same positional arguments:",
             *commands,
             sep='\n')
-    pprint(get_spec_obj(commands, exclude).dict())
+    spec_dict = get_spec_obj(commands, exclude).dict()
+    spec_dict[ARGS] = [{k: v} for k, v in spec_dict[ARGS]]
+    string = pformat(spec_dict)
+    print(string)
 
 
 def get_spec_obj(commands: List[Command], exclude: Set[str]):
