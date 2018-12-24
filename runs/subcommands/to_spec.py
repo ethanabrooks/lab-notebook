@@ -5,6 +5,7 @@ from collections import defaultdict
 from pprint import pprint, pformat
 import re
 from typing import List, Set
+import json
 
 from runs.arguments import add_query_args
 from runs.command import Command
@@ -28,22 +29,20 @@ def add_subparser(subparsers):
 
 
 class DuplicateDict(dict):
-    def __init__(self, *pairs):
-        self.pairs = list(pairs)
-
-    def __bool__(self):
-        return bool(self.pairs)
-
-    def __len__(self):
-        return len(self.pairs)
+    def __init__(self, items):
+        self['something'] = 'something'  # inheriting from dict magic
+        self._items = list(items)
 
     def items(self):
-        return self.pairs
+        return self._items
 
 
 @DataBase.open
 @DataBase.query
 def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *_, **__):
+    if not runs:
+        logger.exit("No commands found.")
+
     exclude = set(exclude)
     commands = [Command.from_run(run) for run in runs]
     for command in commands:
@@ -53,15 +52,15 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *_, **__):
                             f"groups. Currently reproduce-to-spec only supports one "
                             f"positional argument group")
     stems = {' '.join(command.stem) for command in commands}
-    if not len(stems) == 1:
+    if len(stems) > 1:
         logger.exit(
             "Commands do not start with the same positional arguments:",
             *commands,
             sep='\n')
     spec_dict = get_spec_obj(commands, exclude).dict()
-    spec_dict[ARGS] = DuplicateDict(*spec_dict[ARGS])
+    spec_dict[ARGS] = DuplicateDict(spec_dict[ARGS])
     spec_dict = {k: v for k, v in spec_dict.items() if v}
-    pprint(spec_dict)
+    print(json.dumps(spec_dict, sort_keys=True, indent=4))
 
 
 def get_spec_obj(commands: List[Command], exclude: Set[str]):
