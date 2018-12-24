@@ -2,19 +2,19 @@
 import itertools
 import json
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Union
 
 # first party
+from runs.command import Command
 from runs.logger import UI
 from runs.subcommands.new import new
 from runs.transaction.transaction import Transaction
-from runs.utils.command import Command
-from runs.utils.util import PurePath
+from runs.util import PurePath
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'new-from-spec', help='Start a new run using a JSON specification.')
+        'from-spec', help='Start a new run using a JSON specification.')
 
     parser.add_argument('path', type=PurePath, help='Unique path for each run. ')
     parser.add_argument(
@@ -47,17 +47,29 @@ def add_subparser(subparsers):
     #     help='Path where Tensorflow summary of run is to be written.')
 
 
+Variadic = Union[str, List[str]]
+
+
 class SpecObj:
-    def __init__(self, command: str, args: dict, delimiter: str = '='):
+    def __init__(
+            self,
+            command: str,
+            args: Dict[str, Variadic],
+            flags: List[Variadic] = None,
+            delimiter: str = '=',
+    ):
         self.command = command
         self.args = args
+        self.flags = flags
         self.delimiter = delimiter
 
     def dict(self):
-        return dict(command=self.command, args=self.args)
+        _dict = vars(self)
+        del _dict['delimiter']
+        return _dict
 
 
-FLAG_KWD = '<arg>'
+ARG_KWD = '<arg>'
 
 
 @Transaction.wrapper
@@ -73,27 +85,35 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
             spec_objs = [SpecObj(**dict(o)) for o in obj]
     except TypeError:
         logger.exit(f'Each object in {spec} must have a '
-                    f'"command" field and a "args" field.')
+                    '"command" field and a "args" field.')
 
-    def process_arg(key, value, delim='='):
-        if key == '':
-            if value == '':
-                return ''
-            return process_arg(key=value, value='', delim='')
-        if not key.startswith('-'):
-            key = f'--{key}'
-        return f'{key}{delim}"{value}"'
+    def listify(x):
+        if isinstance(x, list):
+            return x
+        return [x]
 
-    def process_args(k, v):
-        if isinstance(v, (list, tuple)):
-            for value in v:
-                yield process_arg(k, value)
-        else:
-            yield process_arg(k, v)
+    def prepend(arg: str):
+        if arg.startswith('-') or arg == '':
+            return arg
+        return f'--{arg}'
+
+    def arg_alternatives(key, values):
+        for value in listify(values):
+            yield prepend(f'{key}="{value}"')
+
+    def flag_alternatives(values):
+        for value in listify(values):
+            yield prepend(value)
+
+    def group_args(spec):
+        for k, v in spec.args or []:
+            yield list(arg_alternatives(k, v))
+        for v in spec.flags or []:
+            yield list(flag_alternatives(v))
 
     def arg_assignments():
         for spec in spec_objs:
-            for arg_set in itertools.product(*[process_args(*f) for f in spec.args]):
+            for arg_set in itertools.product(*group_args(spec)):
                 yield spec.command, arg_set
 
     assignments = list(arg_assignments())

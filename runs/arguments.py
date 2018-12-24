@@ -16,7 +16,7 @@ def parse_datetime(string: str):
     return datetime.strptime(string, '%y-%m-%d')
 
 
-DEFAULT_QUERY_FLAGS = {
+DEFAULT_QUERY_ARGS = {
     'patterns':
     dict(nargs='*', type=PurePath, help='Look up runs matching these patterns'),
     '--unless':
@@ -45,7 +45,7 @@ DEFAULT_QUERY_FLAGS = {
 def add_query_args(
         parser,
         with_sort: bool,
-        default_args: dict = DEFAULT_QUERY_FLAGS,
+        default_args: dict = DEFAULT_QUERY_ARGS,
 ):
     if not with_sort:
         default_args = deepcopy(default_args)

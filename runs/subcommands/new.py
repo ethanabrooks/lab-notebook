@@ -5,10 +5,10 @@ import itertools
 from typing import List
 
 # first party
+from runs.command import Command
 from runs.logger import UI
 from runs.transaction.transaction import Transaction
-from runs.utils.command import Command
-from runs.utils.util import PurePath
+from runs.util import PurePath
 
 
 def add_subparser(subparsers):

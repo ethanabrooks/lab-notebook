@@ -4,7 +4,7 @@ import shutil
 from typing import List
 
 # first party
-from runs.utils.util import prune_empty
+from runs.util import prune_empty
 
 
 class FileSystem:

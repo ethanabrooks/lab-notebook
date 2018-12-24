@@ -4,16 +4,16 @@ from itertools import zip_longest
 from typing import List
 
 # first party
+from runs.arguments import DEFAULT_QUERY_ARGS, add_query_args
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.utils.arguments import DEFAULT_QUERY_FLAGS, add_query_args
-from runs.utils.util import PurePath, natural_order
+from runs.util import PurePath, natural_order
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('ls', help='Print paths in run database.')
-    add_query_args(parser, with_sort=True, default_args=DEFAULT_QUERY_FLAGS)
+    add_query_args(parser, with_sort=True, default_args=DEFAULT_QUERY_ARGS)
 
     parser.add_argument(
         '--show-attrs',

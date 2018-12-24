@@ -86,3 +86,7 @@ def parse_arg(arg: str, delims: str = '=| ') -> List[str]:
         return [f'--{key}={value}' for value in values.split('|')]
     else:
         return arg.split('|')
+
+
+MAIN = 'main'
+ARGS = 'args'

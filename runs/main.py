@@ -3,20 +3,18 @@
 # stdlib
 import argparse
 import codecs
+import pprint
+import sys
 from configparser import ConfigParser, ExtendedInterpolation
 from importlib import import_module
 from pathlib import Path, PurePath
-import pprint
-import sys
 from typing import List
 
 # first party
 from runs.logger import UI
-from runs.subcommands import (build_spec, change_description, correlate, diff, kill,
-                              lookup, ls, mv, new, new_from_spec, reproduce, rm)
-
-MAIN = 'main'
-ARGS = 'args'
+from runs.subcommands import (to_spec, change_description, correlate, diff, kill,
+                              lookup, ls, mv, new, from_spec, reproduce, rm)
+from runs.util import MAIN, ARGS
 
 
 def find_up(filename):
@@ -33,7 +31,8 @@ def pure_path_list(paths: str) -> List[PurePath]:
 
 
 def arg_list(args_string: str) -> List[List[str]]:
-    return codecs.decode(args_string, encoding='unicode_escape').strip('\n').split('\n')
+    args_string = codecs.decode(args_string, encoding='unicode_escape').strip('\n')
+    return args_string.split('\n') if args_string else []
 
 
 def main(argv=sys.argv[1:]):
@@ -74,13 +73,14 @@ def main(argv=sys.argv[1:]):
             _pure_path_list=pure_path_list,
             _arg_list=arg_list))
     config_filename = Path('.runsrc')
+
     config_path = find_up(config_filename)
     missing_config_keys = []
     default_values = dict(
         root=str(Path('.runs').absolute()),
         db_path=str(Path('runs.db').absolute()),
-        dir_names=[],
-        args=[])
+        dir_names='',
+        args='')
     if config_path:
         config.read(str(config_path))
 
@@ -92,7 +92,7 @@ def main(argv=sys.argv[1:]):
             missing_config_keys.append(k)
             config[MAIN][k] = v
 
-    main_config = dict(config[MAIN])
+    main_config = dict(config[MAIN]).copy()
     main_config.update(
         root=config[MAIN].get_path('root'),
         db_path=config[MAIN].get_path('db_path'),
@@ -102,7 +102,7 @@ def main(argv=sys.argv[1:]):
     for subparser in [parser] + [
             adder(subparsers) for adder in [
                 new.add_subparser,
-                new_from_spec.add_subparser,
+                from_spec.add_subparser,
                 rm.add_subparser,
                 mv.add_subparser,
                 ls.add_subparser,
@@ -112,7 +112,7 @@ def main(argv=sys.argv[1:]):
                 correlate.add_subparser,
                 kill.add_subparser,
                 diff.add_subparser,
-                build_spec.add_subparser,
+                to_spec.add_subparser,
             ]
     ]:
         assert isinstance(subparser, argparse.ArgumentParser)
@@ -141,7 +141,7 @@ def main(argv=sys.argv[1:]):
         write_config()
     elif missing_config_keys:
         for key in missing_config_keys:
-            ui.print(f'Using default value for {key}: {main_config[key]}')
+            ui.print(f'Using default value for {key}: {config[MAIN][key]}')
         write_config()
 
     module = import_module('runs.subcommands.' + args.dest.replace('-', '_'))

@@ -5,11 +5,11 @@ import re
 from typing import Callable, Dict, List, Optional
 
 # first party
+from runs.arguments import add_query_args
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.utils.arguments import add_query_args
-from runs.utils.util import PurePath
+from runs.util import PurePath
 
 
 def add_subparser(subparsers):
@@ -83,7 +83,4 @@ def correlations(
             return math.inf
 
     args = {arg for run in runs for arg in get_args(run.command)}
-    return {
-        arg: get_correlation(arg)
-        for arg in args if get_correlation(arg) < math.inf
-    }
+    return {arg: get_correlation(arg) for arg in args if get_correlation(arg) < math.inf}

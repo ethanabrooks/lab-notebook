@@ -3,7 +3,7 @@ from collections import namedtuple
 
 # first party
 from runs.transaction.sub_transaction import SubTransaction
-from runs.utils.util import string_from_vim
+from runs.util import string_from_vim
 
 DescriptionChange = namedtuple('DescriptionChange',
                                ['path', 'command', 'old_description', 'new_description'])

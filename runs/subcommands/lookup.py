@@ -2,11 +2,11 @@
 from typing import Dict, List
 
 # first party
+from runs.arguments import add_query_args
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.utils.arguments import add_query_args
-from runs.utils.util import PurePath, highlight
+from runs.util import PurePath, highlight
 
 
 def add_subparser(subparsers):
@@ -26,8 +26,8 @@ def add_subparser(subparsers):
 
 @DataBase.open
 @DataBase.query
-def cli(runs: List[RunEntry], db: DataBase, logger: Logger, key: str, porcelain: bool,
-        *_, **__):
+def cli(runs: List[RunEntry], db: DataBase, logger: Logger, key: str, porcelain: bool, *_,
+        **__):
     logger.print(string(runs=runs, key=key, porcelain=porcelain))
 
 
