@@ -76,6 +76,8 @@ ARG_KWD = '<arg>'
 def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
         description: str, transaction: Transaction, *_, **__):
     # spec: Path
+    if not spec.exists():
+        logger.exit(f'{spec.absolute()} does not exist.')
     with spec.open() as f:
         obj = json.load(f, object_pairs_hook=lambda pairs: pairs)
     try:
