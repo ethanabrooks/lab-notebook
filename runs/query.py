@@ -18,7 +18,7 @@ class Condition:
         return bool(self.values())
 
     def __str__(self):
-        return self._str() if self.values() else ''
+        return f'({self._str()})' if self.values() else ''
 
     def values(self):
         return [str(v) for v in self._values() if v]
