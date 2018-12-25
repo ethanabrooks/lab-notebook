@@ -3,13 +3,14 @@ import argparse
 from pathlib import Path, PurePath
 import pickle
 
+import yaml
+
 # third party
 # first party
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
 from runs.subcommands import ls
-import yaml
 
 
 def yaml_to_run_entry(node, *parts):

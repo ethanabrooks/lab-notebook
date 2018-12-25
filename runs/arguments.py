@@ -1,7 +1,8 @@
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import PurePath
 import re
+
 import dateutil.parser
 
 from runs.run_entry import RunEntry
@@ -28,7 +29,9 @@ DEFAULT_QUERY_ARGS = {
     dict(
         default=None,
         type=dateutil.parser.parse,
-        help='Only display runs since this date (use isoformat).'),
+        help='Only display runs since this date. Accepts any argument that is parseable '
+        'by `dateutil.parser.parse` (https://dateutil.readthedocs.io/en/2.7.5/parser.html#dateutil.parser.parse).'
+    ),
     '--from-last':
     dict(
         default=None,

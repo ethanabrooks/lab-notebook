@@ -9,6 +9,7 @@ import subprocess
 # third party
 # first party
 from nose.tools import assert_false, assert_in, assert_is_instance, assert_not_in, assert_raises, eq_, ok_
+
 from runs import main
 from runs.database import DataBase
 from runs.logger import UI
