@@ -19,20 +19,11 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'to-spec',
         help='Print json spec that reproduces crossproduct '
-        'of args in given patterns.')
+             'of args in given patterns.')
     parser.add_argument(
         '--exclude', nargs='*', default=set(), help='Keys of args to exclude.')
     add_query_args(parser, with_sort=False)
     return parser
-
-
-class DuplicateDict(dict):
-    def __init__(self, items):
-        self['something'] = 'something'  # inheriting from dict magic
-        self._items = list(items)
-
-    def items(self):
-        return self._items
 
 
 @DataBase.open
@@ -56,7 +47,6 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *_, **__):
             *commands,
             sep='\n')
     spec_dict = get_spec_obj(commands, exclude).dict()
-    spec_dict[ARGS] = DuplicateDict(spec_dict[ARGS])
     spec_dict = {k: v for k, v in spec_dict.items() if v}
     print(json.dumps(spec_dict, sort_keys=True, indent=4))
 
@@ -110,6 +100,7 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
                 args[k] = [None]
     grouped_args = group((pair for args in command_args for pair in args.items()))
     flags = remove_duplicates(grouped_args.pop(None, []))
-    args = [(k, squeeze(list(val_alternatives))) for k, v in grouped_args.items()
-            for val_alternatives in zip(*remove_duplicates(v))]
+
+    args = {k: list(map(squeeze, v)) for k, v in grouped_args.items()}
+
     return SpecObj(command=stem, args=args, flags=flags or None)

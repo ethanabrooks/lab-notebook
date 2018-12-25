@@ -97,28 +97,27 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
         return [x]
 
     def prepend(arg: str):
-        if arg.startswith('-') or arg == '':
+        if not arg or arg.startswith('-'):
             return arg
         return f'--{arg}'
 
     def arg_alternatives(key, values):
-        for value in listify(values):
-            yield prepend(f'{key}="{value}"')
+        for v in listify(values):
+            yield [prepend(f'{key}="{value}"') for value in listify(v)]
 
     def flag_alternatives(values):
-        for value in listify(values):
-            yield prepend(value)
+        for v in values:
+            yield list(map(prepend, v))
 
     def group_args(spec):
         for k, v in spec.args or []:
             yield list(arg_alternatives(k, v))
-        for v in spec.flags or []:
-            yield list(flag_alternatives(v))
+        yield list(flag_alternatives(spec.flags))
 
     def arg_assignments():
         for spec in spec_objs:
             for arg_set in itertools.product(*group_args(spec)):
-                yield spec.command, arg_set
+                yield spec.command, [a for s in arg_set for a in s if a]
 
     assignments = list(arg_assignments())
     for i, (command, arg_set) in enumerate(assignments):
