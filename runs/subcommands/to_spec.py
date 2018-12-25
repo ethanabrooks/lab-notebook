@@ -2,19 +2,17 @@
 
 # first party
 from collections import defaultdict
-from pprint import pprint, pformat
+import json
 import re
 from typing import List, Set
-import json
 
 from runs.arguments import add_query_args
 from runs.command import Command
 from runs.database import DataBase
 from runs.logger import Logger
-from runs.util import ARGS
 from runs.run_entry import RunEntry
 from runs.subcommands.from_spec import SpecObj
-from collections.abc import Mapping
+from runs.util import ARGS
 
 
 def add_subparser(subparsers):

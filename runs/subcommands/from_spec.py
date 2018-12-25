@@ -16,7 +16,6 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'from-spec', help='Start a new run using a JSON specification.')
 
-    parser.add_argument('path', type=PurePath, help='Unique path for each run. ')
     parser.add_argument(
         'spec',
         type=Path,
@@ -26,10 +25,13 @@ def add_subparser(subparsers):
         '"a: b," becomes "--a=b" for example.',
     )
     parser.add_argument(
-        'description',
+        '--path', type=PurePath, help='Unique path for each run.', required=True)
+    parser.add_argument(
+        '--description',
         help='Description of this run. Explain what this run was all about or '
         'write whatever your heart desires. If this argument is `commit-message`,'
-        'it will simply use the last commit message.')
+        'it will simply use the last commit message.',
+        required=True)
     parser.add_argument(
         '--prefix',
         type=str,

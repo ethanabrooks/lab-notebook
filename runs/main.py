@@ -3,18 +3,18 @@
 # stdlib
 import argparse
 import codecs
-import pprint
-import sys
 from configparser import ConfigParser, ExtendedInterpolation
 from importlib import import_module
 from pathlib import Path, PurePath
+import pprint
+import sys
 from typing import List
 
 # first party
 from runs.logger import UI
-from runs.subcommands import (to_spec, change_description, correlate, diff, kill,
-                              lookup, ls, mv, new, from_spec, reproduce, rm)
-from runs.util import MAIN, ARGS
+from runs.subcommands import (change_description, correlate, diff, from_spec, kill, lookup, ls, mv, new, reproduce, rm,
+                              to_spec)
+from runs.util import ARGS, MAIN
 
 
 def find_up(filename):
