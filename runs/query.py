@@ -63,7 +63,7 @@ class In(OneToManyPredicate):
 
 class OneToOnePredicate(OneToManyPredicate):
     def __init__(self, column, value):
-        super().__init__(self, column, value)
+        super().__init__(column, value)
 
 
 class Equals(OneToOnePredicate):

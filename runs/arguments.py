@@ -2,6 +2,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import PurePath
 import re
+import dateutil.parser
 
 from runs.run_entry import RunEntry
 
@@ -10,10 +11,6 @@ def parse_time_delta(string: str):
     match = re.match(r"(?:(\d+)weeks?)?(?:(\d+)days?)?(?:(\d+)hours?)?", string)
     week, day, hour = [int(n) if n else 0 for n in match.group(1, 2, 3)]
     return timedelta(weeks=week, days=day, hours=hour)
-
-
-def parse_datetime(string: str):
-    return datetime.strptime(string, '%y-%m-%d')
 
 
 DEFAULT_QUERY_ARGS = {
@@ -30,7 +27,7 @@ DEFAULT_QUERY_ARGS = {
     '--since':
     dict(
         default=None,
-        type=parse_datetime,
+        type=dateutil.parser.parse,
         help='Only display runs since this date (use isoformat).'),
     '--from-last':
     dict(

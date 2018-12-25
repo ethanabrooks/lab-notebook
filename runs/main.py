@@ -12,8 +12,8 @@ from typing import List
 
 # first party
 from runs.logger import UI
-from runs.subcommands import (change_description, correlate, diff, from_spec, kill, lookup, ls, mv, new, reproduce, rm,
-                              to_spec)
+from runs.subcommands import (change_description, correlate, diff, from_spec, kill,
+                              lookup, ls, mv, new, reproduce, rm, to_spec)
 from runs.util import ARGS, MAIN
 
 
