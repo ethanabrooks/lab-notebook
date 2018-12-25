@@ -15,7 +15,6 @@ class TMUXSession:
         self.cmd = bash.cmd
 
     def new(self, window_name, command):
-        self.kill()
         self.cmd('tmux new -d -s'.split() + [self.name, '-n', window_name])
         self.cmd('tmux send-keys -t'.split() + [self.name, command, 'Enter'])
 
