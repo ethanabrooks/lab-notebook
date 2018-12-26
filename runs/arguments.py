@@ -1,9 +1,7 @@
 from copy import deepcopy
-from datetime import timedelta
+from datetime import timedelta, datetime
 from pathlib import PurePath
 import re
-
-import dateutil.parser
 
 from runs.run_entry import RunEntry
 
@@ -14,31 +12,55 @@ def parse_time_delta(string: str):
     return timedelta(weeks=week, days=day, hours=hour)
 
 
+def date_parse(string):
+    try:
+        return datetime.strptime('2002-12-04', '%Y-%m-%d')
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime('2002-12-04', "%Y-%m-%dT%H")
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime('2002-12-04', "%Y-%m-%dT%H:%M")
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime('2002-12-04', "%Y-%m-%dT%H:%M:%S.%f")
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime('2002-12-04', "%Y-%m-%dT%H:%M:%S.%f%z")
+    except ValueError:
+        pass
+    return datetime.strptime('2002-12-04', "%Y-%m-%dT%H:%M:%S.%f%z")
+
+
 DEFAULT_QUERY_ARGS = {
     'patterns':
-    dict(nargs='*', type=PurePath, help='Look up runs matching these patterns'),
+        dict(nargs='*', type=PurePath, help='Look up runs matching these patterns'),
     '--unless':
-    dict(nargs='*', type=PurePath, help='Exclude these paths from the search.'),
+        dict(nargs='*', type=PurePath, help='Exclude these paths from the search.'),
     '--active':
-    dict(action='store_true', help='Include all active runs in query.'),
+        dict(action='store_true', help='Include all active runs in query.'),
     '--descendants':
-    dict(action='store_true', help='Include all descendants of pattern.'),
+        dict(action='store_true', help='Include all descendants of pattern.'),
     '--sort':
-    dict(default='datetime', choices=RunEntry.fields(), help='Sort query by this field.'),
+        dict(default='datetime', choices=RunEntry.fields(),
+             help='Sort query by this field.'),
     '--since':
-    dict(
-        default=None,
-        type=dateutil.parser.parse,
-        help='Only display runs since this date. Accepts any argument that is parseable '
-        'by `dateutil.parser.parse` (https://dateutil.readthedocs.io/en/2.7.5/parser.html#dateutil.parser.parse).'
-    ),
+        dict(
+            default=None,
+            type=date_parse,
+            help='Only display runs since this date. Accepts argument in isoformat.'
+        ),
     '--from-last':
-    dict(
-        default=None,
-        type=parse_time_delta,
-        help='Only display runs created in the given time delta. '
-        'Either use "months", "weeks", "days", "hours" to specify time, e.g.'
-        '"2weeks1day" or specify a date: month/day/year.')
+        dict(
+            default=None,
+            type=parse_time_delta,
+            help='Only display runs created in the given time delta. '
+                 'Either use "months", "weeks", "days", "hours" to specify time, e.g.'
+                 '"2weeks1day" or specify a date: month/day/year.')
 }
 
 
