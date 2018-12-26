@@ -102,6 +102,10 @@ def run_main(*args):
     main.main(['-q', '-y'] + list(args))
 
 
+def kill_session(name):
+    BASH.cmd('tmux kill-session -t'.split() + [name], fail_ok=True)
+
+
 @contextmanager
 def _setup(path, dir_names=None, args=None):
     if dir_names is None:
@@ -133,7 +137,7 @@ args : {arg_string}
     run_main('new', f'--path={path}', f'--command={COMMAND}',
              f'--description="{DESCRIPTION}"')
     yield
-    BASH.cmd('tmux kill-session -t'.split() + [path], fail_ok=True)
+    kill_session(path)
     shutil.rmtree(WORK_DIR, ignore_errors=True)
 
 
@@ -261,6 +265,7 @@ def test_move():
                     run_main('mv', path, new_path)
                     yield check_move, path, new_path, dir_names, args
                     yield check_tmux, new_path
+                kill_session(new_path)
 
 
 def move(src, dest):

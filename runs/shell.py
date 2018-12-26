@@ -18,6 +18,7 @@ class Bash:
             universal_newlines=True)
         stdout, stderr = process.communicate(timeout=1)
         if stderr and not fail_ok:
+            raise ValueError
             self.logger.exit(f"Command `{' '.join(args)}` failed: {stderr}")
         return stdout.strip()
 
