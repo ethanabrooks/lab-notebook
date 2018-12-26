@@ -68,15 +68,15 @@ Creating runs
 
 .. parsed-literal::
 
-    [0;32mPath:[0;0m
+    Path:
     demo
-    [0;32mDescription:[0;0m
+    Description:
     Demonstrate lab-notebook capabilities.
-    [0;32mCommand sent to session:[0;0m
+    Command sent to session:
     python
-    [0;32mList active:[0;0m
+    List active:
     tmux list-session
-    [0;32mAttach:[0;0m
+    Attach:
     tmux attach -t demo
     
 
@@ -109,26 +109,26 @@ You can create multiple runs with a single run command:
 
 .. parsed-literal::
 
-    [0;32mPath:[0;0m
+    Path:
     demo2
-    [0;32mDescription:[0;0m
+    Description:
     Demonstrate creating multiple runs at once
-    [0;32mCommand sent to session:[0;0m
+    Command sent to session:
     python dummy.py --my-arg=1
-    [0;32mList active:[0;0m
+    List active:
     tmux list-session
-    [0;32mAttach:[0;0m
+    Attach:
     tmux attach -t demo2
     
-    [0;32mPath:[0;0m
+    Path:
     demo
-    [0;32mDescription:[0;0m
+    Description:
     Demonstrate creating multiple runs at once
-    [0;32mCommand sent to session:[0;0m
+    Command sent to session:
     python dummy.py --my-arg=1 --my-arg=2 --flag
-    [0;32mList active:[0;0m
+    List active:
     tmux list-session
-    [0;32mAttach:[0;0m
+    Attach:
     tmux attach -t demo
     
 
@@ -199,48 +199,48 @@ repeated args.
 
 .. parsed-literal::
 
-    [0;32mPath:[0;0m
+    Path:
     from-spec-demo/0
-    [0;32mDescription:[0;0m
+    Description:
     Demonstrate the use of specs to generate runs.
-    [0;32mCommand sent to session:[0;0m
+    Command sent to session:
     python dummy.py --my-arg="1"
-    [0;32mList active:[0;0m
+    List active:
     tmux list-session
-    [0;32mAttach:[0;0m
+    Attach:
     tmux attach -t from-spec-demo/0
     
-    [0;32mPath:[0;0m
+    Path:
     from-spec-demo/1
-    [0;32mDescription:[0;0m
+    Description:
     Demonstrate the use of specs to generate runs.
-    [0;32mCommand sent to session:[0;0m
+    Command sent to session:
     python dummy.py --flag --my-arg="1"
-    [0;32mList active:[0;0m
+    List active:
     tmux list-session
-    [0;32mAttach:[0;0m
+    Attach:
     tmux attach -t from-spec-demo/1
     
-    [0;32mPath:[0;0m
+    Path:
     from-spec-demo/2
-    [0;32mDescription:[0;0m
+    Description:
     Demonstrate the use of specs to generate runs.
-    [0;32mCommand sent to session:[0;0m
+    Command sent to session:
     python dummy.py --my-arg="2" --my-arg="1"
-    [0;32mList active:[0;0m
+    List active:
     tmux list-session
-    [0;32mAttach:[0;0m
+    Attach:
     tmux attach -t from-spec-demo/2
     
-    [0;32mPath:[0;0m
+    Path:
     from-spec-demo/3
-    [0;32mDescription:[0;0m
+    Description:
     Demonstrate the use of specs to generate runs.
-    [0;32mCommand sent to session:[0;0m
+    Command sent to session:
     python dummy.py --my-arg="2" --flag --my-arg="1"
-    [0;32mList active:[0;0m
+    List active:
     tmux list-session
-    [0;32mAttach:[0;0m
+    Attach:
     tmux attach -t from-spec-demo/3
     
 
@@ -396,10 +396,10 @@ You can query metadata about runs:
 
 .. parsed-literal::
 
-    [0;32mfrom-spec-demo/0: [0;0mpython dummy.py --my-arg="1"
-    [0;32mfrom-spec-demo/1: [0;0mpython dummy.py --flag --my-arg="1"
-    [0;32mfrom-spec-demo/2: [0;0mpython dummy.py --my-arg="2" --my-arg="1"
-    [0;32mfrom-spec-demo/3: [0;0mpython dummy.py --my-arg="2" --flag --my-arg="1"
+    from-spec-demo/0: python dummy.py --my-arg="1"
+    from-spec-demo/1: python dummy.py --flag --my-arg="1"
+    from-spec-demo/2: python dummy.py --my-arg="2" --my-arg="1"
+    from-spec-demo/3: python dummy.py --my-arg="2" --flag --my-arg="1"
 
 
 .. code:: bash
@@ -409,10 +409,10 @@ You can query metadata about runs:
 
 .. parsed-literal::
 
-    [0;32mfrom-spec-demo/0: [0;0m2018-12-25T19:36:22.022499
-    [0;32mfrom-spec-demo/1: [0;0m2018-12-25T19:36:22.028994
-    [0;32mfrom-spec-demo/2: [0;0m2018-12-25T19:36:22.035280
-    [0;32mfrom-spec-demo/3: [0;0m2018-12-25T19:36:22.042038
+    from-spec-demo/0: 2018-12-25T19:36:22.022499
+    from-spec-demo/1: 2018-12-25T19:36:22.028994
+    from-spec-demo/2: 2018-12-25T19:36:22.035280
+    from-spec-demo/3: 2018-12-25T19:36:22.042038
 
 
 For info about queryable fields, run ``runs lookup -h`` (omitted for
@@ -464,26 +464,26 @@ run. The ``<path>`` keyword gets replaced with the path of the run.
 
 .. parsed-literal::
 
-    [0;32mPath:[0;0m
+    Path:
     demo1
-    [0;32mDescription:[0;0m
+    Description:
     Demonstrate .runsrc capabilities
-    [0;32mCommand sent to session:[0;0m
+    Command sent to session:
     python3 file_io_demo.py --write-path=/Users/ethan/lab-notebook/demo/.runs/write-dir/demo1/hello.txt
-    [0;32mList active:[0;0m
+    List active:
     tmux list-session
-    [0;32mAttach:[0;0m
+    Attach:
     tmux attach -t demo1
     
-    [0;32mPath:[0;0m
+    Path:
     demo2
-    [0;32mDescription:[0;0m
+    Description:
     Demonstrate .runsrc capabilities
-    [0;32mCommand sent to session:[0;0m
+    Command sent to session:
     python3 file_io_demo.py --write-path=/Users/ethan/lab-notebook/demo/.runs/write-dir/demo2/hello.txt
-    [0;32mList active:[0;0m
+    List active:
     tmux list-session
-    [0;32mAttach:[0;0m
+    Attach:
     tmux attach -t demo2
     
 
@@ -662,12 +662,12 @@ We can also change the description for runs
 
 .. parsed-literal::
 
-    [0;32mdemo: [0;0mDemonstrate .runsrc capabilities
-    [0;32mdemo1: [0;0mDemonstrate .runsrc capabilities
-    [0;32mfrom-spec-demo/0: [0;0mA new description
-    [0;32mfrom-spec-demo/1: [0;0mA new description
-    [0;32mfrom-spec-demo/2: [0;0mA new description
-    [0;32mfrom-spec-demo/3: [0;0mA new description
+    demo: Demonstrate .runsrc capabilities
+    demo1: Demonstrate .runsrc capabilities
+    from-spec-demo/0: A new description
+    from-spec-demo/1: A new description
+    from-spec-demo/2: A new description
+    from-spec-demo/3: A new description
 
 
 ``kill``
@@ -769,7 +769,7 @@ reproduce a queried run.
 
 .. parsed-literal::
 
-    [0;32mTo reproduce:[0;0m
+    To reproduce:
     git checkout 0a647b658424035027e8b8f6b239d95c61eb9438
     runs new --path="demo1" --command="python3 file_io_demo.py " --description="Demonstrate .runsrc capabilities"
 
@@ -783,7 +783,7 @@ You can also reproduce multiple runs:
 
 .. parsed-literal::
 
-    [0;32mTo reproduce:[0;0m
+    To reproduce:
     git checkout 0a647b658424035027e8b8f6b239d95c61eb9438
     runs new \
     --path="from-spec-demo/0" \
@@ -810,7 +810,7 @@ Comparing runs
 
 .. parsed-literal::
 
-    python dummy.py --my-arg="1" [0;32m --flag [0;0m[1;31m --my-arg="2" [0;0m
+    python dummy.py --my-arg="1"  --flag  --my-arg="2" 
 
 ``runs-git``
 ============
