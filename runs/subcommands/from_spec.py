@@ -106,8 +106,11 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
             yield [prepend(f'{key}="{value}"') for value in listify(v)]
 
     def flag_alternatives(values):
-        for v in values:
-            yield list(map(prepend, v))
+        if values:
+            for v in values:
+                yield list(map(prepend, v))
+        else:
+            yield [None]
 
     def group_args(spec):
         for k, v in spec.args or []:
