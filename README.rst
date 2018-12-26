@@ -1,8 +1,7 @@
-Installation
-============
+
 .. code:: bash
 
-    pip install lab-notebook
+    runs -y rm % && rm -f runs.db .runsrc
 
 Starting out
 ============
@@ -24,6 +23,7 @@ You can also use the short flag ``-y``.
      'db_path': '/Users/ethan/lab-notebook/demo/runs.db',
      'dir_names': '',
      'root': '/Users/ethan/lab-notebook/demo/.runs'}
+    
 
 
 .. code:: bash
@@ -95,7 +95,7 @@ of this tutorial).
 
 .. parsed-literal::
 
-    demo: 1 windows (created Tue Dec 25 19:36:20 2018) [80x24]
+    demo: 1 windows (created Tue Dec 25 23:18:40 2018) [80x24]
 
 
 You can create multiple runs with a single run command:
@@ -125,7 +125,7 @@ You can create multiple runs with a single run command:
     Description:
     Demonstrate creating multiple runs at once
     Command sent to session:
-    python dummy.py --my-arg=1 --my-arg=2 --flag
+    python dummy.py --flag --my-arg=2 --my-arg=1
     List active:
     tmux list-session
     Attach:
@@ -145,8 +145,8 @@ change.
 
 .. parsed-literal::
 
-    demo: 1 windows (created Tue Dec 25 19:36:20 2018) [80x24]
-    demo2: 1 windows (created Tue Dec 25 19:36:20 2018) [80x24]
+    demo: 1 windows (created Tue Dec 25 23:18:41 2018) [80x24]
+    demo2: 1 windows (created Tue Dec 25 23:18:41 2018) [80x24]
 
 
 Using specs
@@ -172,18 +172,18 @@ can generate one from existing runs:
             "my-arg": [
                 1,
                 [
-                    1,
-                    2
+                    2,
+                    1
                 ]
             ]
         },
         "command": "python dummy.py",
         "flags": [
             [
-                null
+                "flag"
             ],
             [
-                "flag"
+                null
             ]
         ]
     }
@@ -204,7 +204,7 @@ repeated args.
     Description:
     Demonstrate the use of specs to generate runs.
     Command sent to session:
-    python dummy.py --my-arg="1"
+    python dummy.py --flag --my-arg="1"
     List active:
     tmux list-session
     Attach:
@@ -215,7 +215,7 @@ repeated args.
     Description:
     Demonstrate the use of specs to generate runs.
     Command sent to session:
-    python dummy.py --flag --my-arg="1"
+    python dummy.py --my-arg="1"
     List active:
     tmux list-session
     Attach:
@@ -226,7 +226,7 @@ repeated args.
     Description:
     Demonstrate the use of specs to generate runs.
     Command sent to session:
-    python dummy.py --my-arg="2" --my-arg="1"
+    python dummy.py --flag --my-arg="2" --my-arg="1"
     List active:
     tmux list-session
     Attach:
@@ -237,7 +237,7 @@ repeated args.
     Description:
     Demonstrate the use of specs to generate runs.
     Command sent to session:
-    python dummy.py --my-arg="2" --flag --my-arg="1"
+    python dummy.py --my-arg="2" --my-arg="1"
     List active:
     tmux list-session
     Attach:
@@ -252,12 +252,12 @@ repeated args.
 
 .. parsed-literal::
 
-    demo: 1 windows (created Tue Dec 25 19:36:20 2018) [80x24]
-    demo2: 1 windows (created Tue Dec 25 19:36:20 2018) [80x24]
-    from-spec-demo/0: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/1: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/2: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/3: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
+    demo: 1 windows (created Tue Dec 25 23:18:41 2018) [80x24]
+    demo2: 1 windows (created Tue Dec 25 23:18:41 2018) [80x24]
+    from-spec-demo/0: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/1: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/2: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/3: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
 
 
 Querying existing runs
@@ -320,12 +320,12 @@ This matches the output of ``tmux ls``:
 
 .. parsed-literal::
 
-    demo: 1 windows (created Tue Dec 25 19:36:20 2018) [80x24]
-    demo2: 1 windows (created Tue Dec 25 19:36:20 2018) [80x24]
-    from-spec-demo/0: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/1: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/2: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/3: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
+    demo: 1 windows (created Tue Dec 25 23:18:41 2018) [80x24]
+    demo2: 1 windows (created Tue Dec 25 23:18:41 2018) [80x24]
+    from-spec-demo/0: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/1: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/2: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/3: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
 
 
 .. code:: bash
@@ -396,10 +396,10 @@ You can query metadata about runs:
 
 .. parsed-literal::
 
-    from-spec-demo/0: python dummy.py --my-arg="1"
-    from-spec-demo/1: python dummy.py --flag --my-arg="1"
-    from-spec-demo/2: python dummy.py --my-arg="2" --my-arg="1"
-    from-spec-demo/3: python dummy.py --my-arg="2" --flag --my-arg="1"
+    from-spec-demo/0: python dummy.py --flag --my-arg="1"
+    from-spec-demo/1: python dummy.py --my-arg="1"
+    from-spec-demo/2: python dummy.py --flag --my-arg="2" --my-arg="1"
+    from-spec-demo/3: python dummy.py --my-arg="2" --my-arg="1"
 
 
 .. code:: bash
@@ -409,10 +409,10 @@ You can query metadata about runs:
 
 .. parsed-literal::
 
-    from-spec-demo/0: 2018-12-25T19:36:22.022499
-    from-spec-demo/1: 2018-12-25T19:36:22.028994
-    from-spec-demo/2: 2018-12-25T19:36:22.035280
-    from-spec-demo/3: 2018-12-25T19:36:22.042038
+    from-spec-demo/0: 2018-12-25T23:18:42.071157
+    from-spec-demo/1: 2018-12-25T23:18:42.077845
+    from-spec-demo/2: 2018-12-25T23:18:42.084535
+    from-spec-demo/3: 2018-12-25T23:18:42.091742
 
 
 For info about queryable fields, run ``runs lookup -h`` (omitted for
@@ -566,12 +566,12 @@ of things:
 
 .. parsed-literal::
 
-    demo1: 1 windows (created Tue Dec 25 19:36:27 2018) [80x24]
-    demo2: 1 windows (created Tue Dec 25 19:36:27 2018) [80x24]
-    from-spec-demo/0: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/1: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/2: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/3: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
+    demo1: 1 windows (created Tue Dec 25 23:18:47 2018) [80x24]
+    demo2: 1 windows (created Tue Dec 25 23:18:47 2018) [80x24]
+    from-spec-demo/0: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/1: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/2: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/3: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
 
 
 .. code:: bash
@@ -638,12 +638,12 @@ This overwrites the run ``demo``. It also moves
 
 .. parsed-literal::
 
-    demo: 1 windows (created Tue Dec 25 19:36:27 2018) [80x24]
-    demo1: 1 windows (created Tue Dec 25 19:36:27 2018) [80x24]
-    from-spec-demo/0: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/1: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/2: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
-    from-spec-demo/3: 1 windows (created Tue Dec 25 19:36:22 2018) [80x24]
+    demo: 1 windows (created Tue Dec 25 23:18:47 2018) [80x24]
+    demo1: 1 windows (created Tue Dec 25 23:18:47 2018) [80x24]
+    from-spec-demo/0: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/1: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/2: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
+    from-spec-demo/3: 1 windows (created Tue Dec 25 23:18:42 2018) [80x24]
 
 
 ``change-description``
@@ -687,8 +687,8 @@ record:
 
 .. parsed-literal::
 
-    demo: 1 windows (created Tue Dec 25 19:36:27 2018) [80x24]
-    demo1: 1 windows (created Tue Dec 25 19:36:27 2018) [80x24]
+    demo: 1 windows (created Tue Dec 25 23:18:47 2018) [80x24]
+    demo1: 1 windows (created Tue Dec 25 23:18:47 2018) [80x24]
 
 
 .. code:: bash
@@ -770,7 +770,7 @@ reproduce a queried run.
 .. parsed-literal::
 
     To reproduce:
-    git checkout 0a647b658424035027e8b8f6b239d95c61eb9438
+    git checkout 7bf6ccd0fe2d1d2fc7a26e969095531b6d261ebe
     runs new --path="demo1" --command="python3 file_io_demo.py " --description="Demonstrate .runsrc capabilities"
 
 
@@ -784,19 +784,19 @@ You can also reproduce multiple runs:
 .. parsed-literal::
 
     To reproduce:
-    git checkout 0a647b658424035027e8b8f6b239d95c61eb9438
+    git checkout 7bf6ccd0fe2d1d2fc7a26e969095531b6d261ebe
     runs new \
     --path="from-spec-demo/0" \
-    --command="python dummy.py --my-arg=\"1\"" \
-    --description="A new description" \
-    --path="from-spec-demo/1" \
     --command="python dummy.py --flag --my-arg=\"1\"" \
     --description="A new description" \
+    --path="from-spec-demo/1" \
+    --command="python dummy.py --my-arg=\"1\"" \
+    --description="A new description" \
     --path="from-spec-demo/2" \
-    --command="python dummy.py --my-arg=\"2\" --my-arg=\"1\"" \
+    --command="python dummy.py --flag --my-arg=\"2\" --my-arg=\"1\"" \
     --description="A new description" \
     --path="from-spec-demo/3" \
-    --command="python dummy.py --my-arg=\"2\" --flag --my-arg=\"1\"" \
+    --command="python dummy.py --my-arg=\"2\" --my-arg=\"1\"" \
     --description="A new description"
 
 
@@ -805,12 +805,35 @@ Comparing runs
 
 .. code:: bash
 
-    runs diff from-spec-demo/1 from-spec-demo/2
+    runs lookup command from-spec-demo/0
 
 
 .. parsed-literal::
 
-    python dummy.py --my-arg="1"  --flag  --my-arg="2" 
+    from-spec-demo/0: python dummy.py --flag --my-arg="1"
+
+
+.. code:: bash
+
+    runs lookup command from-spec-demo/3
+
+
+.. parsed-literal::
+
+    from-spec-demo/3: python dummy.py --my-arg="2" --my-arg="1"
+
+
+.. code:: bash
+
+    runs diff from-spec-demo/0 from-spec-demo/3
+
+
+.. parsed-literal::
+
+    python dummy.py --my-arg="1" 
+    + --flag 
+    - --my-arg="2" 
+
 
 ``runs-git``
 ============
