@@ -29,6 +29,11 @@ def add_subparser(subparsers):
         default=None,
         help="Description to be assigned to new run. If None, use the same description as "
         "the run being reproduced.")
+    parser.add_argument(
+        '--prefix',
+        type=str,
+        help="String that would be prepended to commands, and should therefore be "
+             "excluded from the reproduce command ")
     return parser
 
 
@@ -48,7 +53,7 @@ def cli(runs: List[RunEntry], args: List[str], logger: Logger, db: DataBase, pre
 
 
 def strings(runs: List[RunEntry], args: List[str], prefix: str, db: DataBase,
-            path: Optional[PurePath], description: Optional[str]):
+            description: Optional[str], path: Optional[PurePath]):
     entry_dict = defaultdict(list)
     return_strings = [highlight('To reproduce:')]
     for entry in runs:
@@ -83,7 +88,9 @@ def strings(runs: List[RunEntry], args: List[str], prefix: str, db: DataBase,
 
 def get_command_string(path: PurePath, prefix: str, command: str, args: List[str]) -> str:
     args = [interpolate_keywords(path, f) for f in args]
-    for s in args + [prefix]:
+    if prefix:
+        args += [prefix]
+    for s in args:
         command = command.replace(s, '')
     return command
     # command_string = f"runs new {new_path} '{command}' --description='Reproduce {entry.path}. "
