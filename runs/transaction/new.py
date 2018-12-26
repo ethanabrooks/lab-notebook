@@ -39,6 +39,6 @@ class NewRunTransaction(SubTransaction):
             highlight('List active:'),
             'tmux list-session',
             highlight('Attach:'),
-            f'tmux attach -t {tmux}',
+            f"tmux attach -t '{tmux}'",
             '',
             sep='\n')
