@@ -277,48 +277,59 @@ def test_move_dirs():
         move('sub', 'new_dir')
         # src is dir -> change src to dest and bring children
         yield check_move, 'sub/test_run', 'new_dir/test_run'
+        kill_session('new_dir/test_run')
 
     with _setup('sub/sub/test_run'):
         move('sub/sub', 'sub/new_dir')
         # src is dir -> change src to dest and bring children
         yield check_move, 'sub/sub/test_run', 'sub/new_dir/test_run'
+        kill_session('sub/new_dir/test_run')
 
     with _setup('sub/test_run'):
         move('sub', 'new_dir')
         # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/test_run', 'new_dir/test_run'
+        kill_session('new_dir/test_run')
 
     with _setup('sub/test_run'), _setup('sub2/test_run2'):
         move('sub', 'sub2')
         # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/test_run', 'sub2/sub/test_run'
+        kill_session('sub2/sub/test_run')
 
     with _setup('sub/sub1/test_run'):
         move('sub/sub1/', '.')
         # src is dir and dest is dir -> move src into dest and bring children
         yield check_move, 'sub/sub1/test_run', 'sub1/test_run'
+        kill_session('sub1/test_run')
 
     with _setup('sub/test_run1'), _setup('sub/test_run2'):
         move('sub/%', 'new')
         # src is multi -> for each node match, move head into dest
         yield check_move, 'sub/test_run1', 'new/test_run1'
         yield check_move, 'sub/test_run2', 'new/test_run2'
+        kill_session('new/test_run1')
+        kill_session('new/test_run2')
 
     with _setup('sub/sub1/test_run1'), _setup('sub/sub2/test_run2'):
         move('sub/%', 'new')
         # src is multi -> for each node match, move head into dest
         yield check_move, 'sub/sub1/test_run1', 'new/sub1/test_run1'
         yield check_move, 'sub/sub2/test_run2', 'new/sub2/test_run2'
+        kill_session('new/sub1/test_run1')
+        kill_session('new/sub2/test_run2')
 
     with _setup('sub1/test_run1'), _setup('sub2/test_run2'):
         move('sub1/test_run1', 'sub2')
         # dest is dir -> move node into dest
         yield check_move, 'sub1/test_run1', 'sub2/test_run1'
+        kill_session('sub2/test_run1')
 
     with _setup('sub1/sub1/test_run1'), _setup('sub2/test_run2'):
         move('sub1/sub1', 'sub2')
         # dest is dir and src is dir -> move node into dest
         yield check_move, 'sub1/sub1/test_run1', 'sub2/sub1/test_run1'
+        kill_session('sub2/sub1/test_run1')
 
     with _setup('test_run1', args=['--run1']), _setup('test_run2', args=['run2']):
         move('test_run1', 'test_run2')
@@ -326,11 +337,13 @@ def test_move_dirs():
         yield check_move, 'test_run1', 'test_run2'
         with DB as db:
             assert_in('--run1', lookup.string(runs=db.get(['test_run2']), key='command'))
+        kill_session('test_run2')
 
     with _setup('test'):
         move('test', 'test/test2')
         # move into self; this is a problem for movedir
         yield check_move, 'test', 'test/test2'
+        kill_session('test/test2')
 
     # with _setup('test_run1'), _setup('test_run2'):
     #     # src is multi, dest is run -> create dir with same name as dest
