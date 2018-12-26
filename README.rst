@@ -1,7 +1,8 @@
-
+Installation
+============
 .. code:: bash
 
-    runs -y rm % && rm -f runs.db .runsrc
+    pip install lab-notebook
 
 Starting out
 ============
