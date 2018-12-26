@@ -5,19 +5,22 @@ import runs
 class Logger:
     exists = False
 
-    def __init__(self, quiet):
+    def __init__(self, quiet: bool, raise_on_exit: bool = False):
         # TODO: make this class singleton somehow
         # if Logger.exists:
         #     raise RuntimeError(
         #         "There should only be one logger in existence at a time.")
         Logger.exists = True
         self.quiet = quiet
+        self.raise_on_exit = raise_on_exit
 
     def print(self, *msg, **kwargs):
         if not self.quiet:
             print(*msg, **kwargs)
 
     def exit(self, *msg, **kwargs):
+        if self.raise_on_exit:
+            raise RuntimeError(msg)
         self.print(*msg, **kwargs)
         exit()
 
@@ -27,8 +30,8 @@ class Logger:
 
 
 class UI(Logger):
-    def __init__(self, assume_yes: bool, quiet):
-        super().__init__(quiet=quiet)
+    def __init__(self, assume_yes: bool, **kwargs):
+        super().__init__(**kwargs)
         self.assume_yes = assume_yes
 
     def get_permission(self, *question, sep=' '):

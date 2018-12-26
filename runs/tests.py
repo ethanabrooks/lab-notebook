@@ -34,7 +34,7 @@ SEP = '/'
 SUBDIR = 'subdir'
 TEST_RUN = 'test_run'
 
-LOGGER = UI(quiet=True, assume_yes=True)
+LOGGER = UI(quiet=True, assume_yes=True, raise_on_exit=True)
 BASH = Bash(logger=LOGGER)
 DB = DataBase(DB_PATH, LOGGER)
 
