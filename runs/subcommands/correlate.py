@@ -83,4 +83,4 @@ def correlations(
             return math.inf
 
     args = {arg for run in runs for arg in get_args(run.command)}
-    return {arg: get_correlation(arg) for arg in args if get_correlation(arg) < math.inf}
+    return {arg: get_correlation(arg) for arg in args}
