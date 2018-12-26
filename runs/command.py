@@ -32,7 +32,7 @@ class Command:
             for v in self.arg_groups:
                 yield from v
 
-        return ' '.join(iterator()).replace('<path>', str(self.path))
+        return ' '.join(sorted(list(iterator()))).replace('<path>', str(self.path))
 
     @staticmethod
     def from_run(run):

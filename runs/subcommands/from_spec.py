@@ -120,8 +120,7 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
     def arg_assignments():
         for spec in spec_objs:
             for arg_set in itertools.product(*group_args(spec)):
-                arg_set = sorted([a for s in arg_set for a in s if a])
-                yield spec.command, arg_set
+                yield spec.command, [a for s in arg_set for a in s if a]
 
     assignments = list(arg_assignments())
     for i, (command, arg_set) in enumerate(assignments):
