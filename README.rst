@@ -20,7 +20,7 @@ The only external dependencies of this tool are ``tmux`` and ``git``. After that
 
 Usage
 -----
-Please reference the `Demo.ipynb
+Please reference `Demo.ipynb
 <https://github.com/lobachevzky/lab-notebook/blob/master/demo/Demo.ipynb>`_, which contains a complete overview of the features.
 
 Tab autocompletion
