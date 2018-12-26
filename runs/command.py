@@ -30,9 +30,11 @@ class Command:
     def __str__(self):
         def iterator() -> Generator[str, None, None]:
             for v in self.arg_groups:
+                if isinstance(v, set):
+                    v = sorted(v)  # sort nonpositional args
                 yield from v
 
-        return ' '.join(sorted(list(iterator()))).replace('<path>', str(self.path))
+        return ' '.join(list(iterator())).replace('<path>', str(self.path))
 
     @staticmethod
     def from_run(run):
