@@ -1,7 +1,8 @@
-
+Installation
+============
 .. code:: bash
 
-    runs -y rm % && rm -f runs.db .runsrc
+    pip install lab-notebook
 
 Starting out
 ============
@@ -23,7 +24,6 @@ You can also use the short flag ``-y``.
      'db_path': '/Users/ethan/lab-notebook/demo/runs.db',
      'dir_names': '',
      'root': '/Users/ethan/lab-notebook/demo/.runs'}
-    
 
 
 .. code:: bash
