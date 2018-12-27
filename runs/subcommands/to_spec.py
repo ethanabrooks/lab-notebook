@@ -12,7 +12,6 @@ from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
 from runs.subcommands.from_spec import SpecObj
-from runs.util import ARGS
 
 
 def add_subparser(subparsers):
@@ -84,7 +83,7 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
             yield None, None
 
     def squeeze(x):
-        if len(x) == 1:
+        if len(x) == 1 and not isinstance(x[0], list):
             return x[0]
         return x
 
