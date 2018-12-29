@@ -1,4 +1,5 @@
 * more advanced tab-completion
 * make reproduce consider current .runsrc
-* break out positionals, optionals, and args
-* deal with repeated arguments in build-spec
+* fix repeated arguments issue in to-spec
+* make to-spec consider .runsrc
+* ignore nan values in correlate
