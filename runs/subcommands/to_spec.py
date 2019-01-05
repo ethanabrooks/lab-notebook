@@ -36,7 +36,7 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *_, **__):
     for command in commands:
         for group in command.arg_groups[1:]:
             if isinstance(group, list):
-                logger.exit(f"Command {command} contains multiple positional argument "
+                logger.exit(f'Command "{command}" contains multiple positional argument '
                             f"groups. Currently reproduce-to-spec only supports one "
                             f"positional argument group")
     stems = {' '.join(command.stem) for command in commands}

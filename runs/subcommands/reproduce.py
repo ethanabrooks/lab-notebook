@@ -34,7 +34,7 @@ def add_subparser(subparsers):
         '--prefix',
         type=str,
         help="String that would be prepended to commands, and should therefore be "
-             "excluded from the reproduce command ")
+        "excluded from the reproduce command ")
     return parser
 
 

@@ -29,6 +29,7 @@ def add_subparser(subparsers):
 @DataBase.open
 @DataBase.query
 def cli(logger: Logger, runs: List[RunEntry], value_path: Path, *_, **__):
+    print('Analyzing the following runs', *[r.path for r in runs], sep='\n')
     logger.print(*strings(runs=runs, value_path=value_path), sep='\n')
 
 
@@ -39,8 +40,7 @@ def strings(*args, **kwargs):
 
 
 def get_args(command: str) -> List[str]:
-    findall = re.findall('(?:[A-Z]*=\S* )*\S* (\S*)', command)
-    return findall
+    return re.findall('(?:[A-Z]*=\S* )*\S* (\S*)', command)
 
 
 def correlations(
@@ -48,7 +48,10 @@ def correlations(
         value_path: Path,
 ) -> Dict[str, float]:
     def mean(f: Callable) -> float:
-        return sum(map(f, runs)) / float(len(runs))
+        try:
+            return sum(map(f, runs)) / float(len(runs))
+        except ZeroDivisionError:
+            return math.nan
 
     def get_value(path: PurePath) -> Optional[float]:
         try:
@@ -58,14 +61,15 @@ def correlations(
             return
 
     runs = [r for r in runs if get_value(r.path) is not None]
-    if not runs:
-        return {}
     value_mean = mean(lambda run: get_value(run.path))
     value_std_dev = math.sqrt(mean(lambda run: (get_value(run.path) - value_mean)**2))
 
     def get_correlation(arg: str) -> float:
         def contains_arg(run: RunEntry) -> float:
             return float(arg in get_args(run.command))
+
+        if sum(map(contains_arg, runs)) == len(runs):
+            return None
 
         arg_mean = mean(contains_arg)
 
@@ -83,4 +87,8 @@ def correlations(
             return math.inf
 
     args = {arg for run in runs for arg in get_args(run.command)}
-    return {arg: get_correlation(arg) for arg in args}
+    correlations = {arg: get_correlation(arg) for arg in args}
+    return {
+        arg: correlation
+        for arg, correlation in correlations.items() if correlation is not None
+    }
