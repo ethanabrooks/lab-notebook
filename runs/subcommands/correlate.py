@@ -54,10 +54,12 @@ def correlations(
             return math.nan
 
     def get_value(path: PurePath) -> Optional[float]:
+        path = Path(str(value_path).replace('<path>', str(path)))
         try:
-            with Path(str(value_path).replace('<path>', str(path))).open() as f:
+            with path.open() as f:
                 return float(f.read())
         except (ValueError, FileNotFoundError):
+            print(f'{path} not found')
             return
 
     runs = [r for r in runs if get_value(r.path) is not None]
