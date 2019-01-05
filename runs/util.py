@@ -5,7 +5,9 @@ from pathlib import Path, PurePath
 import re
 import shutil
 import subprocess
-from typing import List
+from typing import List, Set
+
+from runs.command import Command
 
 RED = "\033[1;31m"
 BLUE = "\033[1;34m"
@@ -90,3 +92,25 @@ def parse_arg(arg: str, delims: str = '=| ') -> List[str]:
 
 MAIN = 'main'
 ARGS = 'args'
+
+
+def get_args(command: Command, exclude: Set[str]):
+    try:
+        nonpositionals = command.arg_groups[1]
+        for arg in nonpositionals:
+            match = re.match('(-{1,2}[^=]*)=[\'"]?([^"]*)[\'"]?', arg)
+            if match is not None:
+                key, value = match.groups()
+                try:
+                    value = float(value)
+                    if value % 1. == 0:
+                        value = int(value)
+                except ValueError:
+                    pass
+            else:
+                value, = re.match('(-{1,2}.*)', arg).groups()
+                key = None
+            if key not in exclude:
+                yield key, value
+    except IndexError:
+        yield None, None

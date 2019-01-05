@@ -5,10 +5,11 @@ from typing import List, Optional
 
 # first party
 from runs.arguments import add_query_args
+from runs.command import Command
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.util import PurePath, highlight, interpolate_keywords
+from runs.util import PurePath, highlight, interpolate_keywords, get_args
 
 
 def add_subparser(subparsers):
@@ -60,7 +61,7 @@ def strings(runs: List[RunEntry], args: List[str], prefix: str, db: DataBase,
         entry_dict[entry.commit].append(entry)
     for commit, entries in entry_dict.items():
         return_strings.append(f'git checkout {commit}')
-        command_string = 'runs new'
+        string = 'runs new'
         for i, entry in enumerate(entries):
             if path is None:
                 new_path = entry.path
@@ -69,30 +70,21 @@ def strings(runs: List[RunEntry], args: List[str], prefix: str, db: DataBase,
             else:
                 new_path = path
 
-            subcommand = get_command_string(
-                path=PurePath(new_path), prefix=prefix, command=entry.command, args=args)
-            new_path, subcommand, _description = map(json.dumps, [
-                str(new_path), subcommand, description
+            command = Command(*entry.command.split(), path=entry.path)
+            command_args = [f'{k}={v}' if k else v for k, v in
+                            get_args(command, exclude=set(args))]
+            command = Command(*command.stem, *command_args, path=entry.path)
+            command = str(command).lstrip(prefix)
+            new_path, command, _description = map(json.dumps, [
+                str(new_path), command, description
                 or entry.description.strip('"').strip("'")
             ])
             join_string = ' ' if len(entries) == 1 else ' \\\n'
-            command_string = join_string.join([
-                command_string,
+            string = join_string.join([
+                string,
                 f'--path={new_path}',
-                f'--command={subcommand}',
+                f'--command={command}',
                 f'--description={_description}',
             ])
-        return_strings.append(command_string)
+        return_strings.append(string)
     return return_strings
-
-
-def get_command_string(path: PurePath, prefix: str, command: str, args: List[str]) -> str:
-    args = [interpolate_keywords(path, f) for f in args]
-    if prefix:
-        args += [prefix]
-    for s in args:
-        command = command.replace(s, '')
-    return command
-    # command_string = f"runs new {new_path} '{command}' --description='Reproduce {entry.path}. "
-    # f"Original description: {entry.description}'"
-    # return command_string
