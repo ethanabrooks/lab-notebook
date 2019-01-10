@@ -30,6 +30,6 @@ def cli(db: DataBase, path1: PurePath, path2: PurePath, *_, **__):
             print(GREEN, '+', sep='', end=' ')
         elif _type is Type.DELETED:
             print(RED, '-', sep='', end=' ')
-        for b, t in blobs:
+        for b, t in sorted(blobs, key=lambda t: t[0]):
             print(b, end=' ')
         print(RESET)
