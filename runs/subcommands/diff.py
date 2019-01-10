@@ -22,7 +22,6 @@ def add_subparser(subparsers):
 def cli(db: DataBase, path1: PurePath, path2: PurePath, *_, **__):
     c1 = Command.from_db(db, path1)
     c2 = Command.from_db(db, path2)
-    diff = list(c1.diff(c2))
 
     groups = itertools.groupby(c1.diff(c2), key=lambda t: t[1])
     for _type, blobs in groups:
