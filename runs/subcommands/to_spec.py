@@ -18,7 +18,7 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'to-spec',
         help='Print json spec that reproduces crossproduct '
-             'of args in given patterns.')
+        'of args in given patterns.')
     parser.add_argument(
         '--exclude', nargs='*', default=set(), help='Keys of args to exclude.')
     add_query_args(parser, with_sort=False)
@@ -27,7 +27,8 @@ def add_subparser(subparsers):
 
 @DataBase.open
 @DataBase.query
-def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *_, **__):
+def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], prefix: str,
+        args: List[str], *_, **__):
     if not runs:
         logger.exit("No commands found.")
 
@@ -45,13 +46,13 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], *_, **__):
             "Commands do not start with the same positional arguments:",
             *commands,
             sep='\n')
-    spec_dict = get_spec_obj(commands, exclude).dict()
+    spec_dict = get_spec_obj(commands=commands, exclude=exclude, prefix=prefix).dict()
     spec_dict = {k: v for k, v in spec_dict.items() if v}
     print(json.dumps(spec_dict, sort_keys=True, indent=4))
 
 
-def get_spec_obj(commands: List[Command], exclude: Set[str]):
-    stem = ' '.join(commands[0].stem)
+def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str):
+    stem = ' '.join(commands[0].stem).lstrip(prefix)
 
     def group(pairs):
         d = defaultdict(list)
@@ -68,12 +69,14 @@ def get_spec_obj(commands: List[Command], exclude: Set[str]):
         values = set(map(tuple, values))
         return list(map(list, values))
 
+    # get {key: [values]} dict for command (from '{--key}={value}')
     command_args = [group(get_args(c, exclude)) for c in commands]
-    keys = {k.lstrip('--') for args in command_args for k in args.keys()}
+
+    # add field for flags if not present
     for args in command_args:
-        for k in keys:
-            if k not in args:
-                args[k] = [None]
+        if None not in args:
+            args[None] = []
+
     grouped_args = group((pair for args in command_args for pair in args.items()))
     flags = remove_duplicates(grouped_args.pop(None, []))
 
