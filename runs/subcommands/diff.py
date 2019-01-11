@@ -1,4 +1,4 @@
-# stdlib
+import itertools
 
 # first party
 from runs.command import Command, Type
@@ -10,9 +10,9 @@ def add_subparser(subparsers):
     parser = subparsers.add_parser(
         'diff',
         help='Compare commands associated with two '
-             'runs, highlighting additions in the '
-             'first in green and deletions from the '
-             'second in red.')
+        'runs, highlighting additions in the '
+        'first in green and deletions from the '
+        'second in red.')
     parser.add_argument('path1', type=PurePath, help='Path to compare with path2')
     parser.add_argument('path2', type=PurePath, help='Path to compare with path1')
     return parser
@@ -22,18 +22,13 @@ def add_subparser(subparsers):
 def cli(db: DataBase, path1: PurePath, path2: PurePath, *_, **__):
     c1 = Command.from_db(db, path1)
     c2 = Command.from_db(db, path2)
-    diff = list(c1.diff(c2))
 
-    def _print(_type, prefix=None, color=None):
-        blobs = [b for b, t in diff if t == _type]
-        if not blobs:
-            return
-        if color:
-            print(color, end='')
-        if prefix:
-            print(prefix, end=' ')
-        print(' '.join(blobs), RESET)
-
-    _print(Type.UNCHANGED)
-    _print(Type.ADDED, '+', GREEN)
-    _print(Type.DELETED, '-', RED)
+    groups = itertools.groupby(c1.diff(c2), key=lambda t: t[1])
+    for _type, blobs in groups:
+        if _type is Type.ADDED:
+            print(GREEN, '+', sep='', end=' ')
+        elif _type is Type.DELETED:
+            print(RED, '-', sep='', end=' ')
+        for b, t in sorted(blobs, key=lambda t: t[0]):
+            print(b, end=' ')
+        print(RESET)
