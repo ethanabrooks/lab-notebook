@@ -95,21 +95,28 @@ ARGS = 'args'
 
 
 def get_args(command: Command, exclude: Set[str]):
+
+    def get_key_value(arg):
+        match = re.match('(-{1,2}[^=]*)=[\'"]?([^"]*)[\'"]?', arg)
+        if match is not None:
+            key, value = match.groups()
+            try:
+                value = float(value)
+                if value % 1. == 0:
+                    value = int(value)
+            except ValueError:
+                pass
+        else:
+            value, = re.match('(-{1,2}.*)', arg).groups()
+            key = None
+        return key, value
+
+    exclude = {get_key_value(a)[0] for a in exclude}
+
     try:
         nonpositionals = command.arg_groups[1]
         for arg in nonpositionals:
-            match = re.match('(-{1,2}[^=]*)=[\'"]?([^"]*)[\'"]?', arg)
-            if match is not None:
-                key, value = match.groups()
-                try:
-                    value = float(value)
-                    if value % 1. == 0:
-                        value = int(value)
-                except ValueError:
-                    pass
-            else:
-                value, = re.match('(-{1,2}.*)', arg).groups()
-                key = None
+            key, value = get_key_value(arg)
             if key not in exclude:
                 yield key, value
     except IndexError:
