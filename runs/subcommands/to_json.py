@@ -10,13 +10,13 @@ from runs.command import Command
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.subcommands.from_spec import SpecObj
+from runs.subcommands.from_json import SpecObj
 from runs.util import get_args
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'to-spec',
+        'to-json',
         help='Print json spec that reproduces crossproduct '
         'of args in given patterns.')
     parser.add_argument(
