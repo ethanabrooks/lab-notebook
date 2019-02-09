@@ -14,7 +14,7 @@ from runs.util import PurePath
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'from-spec', help='Start a new run using a JSON specification.')
+        'from-json', help='Start a new run using a JSON specification.')
 
     parser.add_argument(
         'spec',
