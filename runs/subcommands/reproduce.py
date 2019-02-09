@@ -71,8 +71,9 @@ def strings(runs: List[RunEntry], args: List[str], prefix: str, db: DataBase,
                 new_path = path
 
             command = Command(*entry.command.split(), path=entry.path)
-            command_args = [f'{k}={v}' if k else v for k, v in
-                            get_args(command, exclude=set(args))]
+            command_args = [
+                f'{k}="{v}"' if k else v for k, v in get_args(command, exclude=set(args))
+            ]
             command = Command(*command.stem, *command_args, path=entry.path)
             command = str(command).lstrip(prefix)
             new_path, command, _description = map(json.dumps, [
