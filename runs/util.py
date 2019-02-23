@@ -95,7 +95,6 @@ ARGS = 'args'
 
 
 def get_args(command: Command, exclude: Set[str]):
-
     def get_key_value(arg):
         match = re.match('(-{1,2}[^=]*)=[\'"]?([^"]*)[\'"]?', arg)
         if match is not None:

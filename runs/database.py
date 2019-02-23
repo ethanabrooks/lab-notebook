@@ -43,7 +43,7 @@ class DataBase:
                           descendants: bool,
                           active: bool,
                           since: datetime,
-                          from_last: timedelta,
+                          last: timedelta,
                           order: str = None,
                           *args,
                           **kwargs):
@@ -60,7 +60,7 @@ class DataBase:
                 descendants=descendants,
                 active=active,
                 since=since,
-                from_last=from_last,
+                last=last,
             )
             return func(
                 *args, **kwargs, logger=logger, runs=runs, db=db, query_args=query_args)
@@ -136,20 +136,20 @@ class DataBase:
             descendants: bool = False,
             active: bool = False,
             since: datetime = None,
-            from_last: timedelta = None,
+            last: timedelta = None,
     ) -> List[RunEntry]:
 
         if descendants:
             patterns = list(map(str, patterns))
             patterns += [f'{str(pattern).rstrip("/%")}/%' for pattern in patterns]
         condition = DataBase.pattern_match(*patterns)
-        if since or from_last:
+        if since or last:
             if since:
                 time = since
-            if from_last:
-                time = datetime.now() - from_last
-            if since and from_last:
-                time = max(datetime.now() - from_last, since)
+            if last:
+                time = datetime.now() - last
+            if since and last:
+                time = max(datetime.now() - last, since)
             condition = condition & GreaterThan('datetime', time)
         if active:
             condition = condition & In('path', *TMUXSession.active_runs(self.logger))

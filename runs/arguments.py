@@ -1,5 +1,5 @@
 from copy import deepcopy
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from pathlib import PurePath
 import re
 
@@ -38,29 +38,27 @@ def date_parse(string):
 
 DEFAULT_QUERY_ARGS = {
     'patterns':
-        dict(nargs='*', type=PurePath, help='Look up runs matching these patterns'),
+    dict(nargs='*', type=PurePath, help='Look up runs matching these patterns'),
     '--unless':
-        dict(nargs='*', type=PurePath, help='Exclude these paths from the search.'),
+    dict(nargs='*', type=PurePath, help='Exclude these paths from the search.'),
     '--active':
-        dict(action='store_true', help='Include all active runs in query.'),
+    dict(action='store_true', help='Include all active runs in query.'),
     '--descendants':
-        dict(action='store_true', help='Include all descendants of pattern.'),
+    dict(action='store_true', help='Include all descendants of pattern.'),
     '--sort':
-        dict(default='datetime', choices=RunEntry.fields(),
-             help='Sort query by this field.'),
+    dict(default='datetime', choices=RunEntry.fields(), help='Sort query by this field.'),
     '--since':
-        dict(
-            default=None,
-            type=date_parse,
-            help='Only display runs since this date. Accepts argument in isoformat.'
-        ),
-    '--from-last':
-        dict(
-            default=None,
-            type=parse_time_delta,
-            help='Only display runs created in the given time delta. '
-                 'Either use "months", "weeks", "days", "hours" to specify time, e.g.'
-                 '"2weeks1day" or specify a date: month/day/year.')
+    dict(
+        default=None,
+        type=date_parse,
+        help='Only display runs since this date. Accepts argument in isoformat.'),
+    '--last':
+    dict(
+        default=None,
+        type=parse_time_delta,
+        help='Only display runs created in the given time delta. '
+        'Either use "months", "weeks", "days", "hours" to specify time, e.g.'
+        '"2weeks1day" or specify a date: month/day/year.')
 }
 
 
