@@ -85,7 +85,7 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
     try:
         try:
             spec_objs = [SpecObj(**dict(obj))]
-        except TypeError:
+        except ValueError:
             spec_objs = [SpecObj(**dict(o)) for o in obj]
     except TypeError:
         logger.exit(f'Each object in {spec} must have a '
