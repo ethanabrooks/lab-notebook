@@ -40,8 +40,6 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], prefix: str,
 
 
 def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str):
-    import ipdb
-    ipdb.set_trace()
     positionals = commands[0].positionals
     args = defaultdict(set)
     flags = set()
