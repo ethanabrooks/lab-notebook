@@ -56,12 +56,12 @@ class SpecObj:
     def __init__(
             self,
             command: str,
-            keywords: Dict[str, Variadic],
+            args: Dict[str, Variadic],
             flags: List[Variadic] = None,
             delimiter: str = '=',
     ):
         self.command = command
-        self.keywords = keywords
+        self.args = args
         self.flags = flags
         self.delimiter = delimiter
 
@@ -103,7 +103,11 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
 
     def arg_alternatives(key, values):
         for v in listify(values):
-            yield [prepend(f'{key}="{value}"') for value in listify(v)]
+            if isinstance(v, list):
+                value = ' '.join(v)
+                yield [prepend(f'{key} {value}')]
+            else:
+                yield [prepend(f'{key}="{value}"') for value in listify(v)]
 
     def flag_alternatives(values):
         if values:

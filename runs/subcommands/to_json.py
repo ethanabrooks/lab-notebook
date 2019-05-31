@@ -40,8 +40,10 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], prefix: str,
 
 
 def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str):
+    import ipdb
+    ipdb.set_trace()
     positionals = commands[0].positionals
-    keywords = defaultdict(set)
+    args = defaultdict(set)
     flags = set()
 
     def parse(x):
@@ -74,14 +76,12 @@ def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str):
                 sep='\n')
 
         for (k, _), v in command.nonpositionals.items():
-            keywords[k].add(squeeze(take_first(v)))
+            args[k].add(squeeze(take_first(v)))
 
         flags.add(take_first(command.flags))
 
-    flags = list(squeeze(flags))
-    keywords = {k: squeeze(list(v)) for k, v in keywords.items()}
+    flags = list(flags)
+    args = {k: squeeze(list(v)) for k, v in args.items()}
+    command = ''.join([s for t in positionals for s in t])
 
-    return SpecObj(
-        command=''.join([s for t in positionals for s in t]),
-        keywords=keywords,
-        flags=flags)
+    return SpecObj(command=command, args=args, flags=flags)
