@@ -1,6 +1,7 @@
 # stdlib
 import itertools
 import json
+import random
 from pathlib import Path
 from typing import Dict, List, Union
 
@@ -43,6 +44,14 @@ def add_subparser(subparsers):
         default=[],
         action='append',
         help="directories to create and sync automatically with each run")
+    parser.add_argument(
+        '--max-runs',
+        '-m',
+        type=int,
+        help=
+        "If more than this many runs are generated from the cross produce of arguments in the JSON object, <max_runs> runs will will randomly be sampled from the full list."
+    )
+
     return parser
     # new_parser.add_argument(
     #     '--summary-path',
@@ -76,7 +85,7 @@ ARG_KWD = '<arg>'
 
 @Transaction.wrapper
 def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
-        description: str, transaction: Transaction, *_, **__):
+        description: str, transaction: Transaction, max_runs: int, *_, **__):
     # spec: Path
     if not spec.exists():
         logger.exit(f'{spec.absolute()} does not exist.')
@@ -127,6 +136,9 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
                 yield spec.command, [a for s in arg_set for a in s if a]
 
     assignments = list(arg_assignments())
+    if len(assignments) > max_runs:
+        random.shuffle(assignments)
+        assignments = assignments[:max_runs]
     for i, (command, arg_set) in enumerate(assignments):
         new_path = path if len(assignments) == 1 else PurePath(path, str(i))
         command = Command(prefix, command, *arg_set, *args, path=new_path)
