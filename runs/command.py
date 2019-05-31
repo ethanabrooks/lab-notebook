@@ -1,6 +1,6 @@
-from enum import Enum, auto
 import itertools
 import re
+from enum import Enum, auto
 from typing import Generator, List, Set, Union
 
 
@@ -12,29 +12,42 @@ class Type(Enum):
 
 class Command:
     def __init__(self, *args, path):
-        self.path = path
-
-        def iterator():
+        def word_iterator():
             for argstring in args:
-                if argstring:
-                    assert isinstance(argstring, str)
-                    yield from re.split('\s+', argstring)
+                assert isinstance(argstring, str)
+                words = re.split('\s+|=', argstring)
+                seps = re.findall('\s+|=', argstring) \
+                        + [' ']  # pretend all commands end with whitespace
+                yield from zip(words, seps)
 
-        groupby = itertools.groupby(iterator(), lambda s: s.startswith('-'))
-        self.arg_groups = [set(v) if k else list(v) for k, v in groupby]
-        self.stem = self.arg_groups[0]
-        assert isinstance(self.stem, list), \
-            "Command should not start with a nonpositional argument (Command: " \
-            f"{self})"
+        self.positionals = []
+        self.nonpositionals = dict()
+        self.flags = set()
+        key = None
+
+        words = list(word_iterator())
+        for (word1, sep), word2 in itertools.zip_longest(words, words[1:]):
+            if word2 is not None:
+                word2, sep2 = word2
+            if word1.startswith('-'):  # nonpositional or flag
+                if word2 is None or word2.startswith('-'):
+                    self.flags.add((word1, sep))
+                else:
+                    key = (word1, sep)
+                    self.nonpositionals[key] = []
+
+            else:  # positional or value
+                if key is None:
+                    self.positionals.append((word1, sep))
+                else:
+                    self.nonpositionals[key].append((word1, sep))
+
+        self.args = (
+            self.positionals + sorted(self.nonpositionals.items()) + sorted(self.flags))
 
     def __str__(self):
-        def iterator() -> Generator[str, None, None]:
-            for v in self.arg_groups:
-                if isinstance(v, set):
-                    v = sorted(v)  # sort nonpositional args
-                yield from v
-
-        return ' '.join(list(iterator())).replace('<path>', str(self.path))
+        return ''.join([s for t in self.positionals for s in t]).replace(
+            '<path>', str(self.path))
 
     @staticmethod
     def from_run(run):
@@ -47,25 +60,19 @@ class Command:
         return Command.from_run(run)
 
     def diff(self, other):
-        def regroup(groups: List[Union[List[str], Set[str]]]):
-            for pos, nonpos in zip(groups[0::2], groups[1::2]):
-                for pos1, pos2 in itertools.zip_longest(pos, pos[1:]):
-                    yield pos1, nonpos if pos2 is None else set()
-
-        assert isinstance(other, Command)
-
-        for (positional1, nonpositional1), (positional2, nonpositional2) in zip(
-                regroup(self.arg_groups), regroup(other.arg_groups)):
+        for positional1, positions2 in zip(self.positionals, other.positionals):
             if positional1 == positional2:
                 yield positional1, Type.UNCHANGED
             else:
                 yield positional1, Type.ADDED
                 yield positional2, Type.DELETED
-            assert isinstance(nonpositional1, set)
-            assert isinstance(nonpositional2, set)
-            for blob in nonpositional1 & nonpositional2:
-                yield blob, Type.UNCHANGED
-            for blob in nonpositional1 - nonpositional2:
-                yield blob, Type.ADDED
-            for blob in nonpositional2 - nonpositional1:
-                yield blob, Type.DELETED
+
+        nonpositionals1 = set(self.nonpositionals.items()) | self.flags
+        nonpositionals2 = set(other.nonpositionals.items()) | other.flags
+
+        for blob in nonpositional1 & nonpositional2:
+            yield blob, Type.UNCHANGED
+        for blob in nonpositional1 - nonpositional2:
+            yield blob, Type.ADDED
+        for blob in nonpositional2 - nonpositional1:
+            yield blob, Type.DELETED
