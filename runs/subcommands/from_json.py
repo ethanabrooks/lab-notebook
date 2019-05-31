@@ -56,12 +56,12 @@ class SpecObj:
     def __init__(
             self,
             command: str,
-            args: Dict[str, Variadic],
+            keywords: Dict[str, Variadic],
             flags: List[Variadic] = None,
             delimiter: str = '=',
     ):
         self.command = command
-        self.args = args
+        self.keywords = keywords
         self.flags = flags
         self.delimiter = delimiter
 

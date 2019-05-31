@@ -1,8 +1,8 @@
 # stdlib
 
+import json
 # first party
 from collections import defaultdict
-import json
 from typing import List, Set
 
 from runs.arguments import add_query_args
@@ -34,57 +34,54 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], prefix: str,
 
     exclude = set(exclude)
     commands = [Command.from_run(run) for run in runs]
-    for command in commands:
-        for group in command.arg_groups[1:]:
-            if isinstance(group, list):
-                logger.exit(f'Command "{command}" contains multiple positional argument '
-                            f"groups. Currently reproduce-to-spec only supports one "
-                            f"positional argument group")
-    stems = {' '.join(command.stem) for command in commands}
-    if len(stems) > 1:
-        logger.exit(
-            "Commands do not start with the same positional arguments:",
-            *commands,
-            sep='\n')
     spec_dict = get_spec_obj(commands=commands, exclude=exclude, prefix=prefix).dict()
     spec_dict = {k: v for k, v in spec_dict.items() if v}
     print(json.dumps(spec_dict, sort_keys=True, indent=4))
 
 
 def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str):
-    stem = ' '.join(commands[0].stem).lstrip(prefix)
+    positionals = commands[0].positionals
+    keywords = defaultdict(set)
+    flags = set()
 
-    def group(pairs):
-        d = defaultdict(list)
-        for k, v in pairs:
-            d[k].append(v)
-        return d
-
-    def squeeze(x):
-        if len(x) == 1 and not isinstance(x[0], list):
-            return x[0]
+    def parse(x):
+        try:
+            x = float(x)
+            if x.is_integer():
+                x = int(x)
+        except ValueError:
+            pass
         return x
 
-    def remove_duplicates(values):
-        values = set(map(tuple, values))
-        return list(map(list, values))
+    def take_first(it):
+        return tuple([parse(x) for x, _ in it])
 
-    # get {key: [values]} dict for command (from '{--key}={value}')
-    command_args = [group(get_args(c, exclude)) for c in commands]
+    def squeeze(x):
+        try:
+            x, = x
+        except ValueError:
+            pass
+        return x
 
-    # add field for flags if not present
-    for args in command_args:
-        if None not in args:
-            args[None] = []
+    for command in commands:
+        if command.positionals != positionals:
+            self.logger.exit(
+                'Command:',
+                commands[0],
+                'and',
+                command,
+                'do not have the same positional arguments:',
+                sep='\n')
 
-    grouped_args = group((pair for args in command_args for pair in args.items()))
-    flags = remove_duplicates(grouped_args.pop(None, []))
+        for (k, _), v in command.nonpositionals.items():
+            keywords[k].add(squeeze(take_first(v)))
 
-    def preprocess(values):
-        values = remove_duplicates(values)
-        values = list(map(squeeze, values))
-        return squeeze(values)
+        flags.add(take_first(command.flags))
 
-    args = {k: preprocess(v) for k, v in grouped_args.items()}
+    flags = list(squeeze(flags))
+    keywords = {k: squeeze(list(v)) for k, v in keywords.items()}
 
-    return SpecObj(command=stem, args=args, flags=flags or None)
+    return SpecObj(
+        command=''.join([s for t in positionals for s in t]),
+        keywords=keywords,
+        flags=flags)

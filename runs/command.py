@@ -12,11 +12,14 @@ class Type(Enum):
 
 class Command:
     def __init__(self, *args, path):
+        self.path = path
+
         def word_iterator():
             for argstring in args:
                 assert isinstance(argstring, str)
-                words = re.split('\s+|=', argstring)
-                seps = re.findall('\s+|=', argstring) \
+                reg = '[\'"]?\s+[\'"]?|[\'"]?=[\'"]?|[\'"]'
+                words = re.split(reg, argstring)
+                seps = re.findall(reg, argstring) \
                         + [' ']  # pretend all commands end with whitespace
                 yield from zip(words, seps)
 
