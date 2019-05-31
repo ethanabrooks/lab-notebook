@@ -1,7 +1,7 @@
 # stdlib
+import itertools
 from argparse import ArgumentParser
 from datetime import datetime
-import itertools
 from typing import List
 
 # first party

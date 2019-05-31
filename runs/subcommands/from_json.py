@@ -129,7 +129,8 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
     assignments = list(arg_assignments())
     for i, (command, arg_set) in enumerate(assignments):
         new_path = path if len(assignments) == 1 else PurePath(path, str(i))
+        command = Command(prefix, command, *arg_set, *args, path=new_path)
         new(path=new_path,
-            command=Command(prefix, command, *arg_set, *args, path=new_path),
+            command=command,
             description=description,
             transaction=transaction)

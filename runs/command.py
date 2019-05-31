@@ -14,21 +14,18 @@ class Command:
     def __init__(self, *args, path):
         self.path = path
 
-        def word_iterator():
-            for argstring in args:
-                assert isinstance(argstring, str)
-                reg = '[\'"]?\s+[\'"]?|[\'"]?=[\'"]?|[\'"]'
-                words = re.split(reg, argstring)
-                seps = re.findall(reg, argstring) \
-                        + [' ']  # pretend all commands end with whitespace
-                yield from zip(words, seps)
+        argstring = ' '.join(args)
+        reg = '[\'"\s=]+'
+        words = re.split(reg, argstring)
+        seps = re.findall(reg, argstring) \
+                + [' ']  # pretend all commands end with whitespace
 
         self.positionals = []
         self.nonpositionals = dict()
         self.flags = set()
         key = None
 
-        words = list(word_iterator())
+        words = list(zip(words, seps))
         for (word1, sep), word2 in itertools.zip_longest(words, words[1:]):
             if word2 is not None:
                 word2, sep2 = word2
@@ -45,12 +42,23 @@ class Command:
                 else:
                     self.nonpositionals[key].append((word1, sep))
 
-        self.args = (
-            self.positionals + sorted(self.nonpositionals.items()) + sorted(self.flags))
+        nonpositionals = [(k, p) for k, v in self.nonpositionals.items() for p in v]
+        self.args = (self.positionals + sorted(nonpositionals) + sorted(self.flags))
 
     def __str__(self):
-        return ''.join([s for t in self.positionals for s in t]).replace(
-            '<path>', str(self.path))
+        def iterator():
+            for w, s in self.positionals + sorted(self.flags):
+                yield w
+                yield s
+
+            for (k, ks), v in sorted(self.nonpositionals.items()):
+                for (vw, vs) in v:
+                    yield k
+                    yield ks
+                    yield vw
+                    yield vs
+
+        return ''.join(map(str, iterator())).replace('<path>', str(self.path))
 
     @staticmethod
     def from_run(run):
