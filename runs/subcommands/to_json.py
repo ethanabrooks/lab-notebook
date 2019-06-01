@@ -73,7 +73,7 @@ def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str):
                 'do not have the same positional arguments:',
                 sep='\n')
 
-        for (k, _), v in command.optionals.items():
+        for (k, _), v in command.optionals:
             args[k].add(squeeze(take_first(v)))
 
         flags.add(take_first(command.flags))

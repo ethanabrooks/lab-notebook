@@ -136,7 +136,7 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
                 yield spec.command, [a for s in arg_set for a in s if a]
 
     assignments = list(arg_assignments())
-    if len(assignments) > max_runs:
+    if max_runs is not None and len(assignments) > max_runs:
         random.shuffle(assignments)
         assignments = assignments[:max_runs]
     for i, (command, arg_set) in enumerate(assignments):

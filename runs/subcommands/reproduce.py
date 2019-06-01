@@ -17,14 +17,13 @@ def add_subparser(subparsers):
         'reproduce',
         help='Print subcommands to reproduce a run or runs. This command '
         'does not have side-effects (besides printing).')
+    add_query_args(parser, with_sort=False)
     parser.add_argument(
-        'path',
-        nargs='?',
+        '--path',
         type=PurePath,
         default=None,
         help="This is for cases when you want to run the reproduced command on a new path."
     )
-    add_query_args(parser, with_sort=False)
     parser.add_argument(
         '--description',
         type=str,

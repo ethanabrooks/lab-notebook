@@ -85,7 +85,6 @@ class Command:
         return Command.from_run(run)
 
     def diff(self, other):
-
         def pair_with_string(it, flatten=None):
             for x in it:
                 if flatten:
@@ -94,8 +93,8 @@ class Command:
                     y = x
                 yield x, ''.join(map(str, y))
 
-        for (positional1, s1), (positional2, s2) in zip(pair_with_string(self.positionals),
-                                                        pair_with_string(other.positionals)):
+        for (positional1, s1), (positional2, s2) in zip(
+                pair_with_string(self.positionals), pair_with_string(other.positionals)):
             if positional1 == positional2:
                 yield s1, Type.UNCHANGED
             else:
@@ -150,7 +149,7 @@ class Command:
                     new_command.positionals,
                     exclude_command.positionals,
             ):
-                if p != p_exclude:
+                if p is not None and p != p_exclude:
                     yield p
 
         def optionals():
@@ -159,7 +158,13 @@ class Command:
                 if k not in exclude:
                     yield k, v
 
+        def flags():
+            exclude = set(exclude_command.flags)
+            for f in self.flags:
+                if f not in exclude:
+                    yield f
+
         new_command.positionals = list(positionals())
         new_command.optionals = list(optionals())
-        new_command.flags -= exclude_command.flags
+        new_command.flags = list(flags())
         return new_command
