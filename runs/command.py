@@ -27,21 +27,28 @@ class Command:
         key = None
 
         words = list(zip(words, seps))
+
+        def is_value(string):
+            try:
+                float(string)
+                return True
+            except ValueError:
+                return not string.startswith('-')
+
         for (word1, sep), word2 in itertools.zip_longest(words, words[1:]):
             if word2 is not None:
                 word2, sep2 = word2
-            if word1.startswith('-'):  # nonpositional or flag
-                if word2 is None or word2.startswith('-'):
-                    self.flags.add((word1, sep))
-                else:
-                    key = (word1, sep)
-                    self.nonpositionals[key] = []
-
-            else:  # positional or value
+            if is_value(word1):
                 if key is None:
                     self.positionals.append((word1, sep))
                 else:
                     self.nonpositionals[key].append((word1, sep))
+            else:  # nonpositional or flag
+                if word2 is not None and is_value(word2):
+                    key = (word1, sep)
+                    self.nonpositionals[key] = []
+                else:
+                    self.flags.add((word1, sep))
 
         nonpositionals = [(k, p) for k, v in self.nonpositionals.items() for p in v]
         self.args = (self.positionals + sorted(nonpositionals) + sorted(self.flags))
