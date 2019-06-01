@@ -21,8 +21,8 @@ class Command:
         seps = re.findall(reg, argstring)
 
         self.positionals = []
-        self.nonpositionals = []
-        self.flags = set()
+        self.optionals = []
+        self.flags = []
         key = None
         value = []
 
@@ -48,11 +48,11 @@ class Command:
                     key = (word1, sep)
                     value = []
                 else:
-                    self.flags.add((word1, sep))
+                    self.flags.append((word1, sep))
 
             # store key/value
             if key is not None and (word2 is None or not is_value(word2)):
-                self.nonpositionals.append((key, value))
+                self.optionals.append((key, value))
                 key = None
                 value = []
 
@@ -62,7 +62,7 @@ class Command:
                 yield w
                 yield s
 
-            for (k, ks), v in sorted(self.nonpositionals):
+            for (k, ks), v in sorted(self.optionals):
                 yield k
                 yield ks
                 for (vw, vs) in v:
@@ -85,33 +85,81 @@ class Command:
         return Command.from_run(run)
 
     def diff(self, other):
-        for positional1, positions2 in zip(self.positionals, other.positionals):
+
+        def pair_with_string(it, flatten=None):
+            for x in it:
+                if flatten:
+                    y = flatten(*x)
+                else:
+                    y = x
+                yield x, ''.join(map(str, y))
+
+        for (positional1, s1), (positional2, s2) in zip(pair_with_string(self.positionals),
+                                                        pair_with_string(other.positionals)):
             if positional1 == positional2:
-                yield positional1, Type.UNCHANGED
+                yield s1, Type.UNCHANGED
             else:
-                yield positional1, Type.ADDED
-                yield positional2, Type.DELETED
+                yield s1, Type.ADDED
+                yield s2, Type.DELETED
 
-        nonpositionals1 = set(self.nonpositionals) | self.flags
-        nonpositionals2 = set(other.nonpositionals.items()) | other.flags
+        def make_hashable(k, v):
+            return k, tuple(v)
 
-        for blob in nonpositional1 & nonpositional2:
-            yield blob, Type.UNCHANGED
-        for blob in nonpositional1 - nonpositional2:
-            yield blob, Type.ADDED
-        for blob in nonpositional2 - nonpositional1:
-            yield blob, Type.DELETED
+        our_optionals = set([make_hashable(*p) for p in self.optionals])
+        their_optionals = set([make_hashable(*p) for p in other.optionals])
+
+        def flatten(k, v):
+            yield from k
+            for a, b in v:
+                yield a
+                if b is not None:
+                    yield b
+
+        for o, s in pair_with_string(self.optionals, flatten):
+            if make_hashable(*o) in their_optionals:
+                yield s, Type.UNCHANGED
+            else:
+                yield s, Type.ADDED
+        for o in other.optionals:
+            if make_hashable(*o) not in our_optionals:
+                yield s, Type.DELETED
+
+        our_flags = set(self.flags)
+        their_flags = set(other.flags)
+
+        def flatten(a, b):
+            yield a
+            if b is not None:
+                yield b
+
+        for o, s in pair_with_string(self.flags, flatten):
+            if o in their_flags:
+                yield s, Type.UNCHANGED
+            else:
+                yield s, Type.ADDED
+        for o in other.flags:
+            if o not in our_flags:
+                yield s, Type.DELETED
 
     def exclude(self, *args):
         exclude_command = Command(*args, path=None)
         new_command = copy.deepcopy(self)
-        new_command.positionals = [
-            p1 for p1, p2 in itertools.zip_longest(
-                new_command.positionals,
-                exclude_command.positionals,
-            ) if p1 != p2
-        ]
-        for k in exclude_command.nonpositionals:
-            del new_command.nonpositionals[k]
+
+        def positionals():
+            for p, p_exclude in itertools.zip_longest(
+                    new_command.positionals,
+                    exclude_command.positionals,
+            ):
+                if p != p_exclude:
+                    yield p
+
+        def optionals():
+            exclude = set(k for k, v in exclude_command.optionals)
+            for (k, v) in self.optionals:
+                if k not in exclude:
+                    yield k, v
+
+        new_command.positionals = list(positionals())
+        new_command.optionals = list(optionals())
         new_command.flags -= exclude_command.flags
         return new_command

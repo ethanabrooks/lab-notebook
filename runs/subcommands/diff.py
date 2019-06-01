@@ -25,10 +25,11 @@ def cli(db: DataBase, path1: PurePath, path2: PurePath, *_, **__):
 
     groups = itertools.groupby(c1.diff(c2), key=lambda t: t[1])
     for _type, blobs in groups:
+        blobs = list(blobs)
         if _type is Type.ADDED:
             print(GREEN, '+', sep='', end=' ')
         elif _type is Type.DELETED:
             print(RED, '-', sep='', end=' ')
         for b, t in sorted(blobs, key=lambda t: t[0]):
-            print(*b, end=' ')
+            print(b, end='')
         print(RESET)
