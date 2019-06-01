@@ -59,8 +59,11 @@ class Command:
                 for (vw, vs) in v:
                     yield k
                     yield ks
-                    yield vw
-                    yield vs
+                    yield vw.replace('<path>', str(self.path))
+                    if vs is None:
+                        yield ' '
+                    else:
+                        yield vs
 
         return ''.join(map(str, iterator())).replace('<path>', str(self.path))
 
