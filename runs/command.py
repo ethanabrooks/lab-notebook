@@ -15,7 +15,7 @@ class Command:
     def __init__(self, *args, path):
         self.path = path
 
-        argstring = ' '.join(args)
+        argstring = ' '.join([a for a in args if a is not None])
         reg = '[\'"\s=]+'
         words = re.split(reg, argstring)
         seps = re.findall(reg, argstring)
