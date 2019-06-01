@@ -1,3 +1,4 @@
+import copy
 import itertools
 import re
 from enum import Enum, auto
@@ -87,3 +88,17 @@ class Command:
             yield blob, Type.ADDED
         for blob in nonpositional2 - nonpositional1:
             yield blob, Type.DELETED
+
+    def exclude(self, *args):
+        exclude_command = Command(*args, path=None)
+        new_command = copy.deepcopy(self)
+        new_command.positionals = [
+            p1 for p1, p2 in itertools.zip_longest(
+                new_command.positionals,
+                exclude_command.positionals,
+            ) if p1 != p2
+        ]
+        for k in exclude_command.nonpositionals:
+            del new_command.nonpositionals[k]
+        new_command.flags -= exclude_command.flags
+        return new_command

@@ -1,6 +1,6 @@
 # stdlib
-from collections import defaultdict
 import json
+from collections import defaultdict
 from typing import List, Optional
 
 # first party
@@ -9,7 +9,7 @@ from runs.command import Command
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
-from runs.util import PurePath, highlight, interpolate_keywords, get_args
+from runs.util import PurePath, get_args, highlight, interpolate_keywords
 
 
 def add_subparser(subparsers):
@@ -70,15 +70,11 @@ def strings(runs: List[RunEntry], args: List[str], prefix: str, db: DataBase,
             else:
                 new_path = path
 
-            command = Command(*entry.command.split(), path=entry.path)
-            command_args = [
-                f'{k}="{v}"' if k else v for k, v in get_args(command, exclude=set(args))
-            ]
-            command = Command(*command.stem, *command_args, path=entry.path)
-            command = str(command).lstrip(prefix)
+            command = Command(entry.command, path=entry.path)
+            command = command.exclude(prefix, *args)
             new_path, command, _description = map(json.dumps, [
-                str(new_path), command, description
-                or entry.description.strip('"').strip("'")
+                str(new_path),
+                str(command), description or entry.description.strip('"').strip("'")
             ])
             join_string = ' ' if len(entries) == 1 else ' \\\n'
             string = join_string.join([

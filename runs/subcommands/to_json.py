@@ -33,7 +33,7 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], prefix: str,
         logger.exit("No commands found.")
 
     exclude = set(exclude)
-    commands = [Command.from_run(run) for run in runs]
+    commands = [Command.from_run(run).exclude(prefix, *args) for run in runs]
     spec_dict = get_spec_obj(commands=commands, exclude=exclude, prefix=prefix).dict()
     spec_dict = {k: v for k, v in spec_dict.items() if v}
     print(json.dumps(spec_dict, sort_keys=True, indent=4))
