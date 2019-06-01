@@ -21,9 +21,10 @@ class Command:
         seps = re.findall(reg, argstring)
 
         self.positionals = []
-        self.nonpositionals = dict()
+        self.nonpositionals = []
         self.flags = set()
         key = None
+        value = []
 
         pairs = [(a, b) for (a, b) in itertools.zip_longest(words, seps) if a]
 
@@ -41,13 +42,19 @@ class Command:
                 if key is None:
                     self.positionals.append((word1, sep))
                 else:
-                    self.nonpositionals[key].append((word1, sep))
+                    value.append((word1, sep))
             else:  # nonpositional or flag
                 if word2 is not None and is_value(word2):
                     key = (word1, sep)
-                    self.nonpositionals[key] = []
+                    value = []
                 else:
                     self.flags.add((word1, sep))
+
+            # store key/value
+            if key is not None and (word2 is None or not is_value(word2)):
+                self.nonpositionals.append((key, value))
+                key = None
+                value = []
 
     def __str__(self):
         def iterator():
@@ -55,10 +62,10 @@ class Command:
                 yield w
                 yield s
 
-            for (k, ks), v in sorted(self.nonpositionals.items()):
+            for (k, ks), v in sorted(self.nonpositionals):
+                yield k
+                yield ks
                 for (vw, vs) in v:
-                    yield k
-                    yield ks
                     yield vw.replace('<path>', str(self.path))
                     if vs is None:
                         yield ' '
@@ -85,7 +92,7 @@ class Command:
                 yield positional1, Type.ADDED
                 yield positional2, Type.DELETED
 
-        nonpositionals1 = set(self.nonpositionals.items()) | self.flags
+        nonpositionals1 = set(self.nonpositionals) | self.flags
         nonpositionals2 = set(other.nonpositionals.items()) | other.flags
 
         for blob in nonpositional1 & nonpositional2:
