@@ -18,15 +18,14 @@ class Command:
         argstring = ' '.join(args)
         reg = '[\'"\s=]+'
         words = re.split(reg, argstring)
-        seps = re.findall(reg, argstring) \
-                + [' ']  # pretend all commands end with whitespace
+        seps = re.findall(reg, argstring)
 
         self.positionals = []
         self.nonpositionals = dict()
         self.flags = set()
         key = None
 
-        words = list(zip(words, seps))
+        pairs = [(a, b) for (a, b) in itertools.zip_longest(words, seps) if a]
 
         def is_value(string):
             try:
@@ -35,7 +34,7 @@ class Command:
             except ValueError:
                 return not string.startswith('-')
 
-        for (word1, sep), word2 in itertools.zip_longest(words, words[1:]):
+        for (word1, sep), word2 in itertools.zip_longest(pairs, pairs[1:]):
             if word2 is not None:
                 word2, sep2 = word2
             if is_value(word1):
@@ -49,9 +48,6 @@ class Command:
                     self.nonpositionals[key] = []
                 else:
                     self.flags.add((word1, sep))
-
-        nonpositionals = [(k, p) for k, v in self.nonpositionals.items() for p in v]
-        self.args = (self.positionals + sorted(nonpositionals) + sorted(self.flags))
 
     def __str__(self):
         def iterator():
