@@ -19,7 +19,8 @@ def add_subparser(subparsers):
         'does not have side-effects (besides printing).')
     add_query_args(parser, with_sort=False)
     parser.add_argument(
-        '--path',
+        'path',
+        nargs='?',
         type=PurePath,
         default=None,
         help="This is for cases when you want to run the reproduced command on a new path."
