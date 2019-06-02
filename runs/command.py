@@ -56,21 +56,32 @@ class Command:
                 key = None
                 value = []
 
-    def __str__(self):
-        def iterator():
-            for w, s in self.positionals + sorted(self.flags):
-                yield w
-                yield s
+    def positional_strings(self):
+        for w, s in self.positionals:
+            yield w + s
 
-            for (k, ks), v in sorted(self.optionals):
-                yield k
-                yield ks
+    def flag_strings(self):
+        for w, s in self.flags:
+            yield w + s
+
+    def optional_strings(self):
+        for (k, ks), v in self.optionals:
+
+            def value_iterator():
                 for (vw, vs) in v:
-                    yield vw.replace('<path>', str(self.path))
+                    yield vw
                     if vs is None:
                         yield ' '
                     else:
                         yield vs
+
+            yield k + ks + ''.join(value_iterator())
+
+    def __str__(self):
+        def iterator():
+            yield from self.positional_strings()
+            yield from sorted(self.flag_strings())
+            yield from sorted(self.optional_strings())
 
         return ''.join(map(str, iterator())).replace('<path>', str(self.path))
 
@@ -85,16 +96,9 @@ class Command:
         return Command.from_run(run)
 
     def diff(self, other):
-        def pair_with_string(it, flatten=None):
-            for x in it:
-                if flatten:
-                    y = flatten(*x)
-                else:
-                    y = x
-                yield x, ''.join(map(str, y))
-
         for (positional1, s1), (positional2, s2) in zip(
-                pair_with_string(self.positionals), pair_with_string(other.positionals)):
+                zip(self.positionals, self.positional_strings()),
+                zip(other.positionals, other.positional_strings())):
             if positional1 == positional2:
                 yield s1, Type.UNCHANGED
             else:
@@ -107,14 +111,7 @@ class Command:
         our_optionals = set([make_hashable(*p) for p in self.optionals])
         their_optionals = set([make_hashable(*p) for p in other.optionals])
 
-        def flatten(k, v):
-            yield from k
-            for a, b in v:
-                yield a
-                if b is not None:
-                    yield b
-
-        for o, s in pair_with_string(self.optionals, flatten):
+        for o, s in zip(self.optionals, self.optional_strings()):
             if make_hashable(*o) in their_optionals:
                 yield s, Type.UNCHANGED
             else:
@@ -126,12 +123,7 @@ class Command:
         our_flags = set(self.flags)
         their_flags = set(other.flags)
 
-        def flatten(a, b):
-            yield a
-            if b is not None:
-                yield b
-
-        for o, s in pair_with_string(self.flags, flatten):
+        for o, s in zip(self.flags, self.flag_strings()):
             if o in their_flags:
                 yield s, Type.UNCHANGED
             else:

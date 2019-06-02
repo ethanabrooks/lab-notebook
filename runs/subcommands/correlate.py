@@ -1,11 +1,12 @@
 # stdlib
 import math
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 # first party
 from runs.arguments import add_query_args
+from runs.command import Command
 from runs.database import DataBase
 from runs.logger import Logger
 from runs.run_entry import RunEntry
@@ -28,9 +29,12 @@ def add_subparser(subparsers):
 
 @DataBase.open
 @DataBase.query
-def cli(logger: Logger, runs: List[RunEntry], value_path: Path, *_, **__):
+def cli(logger: Logger, runs: List[RunEntry], value_path: Path, prefix: str,
+        args: List[str], *_, **__):
     print('Analyzing the following runs', *[r.path for r in runs], sep='\n')
-    logger.print(*strings(runs=runs, value_path=value_path), sep='\n')
+    logger.print(
+        *strings(runs=runs, value_path=value_path, prefix=prefix, runsrc_args=args),
+        sep='\n')
 
 
 def strings(*args, **kwargs):
@@ -39,13 +43,11 @@ def strings(*args, **kwargs):
     return [f'{cor[k]}, {k}' for k in keys]
 
 
-def get_args(command: str) -> List[str]:
-    return re.findall('(?:[A-Z]*=\S* )*\S* (\S*)', command)
-
-
 def correlations(
         runs: List[RunEntry],
         value_path: Path,
+        prefix: str,
+        runsrc_args: List[str],
 ) -> Dict[str, float]:
     def mean(f: Callable) -> float:
         try:
@@ -66,18 +68,22 @@ def correlations(
     value_mean = mean(lambda run: get_value(run.path))
     value_std_dev = math.sqrt(mean(lambda run: (get_value(run.path) - value_mean)**2))
 
+    def get_args(run):
+        command = Command(run.command, path=None).exclude(prefix, *runsrc_args)
+        yield from command.optional_strings()
+        yield from command.flag_strings()
+
     def get_correlation(arg: str) -> float:
         def contains_arg(run: RunEntry) -> float:
-            return float(arg in get_args(run.command))
+            return float(arg in set(get_args(run)))
 
         if sum(map(contains_arg, runs)) == len(runs):
             return None
 
         arg_mean = mean(contains_arg)
 
-        covariance = mean(
-            lambda run: (contains_arg(run) - arg_mean) * (get_value(run.path) - value_mean)
-        )
+        covariance = mean(lambda run: (contains_arg(run) - arg_mean) * (get_value(
+            run.path) - value_mean))
 
         std_dev = math.sqrt(mean(lambda run: (contains_arg(run) - arg_mean)**2))
 
@@ -88,7 +94,7 @@ def correlations(
         else:
             return math.inf
 
-    args = {arg for run in runs for arg in get_args(run.command)}
+    args = {arg for run in runs for arg in get_args(run)}
     correlations = {arg: get_correlation(arg) for arg in args}
     return {
         arg: correlation
