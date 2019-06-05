@@ -58,10 +58,12 @@ class Command:
 
     def positional_strings(self):
         for w, s in self.positionals:
+            s = s or ' '
             yield w + s
 
     def flag_strings(self):
         for w, s in self.flags:
+            s = s or ' '
             yield w + s
 
     def optional_strings(self):
