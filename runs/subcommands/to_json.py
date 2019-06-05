@@ -58,7 +58,9 @@ def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str):
 
     def squeeze(x):
         try:
-            x, = x
+            y, = x
+            if not isinstance(y, tuple):
+                x = y
         except ValueError:
             pass
         return x
