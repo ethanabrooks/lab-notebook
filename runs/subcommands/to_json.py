@@ -34,12 +34,13 @@ def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], prefix: str,
 
     exclude = set(exclude)
     commands = [Command.from_run(run).exclude(prefix, *args) for run in runs]
-    spec_dict = get_spec_obj(commands=commands, exclude=exclude, prefix=prefix).dict()
+    spec_dict = get_spec_obj(
+        commands=commands, exclude=exclude, prefix=prefix, logger=logger).dict()
     spec_dict = {k: v for k, v in spec_dict.items() if v}
     print(json.dumps(spec_dict, sort_keys=True, indent=4))
 
 
-def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str):
+def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str, logger: Logger):
     positionals = commands[0].positionals
     args = defaultdict(set)
     flags = set()
@@ -67,7 +68,7 @@ def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str):
 
     for command in commands:
         if command.positionals != positionals:
-            self.logger.exit(
+            logger.exit(
                 'Command:',
                 commands[0],
                 'and',
