@@ -1,7 +1,7 @@
 # stdlib
-import itertools
 from argparse import ArgumentParser
 from datetime import datetime
+import itertools
 from typing import List
 
 # first party
@@ -81,7 +81,7 @@ def cli(prefix: str, paths: List[PurePath], commands: List[str], args: List[str]
             else:
                 path = PurePath(paths[0], str(i))
         if len(descriptions) == 0:
-            description = 'Description not given.'
+            description = 'commit-message'
         if len(descriptions) == 1:
             description = descriptions[0]
 
