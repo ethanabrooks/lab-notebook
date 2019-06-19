@@ -69,10 +69,10 @@ def cli(prefix: str, paths: List[PurePath], commands: List[str], args: List[str]
         logger.exit('There must either be 1 or n paths '
                     'where n is the number of subcommands.')
 
-    if not len(descriptions) in [0, 1, n]:
+    if not (descriptions is None or len(descriptions) in [0, 1, n]):
         logger.exit('There must either be 1 or n descriptions '
                     'where n is the number of subcommands.')
-
+    descriptions = descriptions or []
     iterator = enumerate(itertools.zip_longest(paths, commands, descriptions))
     for i, (path, command, description) in iterator:
         if path is None:
@@ -80,10 +80,11 @@ def cli(prefix: str, paths: List[PurePath], commands: List[str], args: List[str]
                 path = PurePath(paths[0])
             else:
                 path = PurePath(paths[0], str(i))
-        if len(descriptions) == 0:
-            description = 'commit-message'
-        if len(descriptions) == 1:
-            description = descriptions[0]
+        if description is None:
+            if descriptions:
+                description = descriptions[0]
+            else:
+                description = 'commit-message'
 
         new(command=Command(prefix, command, *args, path=path),
             description=description,
