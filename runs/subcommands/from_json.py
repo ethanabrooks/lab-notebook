@@ -1,8 +1,8 @@
 # stdlib
 import itertools
 import json
-import random
 from pathlib import Path
+import random
 from typing import Dict, List, Union
 
 # first party
@@ -113,7 +113,7 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
     def arg_alternatives(key, values):
         for v in listify(values):
             if isinstance(v, list):
-                value = ' '.join(v)
+                value = ' '.join([f'"{_v}"' for _v in v])
                 yield [prepend(f'{key} {value}')]
             else:
                 yield [prepend(f'{key}="{value}"') for value in listify(v)]
