@@ -34,7 +34,6 @@ def add_subparser(subparsers):
         help="Description of this run. Explain what this run was all about or "
         "write whatever your heart desires. If this argument is `commit-message`,"
         "it will simply use the last commit message.",
-        required=True,
     )
     parser.add_argument(
         "--prefix",
