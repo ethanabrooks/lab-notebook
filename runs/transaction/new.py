@@ -6,7 +6,7 @@ from runs.run_entry import RunEntry
 from runs.transaction.sub_transaction import SubTransaction
 from runs.util import highlight
 
-Move = namedtuple('Move', ['src', 'dest', 'kill_tmux'])
+Move = namedtuple("Move", ["src", "dest", "kill_tmux"])
 
 
 class NewRunTransaction(SubTransaction):
@@ -17,10 +17,12 @@ class NewRunTransaction(SubTransaction):
     def validate(self):
         if self.queue and self.bash.dirty_repo():
             self.ui.check_permission(
-                "Repo is dirty. You should commit before run. Run anyway?")
+                "Repo is dirty. You should commit before run. Run anyway?"
+            )
         self.ui.check_permission(
             f"Generating the following run{'s' if len(self.queue) > 1 else ''}:",
-            *[f"{highlight(run.path)}: {run.command}" for run in self.queue])
+            *[f"{highlight(run.path)}: {run.command}" for run in self.queue],
+        )
 
     def process(self, run: RunEntry):
         tmux = self.tmux(run.path)
@@ -30,15 +32,16 @@ class NewRunTransaction(SubTransaction):
         tmux.new(window_name=run.description, command=str(run.command))
         self.db.append(run)
         self.ui.print(
-            highlight('Path:'),
+            highlight("Path:"),
             str(run.path),
-            highlight('Description:'),
+            highlight("Description:"),
             run.description,
-            highlight('Command sent to session:'),
+            highlight("Command sent to session:"),
             run.command,
-            highlight('List active:'),
-            'tmux list-session',
-            highlight('Attach:'),
+            highlight("List active:"),
+            "tmux list-session",
+            highlight("Attach:"),
             f"tmux attach -t '{tmux}'",
-            '',
-            sep='\n')
+            "",
+            sep="\n",
+        )

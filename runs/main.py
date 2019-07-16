@@ -12,13 +12,25 @@ from typing import List
 
 # first party
 from runs.logger import UI
-from runs.subcommands import (change_description, correlate, diff, from_json, kill, lookup, ls, mv, new, reproduce, rm,
-                              to_json)
+from runs.subcommands import (
+    change_description,
+    correlate,
+    diff,
+    from_json,
+    kill,
+    lookup,
+    ls,
+    mv,
+    new,
+    reproduce,
+    rm,
+    to_json,
+)
 from runs.util import ARGS, MAIN
 
 
 def find_up(filename):
-    dirpath = Path('.').resolve()
+    dirpath = Path(".").resolve()
     while not dirpath.match(dirpath.root):
         filepath = Path(dirpath, filename)
         if filepath.exists():
@@ -31,56 +43,65 @@ def pure_path_list(paths: str) -> List[PurePath]:
 
 
 def arg_list(args_string: str) -> List[List[str]]:
-    args_string = codecs.decode(args_string, encoding='unicode_escape').strip('\n')
-    return args_string.split('\n') if args_string else []
+    args_string = codecs.decode(args_string, encoding="unicode_escape").strip("\n")
+    return args_string.split("\n") if args_string else []
 
 
 def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser(
         epilog="The script will ask permission before running, deleting, moving, or "
-        "permanently changing anything.")
+        "permanently changing anything."
+    )
     parser.add_argument(
-        '--quiet', '-q', action='store_true', help='Suppress print output')
+        "--quiet", "-q", action="store_true", help="Suppress print output"
+    )
     parser.add_argument(
-        '--db-path',
-        help='path to sqlite file storing run database information.',
-        type=Path)
+        "--db-path",
+        help="path to sqlite file storing run database information.",
+        type=Path,
+    )
     parser.add_argument(
-        '--root',
-        help='Custom path to directory where config directories (if any) are '
-        'automatically '
-        'created',
-        type=Path)
+        "--root",
+        help="Custom path to directory where config directories (if any) are "
+        "automatically "
+        "created",
+        type=Path,
+    )
     parser.add_argument(
-        '--dir-names',
+        "--dir-names",
         type=pure_path_list,
-        help="directories to create and sync automatically with each run")
+        help="directories to create and sync automatically with each run",
+    )
     parser.add_argument(
-        '--assume-yes',
-        '-y',
-        action='store_true',
-        help='Don\'t ask permission before performing operations.')
+        "--assume-yes",
+        "-y",
+        action="store_true",
+        help="Don't ask permission before performing operations.",
+    )
 
-    subparsers = parser.add_subparsers(dest='dest')
+    subparsers = parser.add_subparsers(dest="dest")
 
     config = ConfigParser(
-        delimiters=[':'],
+        delimiters=[":"],
         allow_no_value=True,
         interpolation=ExtendedInterpolation(),
         converters=dict(
             _path=Path,
             _pure_path=PurePath,
             _pure_path_list=pure_path_list,
-            _arg_list=arg_list))
-    config_filename = Path('.runsrc')
+            _arg_list=arg_list,
+        ),
+    )
+    config_filename = Path(".runsrc")
 
     config_path = find_up(config_filename)
     missing_config_keys = []
     default_values = dict(
-        root=str(Path('.runs').absolute()),
-        db_path=str(Path('runs.db').absolute()),
-        dir_names='',
-        args='')
+        root=str(Path(".runs").absolute()),
+        db_path=str(Path("runs.db").absolute()),
+        dir_names="",
+        args="",
+    )
     if config_path:
         config.read(str(config_path))
 
@@ -94,31 +115,33 @@ def main(argv=sys.argv[1:]):
 
     main_config = dict(config[MAIN]).copy()
     main_config.update(
-        root=config[MAIN].get_path('root'),
-        db_path=config[MAIN].get_path('db_path'),
-        dir_names=config[MAIN].get_pure_path_list('dir_names'),
-        args=config[MAIN].get_arg_list(ARGS))
+        root=config[MAIN].get_path("root"),
+        db_path=config[MAIN].get_path("db_path"),
+        dir_names=config[MAIN].get_pure_path_list("dir_names"),
+        args=config[MAIN].get_arg_list(ARGS),
+    )
 
     for subparser in [parser] + [
-            adder(subparsers) for adder in [
-                new.add_subparser,
-                from_json.add_subparser,
-                rm.add_subparser,
-                mv.add_subparser,
-                ls.add_subparser,
-                lookup.add_subparser,
-                change_description.add_subparser,
-                reproduce.add_subparser,
-                correlate.add_subparser,
-                kill.add_subparser,
-                diff.add_subparser,
-                to_json.add_subparser,
-            ]
+        adder(subparsers)
+        for adder in [
+            new.add_subparser,
+            from_json.add_subparser,
+            rm.add_subparser,
+            mv.add_subparser,
+            ls.add_subparser,
+            lookup.add_subparser,
+            change_description.add_subparser,
+            reproduce.add_subparser,
+            correlate.add_subparser,
+            kill.add_subparser,
+            diff.add_subparser,
+            to_json.add_subparser,
+        ]
     ]:
         assert isinstance(subparser, argparse.ArgumentParser)
         config_section = subparser.prog.split()[-1]
         assert isinstance(config_section, str)
-        subparser.set_defaults(**config['DEFAULT'])
+        subparser.set_defaults(**config["DEFAULT"])
         subparser.set_defaults(**main_config)
         if config_section in config:
             subparser.set_defaults(**config[config_section])
@@ -127,24 +150,25 @@ def main(argv=sys.argv[1:]):
     ui = UI(assume_yes=args.assume_yes, quiet=args.quiet)
 
     def write_config():
-        if ui.get_permission(f'Write new config to {config_filename.absolute()}?'):
-            with config_filename.open('w') as f:
+        if ui.get_permission(f"Write new config to {config_filename.absolute()}?"):
+            with config_filename.open("w") as f:
                 config.write(f)
         else:
             ui.exit()
 
     if not config_path:
         ui.print(
-            'Config not found. Using default config:',
+            "Config not found. Using default config:",
             pprint.pformat(dict(config[MAIN])),
-            sep='\n')
+            sep="\n",
+        )
         write_config()
     elif missing_config_keys:
         for key in missing_config_keys:
-            ui.print(f'Using default value for {key}: {config[MAIN][key]}')
+            ui.print(f"Using default value for {key}: {config[MAIN][key]}")
         write_config()
 
-    module = import_module('runs.subcommands.' + args.dest.replace('-', '_'))
+    module = import_module("runs.subcommands." + args.dest.replace("-", "_"))
     kwargs = {k: v for k, v in vars(args).items()}
     try:
         # pluralize args
@@ -155,5 +179,5 @@ def main(argv=sys.argv[1:]):
     module.cli(**kwargs)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

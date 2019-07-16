@@ -13,48 +13,54 @@ from runs.util import PurePath
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'new',
-        help='Start a new run.',
-        epilog='When there are multiple paths/subcommands/descriptions, '
-        'they get collated. If there is one path but multiple subcommands, '
-        'each path gets appended with a number. Similarly if there is one '
-        'description, it gets broadcasted to all paths/subcommands.')
+        "new",
+        help="Start a new run.",
+        epilog="When there are multiple paths/subcommands/descriptions, "
+        "they get collated. If there is one path but multiple subcommands, "
+        "each path gets appended with a number. Similarly if there is one "
+        "description, it gets broadcasted to all paths/subcommands.",
+    )
     assert isinstance(parser, ArgumentParser)
 
     parser.add_argument(
-        '--path',
-        dest='paths',
-        action='append',
+        "--path",
+        dest="paths",
+        action="append",
         type=PurePath,
-        help='Unique path for each run. '
-        'Number of paths and number of subcommands must be equal.',
-        metavar='PATH')
+        help="Unique path for each run. "
+        "Number of paths and number of subcommands must be equal.",
+        metavar="PATH",
+    )
     parser.add_argument(
-        '--command',
-        dest='commands',
-        action='append',
+        "--command",
+        dest="commands",
+        action="append",
         type=str,
-        help='Command to be sent to TMUX for each path.'
-        'Number of paths and number of subcommands must be equal.',
-        metavar='COMMAND')
+        help="Command to be sent to TMUX for each path."
+        "Number of paths and number of subcommands must be equal.",
+        metavar="COMMAND",
+    )
     parser.add_argument(
-        '--description',
-        dest='descriptions',
-        action='append',
-        help='Description of this run. Explain what this run was all about or '
-        'write whatever your heart desires. If this argument is `commit-message`,'
-        'it will simply use the last commit message.')
+        "--description",
+        dest="descriptions",
+        action="append",
+        help="Description of this run. Explain what this run was all about or "
+        "write whatever your heart desires. If this argument is `commit-message`,"
+        "it will simply use the last commit message.",
+    )
     parser.add_argument(
-        '--prefix',
+        "--prefix",
         type=str,
         help="String to prepend to all main subcommands, for example, sourcing a "
-        "virtualenv")
+        "virtualenv",
+    )
     parser.add_argument(
-        '--arg',
-        '-f',
+        "--arg",
+        "-f",
         default=[],
-        action='append',
-        help="directories to create and sync automatically with each run")
+        action="append",
+        help="directories to create and sync automatically with each run",
+    )
     return parser
     # new_parser.add_argument(
     #     '--summary-path',
@@ -62,16 +68,28 @@ def add_subparser(subparsers):
 
 
 @Transaction.wrapper
-def cli(prefix: str, paths: List[PurePath], commands: List[str], args: List[str],
-        logger: UI, descriptions: List[str], transaction: Transaction, *_, **__):
+def cli(
+    prefix: str,
+    paths: List[PurePath],
+    commands: List[str],
+    args: List[str],
+    logger: UI,
+    descriptions: List[str],
+    transaction: Transaction,
+    *_,
+    **__
+):
     n = len(commands)
     if not len(paths) in [1, n]:
-        logger.exit('There must either be 1 or n paths '
-                    'where n is the number of subcommands.')
+        logger.exit(
+            "There must either be 1 or n paths " "where n is the number of subcommands."
+        )
 
     if not (descriptions is None or len(descriptions) in [0, 1, n]):
-        logger.exit('There must either be 1 or n descriptions '
-                    'where n is the number of subcommands.')
+        logger.exit(
+            "There must either be 1 or n descriptions "
+            "where n is the number of subcommands."
+        )
     descriptions = descriptions or []
     iterator = enumerate(itertools.zip_longest(paths, commands, descriptions))
     for i, (path, command, description) in iterator:
@@ -84,20 +102,22 @@ def cli(prefix: str, paths: List[PurePath], commands: List[str], args: List[str]
             if descriptions:
                 description = descriptions[0]
             else:
-                description = 'commit-message'
+                description = "commit-message"
 
-        new(command=Command(prefix, command, *args, path=path),
+        new(
+            command=Command(prefix, command, *args, path=path),
             description=description,
             path=path,
-            transaction=transaction)
+            transaction=transaction,
+        )
 
 
 def new(command, description, path, transaction):
     bash = transaction.bash
     if description is None:
-        description = ''
-    if description == 'commit-message':
-        description = bash.cmd('git log -1 --pretty=%B'.split())
+        description = ""
+    if description == "commit-message":
+        description = bash.cmd("git log -1 --pretty=%B".split())
     if path in transaction.db:
         transaction.remove(path)
     transaction.add_run(
@@ -105,4 +125,5 @@ def new(command, description, path, transaction):
         command=command,
         commit=bash.last_commit(),
         datetime=datetime.now().isoformat(),
-        description=description)
+        description=description,
+    )

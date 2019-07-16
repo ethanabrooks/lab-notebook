@@ -18,13 +18,13 @@ class Condition:
         return bool(self.values())
 
     def __str__(self):
-        return f'({self._str()})' if self.values() else ''
+        return f"({self._str()})" if self.values() else ""
 
     def values(self):
         return [str(v) for v in self._values() if v]
 
     def _placeholders(self):
-        return ','.join('?' * len(self.values()))
+        return ",".join("?" * len(self.values()))
 
     @abstractmethod
     def _str(self):
@@ -44,7 +44,7 @@ class OneToManyPredicate(Condition):
         return self.__values
 
     def _str(self):
-        return f'{self.column} {self._keyword()} ({self._placeholders()})'
+        return f"{self.column} {self._keyword()} ({self._placeholders()})"
 
     @abstractmethod
     def _keyword(self):
@@ -53,12 +53,12 @@ class OneToManyPredicate(Condition):
 
 class Like(OneToManyPredicate):
     def _keyword(self):
-        return 'LIKE'
+        return "LIKE"
 
 
 class In(OneToManyPredicate):
     def _keyword(self):
-        return 'IN'
+        return "IN"
 
 
 class OneToOnePredicate(OneToManyPredicate):
@@ -68,17 +68,17 @@ class OneToOnePredicate(OneToManyPredicate):
 
 class Equals(OneToOnePredicate):
     def _keyword(self):
-        return '='
+        return "="
 
 
 class GreaterThan(OneToOnePredicate):
     def _keyword(self):
-        return '>'
+        return ">"
 
 
 class LessThan(OneToOnePredicate):
     def _keyword(self):
-        return '<'
+        return "<"
 
 
 class ManyToManyPredicate(Condition):
@@ -91,7 +91,7 @@ class ManyToManyPredicate(Condition):
         return [value for condition in self.conditions for value in condition.values()]
 
     def _str(self):
-        return f' {self._keyword()} '.join(map(str, self.conditions))
+        return f" {self._keyword()} ".join(map(str, self.conditions))
 
     @abstractmethod
     def _keyword(self):
@@ -100,12 +100,12 @@ class ManyToManyPredicate(Condition):
 
 class Or(ManyToManyPredicate):
     def _keyword(self):
-        return 'OR'
+        return "OR"
 
 
 class And(ManyToManyPredicate):
     def _keyword(self):
-        return 'AND'
+        return "AND"
 
 
 Any = Or
@@ -118,7 +118,7 @@ class Not(Condition):
         self.condition = condition
 
     def _str(self):
-        return f'NOT {self.condition}'
+        return f"NOT {self.condition}"
 
     def _values(self):
         return self.condition.values()

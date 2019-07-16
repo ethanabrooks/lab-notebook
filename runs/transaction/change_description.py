@@ -5,8 +5,9 @@ from collections import namedtuple
 from runs.transaction.sub_transaction import SubTransaction
 from runs.util import string_from_vim
 
-DescriptionChange = namedtuple('DescriptionChange',
-                               ['path', 'command', 'old_description', 'new_description'])
+DescriptionChange = namedtuple(
+    "DescriptionChange", ["path", "command", "old_description", "new_description"]
+)
 
 
 class ChangeDescriptionTransaction(SubTransaction):
@@ -20,11 +21,15 @@ class ChangeDescriptionTransaction(SubTransaction):
                 f"""
         Edit description for {change.path}.
         Command: {change.command}
-        """, change.old_description)
+        """,
+                change.old_description,
+            )
             # noinspection PyProtectedMember
             return change._replace(new_description=new_description)
 
-        self.queue = {c if c.new_description else get_description(c) for c in self.queue}
+        self.queue = {
+            c if c.new_description else get_description(c) for c in self.queue
+        }
 
     def process(self, change: DescriptionChange):
         self.db.update(change.path, description=change.new_description)

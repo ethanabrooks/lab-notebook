@@ -25,8 +25,10 @@ class Logger:
         exit()
 
     def exit_no_match(self, db, pattern):
-        self.exit(f'No runs match pattern "{pattern}". Recorded runs:\n'
-                  f'{runs.subcommands.ls.string(db)}')
+        self.exit(
+            f'No runs match pattern "{pattern}". Recorded runs:\n'
+            f"{runs.subcommands.ls.string(db)}"
+        )
 
 
 class UI(Logger):
@@ -34,7 +36,7 @@ class UI(Logger):
         super().__init__(**kwargs)
         self.assume_yes = assume_yes
 
-    def get_permission(self, *question, sep=' '):
+    def get_permission(self, *question, sep=" "):
         if self.assume_yes:
             return True
         question = sep.join(map(str, question)).rstrip(sep) + sep
@@ -42,13 +44,13 @@ class UI(Logger):
         response = input(question)
         while True:
             response = response.lower()
-            if response in ['y', 'yes']:
+            if response in ["y", "yes"]:
                 return True
-            if response in ['n', 'no']:
+            if response in ["n", "no"]:
                 return False
             else:
-                response = input('Please enter y[es]|n[o]')
+                response = input("Please enter y[es]|n[o]")
 
-    def check_permission(self, *question, sep='\n'):
+    def check_permission(self, *question, sep="\n"):
         if not self.get_permission(*question, "Continue?", sep=sep):
             self.exit()

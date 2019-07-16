@@ -14,40 +14,48 @@ from runs.util import PurePath
 
 
 def add_subparser(subparsers):
-    parser = subparsers.add_parser('correlate', help='Rank args by Pearson correlation.')
+    parser = subparsers.add_parser(
+        "correlate", help="Rank args by Pearson correlation."
+    )
     add_query_args(parser, with_sort=False)
     parser.add_argument(
-        '--value-path',
+        "--value-path",
         required=True,
         type=Path,
-        help='The command will look for a file at this path containing '
-        'a scalar value. It will calculate the pearson correlation between '
-        'args and this value. The keyword <path> will be replaced '
-        'by the path of the run.')
+        help="The command will look for a file at this path containing "
+        "a scalar value. It will calculate the pearson correlation between "
+        "args and this value. The keyword <path> will be replaced "
+        "by the path of the run.",
+    )
     return parser
 
 
 @DataBase.open
 @DataBase.query
-def cli(logger: Logger, runs: List[RunEntry], value_path: Path, prefix: str,
-        args: List[str], *_, **__):
-    print('Analyzing the following runs', *[r.path for r in runs], sep='\n')
+def cli(
+    logger: Logger,
+    runs: List[RunEntry],
+    value_path: Path,
+    prefix: str,
+    args: List[str],
+    *_,
+    **__,
+):
+    print("Analyzing the following runs", *[r.path for r in runs], sep="\n")
     logger.print(
         *strings(runs=runs, value_path=value_path, prefix=prefix, runsrc_args=args),
-        sep='\n')
+        sep="\n",
+    )
 
 
 def strings(*args, **kwargs):
     cor = correlations(*args, **kwargs)
     keys = sorted(cor.keys(), key=lambda k: cor[k])
-    return [f'{cor[k]}, {k}' for k in keys]
+    return [f"{cor[k]}, {k}" for k in keys]
 
 
 def correlations(
-        runs: List[RunEntry],
-        value_path: Path,
-        prefix: str,
-        runsrc_args: List[str],
+    runs: List[RunEntry], value_path: Path, prefix: str, runsrc_args: List[str]
 ) -> Dict[str, float]:
     def mean(f: Callable) -> float:
         try:
@@ -56,17 +64,17 @@ def correlations(
             return math.nan
 
     def get_value(path: PurePath) -> Optional[float]:
-        path = Path(str(value_path).replace('<path>', str(path)))
+        path = Path(str(value_path).replace("<path>", str(path)))
         try:
             with path.open() as f:
                 return float(f.read())
         except (ValueError, FileNotFoundError):
-            print(f'{path} not found')
+            print(f"{path} not found")
             return
 
     runs = [r for r in runs if get_value(r.path) is not None]
     value_mean = mean(lambda run: get_value(run.path))
-    value_std_dev = math.sqrt(mean(lambda run: (get_value(run.path) - value_mean)**2))
+    value_std_dev = math.sqrt(mean(lambda run: (get_value(run.path) - value_mean) ** 2))
 
     def get_args(run):
         command = Command(run.command, path=None).exclude(prefix, *runsrc_args)
@@ -82,10 +90,12 @@ def correlations(
 
         arg_mean = mean(contains_arg)
 
-        covariance = mean(lambda run: (contains_arg(run) - arg_mean) * (get_value(
-            run.path) - value_mean))
+        covariance = mean(
+            lambda run: (contains_arg(run) - arg_mean)
+            * (get_value(run.path) - value_mean)
+        )
 
-        std_dev = math.sqrt(mean(lambda run: (contains_arg(run) - arg_mean)**2))
+        std_dev = math.sqrt(mean(lambda run: (contains_arg(run) - arg_mean) ** 2))
 
         # return covariance
         denominator = std_dev * value_std_dev
@@ -98,5 +108,6 @@ def correlations(
     correlations = {arg: get_correlation(arg) for arg in args}
     return {
         arg: correlation
-        for arg, correlation in correlations.items() if correlation is not None
+        for arg, correlation in correlations.items()
+        if correlation is not None
     }

@@ -12,34 +12,31 @@ from runs.util import PurePath, natural_order
 
 
 def add_subparser(subparsers):
-    parser = subparsers.add_parser('ls', help='Print paths in run database.')
+    parser = subparsers.add_parser("ls", help="Print paths in run database.")
     add_query_args(parser, with_sort=True, default_args=DEFAULT_QUERY_ARGS)
 
     parser.add_argument(
-        '--show-attrs',
-        action='store_true',
-        help='Print run attributes in addition to names.')
-    parser.add_argument('--depth', type=int, help='Depth of path to print.')
+        "--show-attrs",
+        action="store_true",
+        help="Print run attributes in addition to names.",
+    )
+    parser.add_argument("--depth", type=int, help="Depth of path to print.")
     parser.add_argument(
-        '--pprint',
-        action='store_true',
-        help='format list of path names as tree '
-        'formatting.')
+        "--pprint",
+        action="store_true",
+        help="format list of path names as tree " "formatting.",
+    )
     return parser
 
 
 @DataBase.open
 @DataBase.query
 def cli(runs: List[RunEntry], logger: Logger, pprint: bool, depth, *_, **__):
-    logger.print(string(
-        runs=runs,
-        pprint=pprint,
-        depth=depth,
-    ))
+    logger.print(string(runs=runs, pprint=pprint, depth=depth))
 
 
 def string(runs: List[RunEntry], pprint: bool = False, depth: int = None) -> str:
-    return '\n'.join(map(str, paths(runs=runs, pprint=pprint, depth=depth)))
+    return "\n".join(map(str, paths(runs=runs, pprint=pprint, depth=depth)))
 
 
 def paths(runs: List[RunEntry], pprint: bool = True, depth: int = None) -> List[str]:
@@ -57,24 +54,25 @@ def build_tree(paths, depth: int = None):
         except ValueError:
             return dict()
         if tail:
-            head += '/'
+            head += "/"
         aggregator[head].append(PurePath(*tail))
 
     return {k: build_tree(v, depth=depth) for k, v in aggregator.items()}
 
 
-def tree_strings(tree, prefix='', root_prefix='', root='.'):
+def tree_strings(tree, prefix="", root_prefix="", root="."):
     yield prefix + root_prefix + root
-    if root_prefix == '├── ':
-        prefix += '│   '
-    if root_prefix == '└── ':
-        prefix += '    '
+    if root_prefix == "├── ":
+        prefix += "│   "
+    if root_prefix == "└── ":
+        prefix += "    "
     if tree:
         items = _, *tail = tree.items()
         for (root, tree), _next in zip_longest(items, tail):
             for s in tree_strings(
-                    tree=tree,
-                    prefix=prefix,
-                    root_prefix='├── ' if _next else '└── ',
-                    root=root):
+                tree=tree,
+                prefix=prefix,
+                root_prefix="├── " if _next else "└── ",
+                root=root,
+            ):
                 yield PurePath(s)

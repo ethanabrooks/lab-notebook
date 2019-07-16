@@ -9,51 +9,70 @@ from runs.database import DataBase, QueryArgs
 from runs.transaction.transaction import Transaction
 from runs.util import PurePath
 
-path_clarification = ' Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. '
+path_clarification = (
+    " Can be a relative path from runs: `DIR/NAME|PATTERN` Can also be a pattern. "
+)
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'mv',
-        help='Move a run from OLD to NEW. '
-        'Functionality is identical to Linux `mv` except that non-existent dirs'
-        'are created and empty dirs are removed automatically.')
+        "mv",
+        help="Move a run from OLD to NEW. "
+        "Functionality is identical to Linux `mv` except that non-existent dirs"
+        "are created and empty dirs are removed automatically.",
+    )
 
     default_args = deepcopy(DEFAULT_QUERY_ARGS)
-    del default_args['--descendants']
+    del default_args["--descendants"]
     add_query_args(parser, with_sort=False, default_args=default_args)
 
     parser.add_argument(
-        '--no-descendants',
-        dest='descendants',
-        action='store_false',
-        help="Don't move descendants of search pattern.")
+        "--no-descendants",
+        dest="descendants",
+        action="store_false",
+        help="Don't move descendants of search pattern.",
+    )
     parser.add_argument(
-        'destination', help='New name for run.' + path_clarification, type=str)
+        "destination", help="New name for run." + path_clarification, type=str
+    )
     parser.add_argument(
-        '--kill-tmux',
-        action='store_true',
-        help='Kill tmux session instead of renaming it.')
+        "--kill-tmux",
+        action="store_true",
+        help="Kill tmux session instead of renaming it.",
+    )
     return parser
 
 
 @Transaction.wrapper
 @DataBase.query
-def cli(query_args: QueryArgs, destination: str, kill_tmux: bool,
-        transaction: Transaction, db: DataBase, *_, **__):
+def cli(
+    query_args: QueryArgs,
+    destination: str,
+    kill_tmux: bool,
+    transaction: Transaction,
+    db: DataBase,
+    *_,
+    **__,
+):
     move(
         query_args=query_args,
         db=db,
         dest_path=destination,
         kill_tmux=kill_tmux,
-        transaction=transaction)
+        transaction=transaction,
+    )
 
 
-def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Transaction,
-         db: DataBase):
+def move(
+    query_args: QueryArgs,
+    dest_path: str,
+    kill_tmux: bool,
+    transaction: Transaction,
+    db: DataBase,
+):
     dest_path_is_dir = any(
-        [dest_path == '.', f'{dest_path}/%' in db,
-         dest_path.endswith('/')])
+        [dest_path == ".", f"{dest_path}/%" in db, dest_path.endswith("/")]
+    )
 
     for src_pattern in query_args.patterns:
         dest_to_src = defaultdict(list)
@@ -62,10 +81,9 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
         for entry in src_entries:
 
             # parent, grandparent, great-grandparent, etc.
-            parents = [str(entry.path)] + [str(p) + '/' for p in entry.path.parents]
+            parents = [str(entry.path)] + [str(p) + "/" for p in entry.path.parents]
             matches = [
-                p for p in reversed(parents) if like(str(p),
-                                                     str(src_pattern) + '%')
+                p for p in reversed(parents) if like(str(p), str(src_pattern) + "%")
             ]
 
             head = next(iter(matches))  # a/b/% -> a/b
@@ -74,7 +92,7 @@ def move(query_args: QueryArgs, dest_path: str, kill_tmux: bool, transaction: Tr
             if dest_path_is_dir:
                 dest = PurePath(dest_path, tail)
             else:
-                dest = str(entry.path).replace(head.rstrip('/'), dest_path, 1)
+                dest = str(entry.path).replace(head.rstrip("/"), dest_path, 1)
             dest_to_src[dest] += [entry.path]
 
         for dest, srcs in dest_to_src.items():

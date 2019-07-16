@@ -34,7 +34,7 @@ class FileSystem:
                     old.rename(new)
                 except OSError:
                     # deal with x -> x/y
-                    tmp = Path(old.parent, 'tmp')
+                    tmp = Path(old.parent, "tmp")
                     old.rename(tmp)
                     new.parent.mkdir(exist_ok=True, parents=True)
                     tmp.rename(new)

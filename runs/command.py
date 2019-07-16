@@ -15,8 +15,8 @@ class Command:
     def __init__(self, *args, path):
         self.path = path
 
-        argstring = ' '.join([a for a in args if a is not None])
-        reg = '[\'"\s=]+'
+        argstring = " ".join([a for a in args if a is not None])
+        reg = "['\"\s=]+"
         words = re.split(reg, argstring)
         seps = re.findall(reg, argstring)
 
@@ -33,7 +33,7 @@ class Command:
                 float(string)
                 return True
             except ValueError:
-                return not string.startswith('-')
+                return not string.startswith("-")
 
         for (word1, sep), word2 in itertools.zip_longest(pairs, pairs[1:]):
             if word2 is not None:
@@ -58,12 +58,12 @@ class Command:
 
     def positional_strings(self):
         for w, s in self.positionals:
-            s = s or ' '
+            s = s or " "
             yield w + s
 
     def flag_strings(self):
         for w, s in self.flags:
-            s = s or ' '
+            s = s or " "
             yield w + s
 
     def optional_strings(self):
@@ -73,11 +73,11 @@ class Command:
                 for (vw, vs) in v:
                     yield vw
                     if vs is None:
-                        yield ' '
+                        yield " "
                     else:
                         yield vs
 
-            yield k + ks + ''.join(value_iterator())
+            yield k + ks + "".join(value_iterator())
 
     def __str__(self):
         def iterator():
@@ -85,7 +85,7 @@ class Command:
             yield from sorted(self.flag_strings())
             yield from sorted(self.optional_strings())
 
-        return ''.join(map(str, iterator())).replace('<path>', str(self.path))
+        return "".join(map(str, iterator())).replace("<path>", str(self.path))
 
     @staticmethod
     def from_run(run):
@@ -99,8 +99,9 @@ class Command:
 
     def diff(self, other):
         for (positional1, s1), (positional2, s2) in zip(
-                zip(self.positionals, self.positional_strings()),
-                zip(other.positionals, other.positional_strings())):
+            zip(self.positionals, self.positional_strings()),
+            zip(other.positionals, other.positional_strings()),
+        ):
             if positional1 == positional2:
                 yield s1, Type.UNCHANGED
             else:
@@ -140,8 +141,7 @@ class Command:
 
         def positionals():
             for p, p_exclude in itertools.zip_longest(
-                    new_command.positionals,
-                    exclude_command.positionals,
+                new_command.positionals, exclude_command.positionals
             ):
                 if p is not None and p != p_exclude:
                     yield p

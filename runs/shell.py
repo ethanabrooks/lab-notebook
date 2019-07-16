@@ -15,18 +15,20 @@ class Bash:
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE,
             cwd=cwd,
-            universal_newlines=True)
+            universal_newlines=True,
+        )
         stdout, stderr = process.communicate(timeout=1)
         if stderr and not fail_ok:
             self.logger.exit(f"Command `{' '.join(args)}` failed: {stderr}")
         return stdout.strip()
 
     def last_commit(self):
-        commit = self.cmd('git rev-parse HEAD'.split(), fail_ok=True)
+        commit = self.cmd("git rev-parse HEAD".split(), fail_ok=True)
         if not commit:
             self.logger.exit(
-                'Could not detect last commit. Perhaps you have not committed yet?')
+                "Could not detect last commit. Perhaps you have not committed yet?"
+            )
         return commit
 
     def dirty_repo(self):
-        return self.cmd('git status --porcelain'.split()) is not ''
+        return self.cmd("git status --porcelain".split()) is not ""

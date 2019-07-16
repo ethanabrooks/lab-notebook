@@ -11,14 +11,15 @@ from runs.transaction.transaction import Transaction
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'rm',
+        "rm",
         help="Delete runs from the database (and all associated tensorboard "
-        "and checkpoint files).")
+        "and checkpoint files).",
+    )
     default_args = deepcopy(DEFAULT_QUERY_ARGS)
-    default_args['patterns'].update(
-        help=
-        'This script will only delete entries in the database whose names are a complete '
-        '(not partial) match of this sql pattern.')
+    default_args["patterns"].update(
+        help="This script will only delete entries in the database whose names are a complete "
+        "(not partial) match of this sql pattern."
+    )
     add_query_args(parser, with_sort=False, default_args=default_args)
     return parser
 

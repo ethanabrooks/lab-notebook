@@ -13,19 +13,17 @@ from runs.util import natural_order
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'args', help='Print args whose cross-product correspond to the queried runs.')
+        "args", help="Print args whose cross-product correspond to the queried runs."
+    )
     add_query_args(parser, with_sort=False)
-    parser.add_argument('--delimiter', default='=', help='Delimiter for arg patterns.')
+    parser.add_argument("--delimiter", default="=", help="Delimiter for arg patterns.")
     return parser
 
 
 @DataBase.open
 @DataBase.query
 def cli(logger: Logger, runs: List[RunEntry], delimiter: str, *_, **__):
-    for string in strings(
-            runs=runs,
-            delimiter=delimiter,
-    ):
+    for string in strings(runs=runs, delimiter=delimiter):
         logger.print(string)
 
 
@@ -43,7 +41,7 @@ def parse_args(commands: List[str], delimiter: str):
     for command in commands:
         for word in command.split():
             if delimiter in command:
-                pattern = f'([^{delimiter}]*)({delimiter})(.*)'
+                pattern = f"([^{delimiter}]*)({delimiter})(.*)"
                 match = re.match(pattern, word)
                 if match:
                     key, delim, value = match.groups()

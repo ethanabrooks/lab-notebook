@@ -5,7 +5,7 @@ from collections import namedtuple
 from runs.transaction.sub_transaction import SubTransaction
 from runs.util import highlight
 
-Move = namedtuple('Move', ['src', 'dest', 'kill_tmux'])
+Move = namedtuple("Move", ["src", "dest", "kill_tmux"])
 
 
 class MoveTransaction(SubTransaction):
@@ -20,7 +20,8 @@ class MoveTransaction(SubTransaction):
             self.ui.exit(
                 f"Cannot move multiple runs into the same path:",
                 *[f"{m.src} -> {m.dest}" for m in collisions],
-                sep='\n')
+                sep="\n",
+            )
 
         def validate_move(kill_tmux):
             moves = [m for m in self.queue if m.kill_tmux == kill_tmux]
@@ -28,8 +29,9 @@ class MoveTransaction(SubTransaction):
                 prompt = highlight("About to perform the following moves")
                 if kill_tmux:
                     prompt += highlight(" and kill the associated tmux sessions")
-                self.ui.check_permission(prompt + ':',
-                                         *[f"{m.src} -> {m.dest}" for m in self.queue])
+                self.ui.check_permission(
+                    prompt + ":", *[f"{m.src} -> {m.dest}" for m in self.queue]
+                )
 
         validate_move(kill_tmux=True)
         validate_move(kill_tmux=False)

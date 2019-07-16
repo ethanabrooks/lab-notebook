@@ -14,61 +14,60 @@ def parse_time_delta(string: str):
 
 def date_parse(string):
     try:
-        return datetime.strptime('2002-12-04', '%Y-%m-%d')
+        return datetime.strptime("2002-12-04", "%Y-%m-%d")
     except ValueError:
         pass
     try:
-        return datetime.strptime('2002-12-04', "%Y-%m-%dT%H")
+        return datetime.strptime("2002-12-04", "%Y-%m-%dT%H")
     except ValueError:
         pass
     try:
-        return datetime.strptime('2002-12-04', "%Y-%m-%dT%H:%M")
+        return datetime.strptime("2002-12-04", "%Y-%m-%dT%H:%M")
     except ValueError:
         pass
     try:
-        return datetime.strptime('2002-12-04', "%Y-%m-%dT%H:%M:%S.%f")
+        return datetime.strptime("2002-12-04", "%Y-%m-%dT%H:%M:%S.%f")
     except ValueError:
         pass
     try:
-        return datetime.strptime('2002-12-04', "%Y-%m-%dT%H:%M:%S.%f%z")
+        return datetime.strptime("2002-12-04", "%Y-%m-%dT%H:%M:%S.%f%z")
     except ValueError:
         pass
-    return datetime.strptime('2002-12-04', "%Y-%m-%dT%H:%M:%S.%f%z")
+    return datetime.strptime("2002-12-04", "%Y-%m-%dT%H:%M:%S.%f%z")
 
 
 DEFAULT_QUERY_ARGS = {
-    'patterns':
-    dict(nargs='*', type=PurePath, help='Look up runs matching these patterns'),
-    '--unless':
-    dict(nargs='*', type=PurePath, help='Exclude these paths from the search.'),
-    '--active':
-    dict(action='store_true', help='Include all active runs in query.'),
-    '--descendants':
-    dict(action='store_true', help='Include all descendants of pattern.'),
-    '--sort':
-    dict(default='datetime', choices=RunEntry.fields(), help='Sort query by this field.'),
-    '--since':
-    dict(
+    "patterns": dict(
+        nargs="*", type=PurePath, help="Look up runs matching these patterns"
+    ),
+    "--unless": dict(
+        nargs="*", type=PurePath, help="Exclude these paths from the search."
+    ),
+    "--active": dict(action="store_true", help="Include all active runs in query."),
+    "--descendants": dict(
+        action="store_true", help="Include all descendants of pattern."
+    ),
+    "--sort": dict(
+        default="datetime", choices=RunEntry.fields(), help="Sort query by this field."
+    ),
+    "--since": dict(
         default=None,
         type=date_parse,
-        help='Only display runs since this date. Accepts argument in isoformat.'),
-    '--last':
-    dict(
+        help="Only display runs since this date. Accepts argument in isoformat.",
+    ),
+    "--last": dict(
         default=None,
         type=parse_time_delta,
-        help='Only display runs created in the given time delta. '
+        help="Only display runs created in the given time delta. "
         'Either use "months", "weeks", "days", "hours" to specify time, e.g.'
-        '"2weeks1day" or specify a date: month/day/year.')
+        '"2weeks1day" or specify a date: month/day/year.',
+    ),
 }
 
 
-def add_query_args(
-        parser,
-        with_sort: bool,
-        default_args: dict = DEFAULT_QUERY_ARGS,
-):
+def add_query_args(parser, with_sort: bool, default_args: dict = DEFAULT_QUERY_ARGS):
     if not with_sort:
         default_args = deepcopy(default_args)
-        del default_args['--sort']
+        del default_args["--sort"]
     for arg_name, kwargs in default_args.items():
         parser.add_argument(arg_name, **kwargs)

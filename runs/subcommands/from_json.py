@@ -15,41 +15,45 @@ from runs.util import PurePath
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'from-json', help='Start a new run using a JSON specification.')
+        "from-json", help="Start a new run using a JSON specification."
+    )
 
     parser.add_argument(
-        'spec',
+        "spec",
         type=Path,
-        help='JSON file that contains either a single or an array of JSON objects'
+        help="JSON file that contains either a single or an array of JSON objects"
         'each with a "command" key and a "args" key. The "command" value'
         'is a single string and the "args" value is a JSON object such that'
         '"a: b," becomes "--a=b" for example.',
     )
     parser.add_argument(
-        '--path', type=PurePath, help='Unique path for each run.', required=True)
+        "--path", type=PurePath, help="Unique path for each run.", required=True
+    )
     parser.add_argument(
-        '--description',
-        help='Description of this run. Explain what this run was all about or '
-        'write whatever your heart desires. If this argument is `commit-message`,'
-        'it will simply use the last commit message.',
-        required=True)
+        "--description",
+        help="Description of this run. Explain what this run was all about or "
+        "write whatever your heart desires. If this argument is `commit-message`,"
+        "it will simply use the last commit message.",
+        required=True,
+    )
     parser.add_argument(
-        '--prefix',
+        "--prefix",
         type=str,
         help="String to prepend to all main subcommands, for example, sourcing a "
-        "virtualenv")
+        "virtualenv",
+    )
     parser.add_argument(
-        '--arg',
-        '-f',
+        "--arg",
+        "-f",
         default=[],
-        action='append',
-        help="directories to create and sync automatically with each run")
+        action="append",
+        help="directories to create and sync automatically with each run",
+    )
     parser.add_argument(
-        '--max-runs',
-        '-m',
+        "--max-runs",
+        "-m",
         type=int,
-        help=
-        "If more than this many runs are generated from the cross produce of arguments in the JSON object, <max_runs> runs will will randomly be sampled from the full list."
+        help="If more than this many runs are generated from the cross produce of arguments in the JSON object, <max_runs> runs will will randomly be sampled from the full list.",
     )
 
     return parser
@@ -63,11 +67,11 @@ Variadic = Union[str, List[str]]
 
 class SpecObj:
     def __init__(
-            self,
-            command: str,
-            args: Dict[str, Variadic],
-            flags: List[Variadic] = None,
-            delimiter: str = '=',
+        self,
+        command: str,
+        args: Dict[str, Variadic],
+        flags: List[Variadic] = None,
+        delimiter: str = "=",
     ):
         self.command = command
         self.args = args
@@ -76,19 +80,29 @@ class SpecObj:
 
     def dict(self):
         _dict = vars(self)
-        del _dict['delimiter']
+        del _dict["delimiter"]
         return _dict
 
 
-ARG_KWD = '<arg>'
+ARG_KWD = "<arg>"
 
 
 @Transaction.wrapper
-def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
-        description: str, transaction: Transaction, max_runs: int, *_, **__):
+def cli(
+    prefix: str,
+    path: PurePath,
+    spec: Path,
+    args: List[str],
+    logger: UI,
+    description: str,
+    transaction: Transaction,
+    max_runs: int,
+    *_,
+    **__,
+):
     # spec: Path
     if not spec.exists():
-        logger.exit(f'{spec.absolute()} does not exist.')
+        logger.exit(f"{spec.absolute()} does not exist.")
     with spec.open() as f:
         obj = json.load(f, object_pairs_hook=lambda pairs: pairs)
     try:
@@ -97,8 +111,9 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
         except ValueError:
             spec_objs = [SpecObj(**dict(o)) for o in obj]
     except TypeError:
-        logger.exit(f'Each object in {spec} must have a '
-                    '"command" field and a "args" field.')
+        logger.exit(
+            f"Each object in {spec} must have a " '"command" field and a "args" field.'
+        )
 
     def listify(x):
         if isinstance(x, list):
@@ -106,15 +121,15 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
         return [x]
 
     def prepend(arg: str):
-        if not arg or arg.startswith('-'):
+        if not arg or arg.startswith("-"):
             return arg
-        return f'--{arg}'
+        return f"--{arg}"
 
     def arg_alternatives(key, values):
         for v in listify(values):
             if isinstance(v, list):
-                value = ' '.join([f'"{_v}"' for _v in v])
-                yield [prepend(f'{key} {value}')]
+                value = " ".join([f'"{_v}"' for _v in v])
+                yield [prepend(f"{key} {value}")]
             else:
                 yield [prepend(f'{key}="{value}"') for value in listify(v)]
 
@@ -142,7 +157,9 @@ def cli(prefix: str, path: PurePath, spec: Path, args: List[str], logger: UI,
     for i, (command, arg_set) in enumerate(assignments):
         new_path = path if len(assignments) == 1 else PurePath(path, str(i))
         command = Command(prefix, command, *arg_set, *args, path=new_path)
-        new(path=new_path,
+        new(
+            path=new_path,
             command=command,
             description=description,
-            transaction=transaction)
+            transaction=transaction,
+        )

@@ -1,6 +1,7 @@
 # stdlib
 
 import json
+
 # first party
 from collections import defaultdict
 from typing import List, Set
@@ -16,31 +17,43 @@ from runs.util import get_args
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser(
-        'to-json',
-        help='Print json spec that reproduces crossproduct '
-        'of args in given patterns.')
+        "to-json",
+        help="Print json spec that reproduces crossproduct "
+        "of args in given patterns.",
+    )
     parser.add_argument(
-        '--exclude', nargs='*', default=set(), help='Keys of args to exclude.')
+        "--exclude", nargs="*", default=set(), help="Keys of args to exclude."
+    )
     add_query_args(parser, with_sort=False)
     return parser
 
 
 @DataBase.open
 @DataBase.query
-def cli(runs: List[RunEntry], logger: Logger, exclude: List[str], prefix: str,
-        args: List[str], *_, **__):
+def cli(
+    runs: List[RunEntry],
+    logger: Logger,
+    exclude: List[str],
+    prefix: str,
+    args: List[str],
+    *_,
+    **__
+):
     if not runs:
         logger.exit("No commands found.")
 
     exclude = set(exclude)
     commands = [Command.from_run(run).exclude(prefix, *args) for run in runs]
     spec_dict = get_spec_obj(
-        commands=commands, exclude=exclude, prefix=prefix, logger=logger).dict()
+        commands=commands, exclude=exclude, prefix=prefix, logger=logger
+    ).dict()
     spec_dict = {k: v for k, v in spec_dict.items() if v}
     print(json.dumps(spec_dict, sort_keys=True, indent=4))
 
 
-def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str, logger: Logger):
+def get_spec_obj(
+    commands: List[Command], exclude: Set[str], prefix: str, logger: Logger
+):
     positionals = commands[0].positionals
     args = defaultdict(set)
     flags = set()
@@ -69,12 +82,13 @@ def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str, logger
     for command in commands:
         if command.positionals != positionals:
             logger.exit(
-                'Command:',
+                "Command:",
                 commands[0],
-                'and',
+                "and",
                 command,
-                'do not have the same positional arguments:',
-                sep='\n')
+                "do not have the same positional arguments:",
+                sep="\n",
+            )
 
         for (k, _), v in command.optionals:
             args[k].add(squeeze(take_first(v)))
@@ -83,6 +97,6 @@ def get_spec_obj(commands: List[Command], exclude: Set[str], prefix: str, logger
 
     flags = list(flags)
     args = {k: squeeze(list(v)) for k, v in args.items()}
-    command = ''.join([s for t in positionals for s in t])
+    command = "".join([s for t in positionals for s in t])
 
     return SpecObj(command=command, args=args, flags=flags)

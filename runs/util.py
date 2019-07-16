@@ -18,7 +18,7 @@ BOLD = "\033[;1m"
 REVERSE = "\033[;7m"
 
 
-def highlight(*args, sep=' '):
+def highlight(*args, sep=" "):
     return GREEN + sep.join(map(str, args)) + RESET
 
 
@@ -27,7 +27,7 @@ def prune_empty(path):
 
     if path.exists():
         # directory is not empty, stop
-        if [p for p in path.iterdir() if p.name != '.DS_Store']:
+        if [p for p in path.iterdir() if p.name != ".DS_Store"]:
             return
 
         # otherwise, remove it
@@ -38,19 +38,19 @@ def prune_empty(path):
 def chunks(it, size):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(it), size):
-        yield it[i:i + size]
+        yield it[i : i + size]
 
 
 def string_from_vim(prompt: str, string=None, line_length=100):
     if string is None:
-        string = ' '
-    path = Path('/', 'tmp', datetime.now().strftime('%s') + '.txt')
-    prompt = '\n'.join(chunks(prompt.strip('\n '), line_length))
-    delimiter = '\n' + '=' * line_length
-    with path.open('w') as f:
-        f.write(prompt + delimiter + '\n' + string.lstrip('\n'))
-    start_line = 3 + prompt.count('\n')
-    subprocess.call('vim +{} {}'.format(start_line, path), shell=True)
+        string = " "
+    path = Path("/", "tmp", datetime.now().strftime("%s") + ".txt")
+    prompt = "\n".join(chunks(prompt.strip("\n "), line_length))
+    delimiter = "\n" + "=" * line_length
+    with path.open("w") as f:
+        f.write(prompt + delimiter + "\n" + string.lstrip("\n"))
+    start_line = 3 + prompt.count("\n")
+    subprocess.call("vim +{} {}".format(start_line, path), shell=True)
     with path.open() as f:
         file_contents = f.read()[:-1]
         if delimiter not in file_contents:
@@ -61,7 +61,7 @@ def string_from_vim(prompt: str, string=None, line_length=100):
 
 
 def nonempty_string_type(value):
-    if value == '' or not isinstance(value, str):
+    if value == "" or not isinstance(value, str):
         raise argparse.ArgumentTypeError("Value must be a nonempty string.")
     return value
 
@@ -69,29 +69,29 @@ def nonempty_string_type(value):
 def interpolate_keywords(path, string):
     keywords = dict(path=path, name=PurePath(path).name)
     for word, replacement in keywords.items():
-        string = string.replace(f'<{word}>', str(replacement))
+        string = string.replace(f"<{word}>", str(replacement))
     return string
 
 
 def natural_order(text):
-    return [int(c) if c.isdigit() else c for c in re.split('(\d+)', text)]
+    return [int(c) if c.isdigit() else c for c in re.split("(\d+)", text)]
 
 
-def parse_arg(arg: str, delims: str = '=| ') -> List[str]:
+def parse_arg(arg: str, delims: str = "=| ") -> List[str]:
     """
     :return: a list of [--arg=value] strings
     """
-    pattern = f'(?:--)?([^{delims}]*)({delims})(.*)'
+    pattern = f"(?:--)?([^{delims}]*)({delims})(.*)"
     match = re.match(pattern, arg)
     if match:
         key, delim, values = match.groups()
-        return [f'--{key}={value}' for value in values.split('|')]
+        return [f"--{key}={value}" for value in values.split("|")]
     else:
-        return arg.split('|')
+        return arg.split("|")
 
 
-MAIN = 'main'
-ARGS = 'args'
+MAIN = "main"
+ARGS = "args"
 
 
 def get_args(command: Command, exclude: Set[str]):
@@ -101,12 +101,12 @@ def get_args(command: Command, exclude: Set[str]):
             key, value = match.groups()
             try:
                 value = float(value)
-                if value % 1. == 0:
+                if value % 1.0 == 0:
                     value = int(value)
             except ValueError:
                 pass
         else:
-            value, = re.match('(-{1,2}.*)', arg).groups()
+            value, = re.match("(-{1,2}.*)", arg).groups()
             key = None
         return key, value
 

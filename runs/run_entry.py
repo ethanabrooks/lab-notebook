@@ -4,13 +4,8 @@ from typing import Tuple
 
 
 class RunEntry(
-        namedtuple('RunEntry', [
-            'path',
-            'command',
-            'commit',
-            'datetime',
-            'description',
-        ])):
+    namedtuple("RunEntry", ["path", "command", "commit", "datetime", "description"])
+):
     __slots__ = ()
 
     class KeyError(KeyError):
@@ -18,7 +13,7 @@ class RunEntry(
 
     def __str__(self):
         # noinspection PyUnresolvedReferences
-        return ','.join([f"'{x}'" for x in self])
+        return ",".join([f"'{x}'" for x in self])
 
     def replace(self, **kwargs):
         return super()._replace(**kwargs)
