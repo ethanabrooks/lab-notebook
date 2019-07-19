@@ -38,6 +38,11 @@ def add_subparser(subparsers):
         help="String that would be prepended to commands, and should therefore be "
         "excluded from the reproduce command ",
     )
+    parser.add_argument(
+        "--porcelain",
+        action="store_true",
+        help="Eliminate any explanatory text so that output can be run in a script.",
+    )
     return parser
 
 
@@ -51,11 +56,18 @@ def cli(
     prefix: str,
     path: Optional[PurePath],
     description: str,
+    porcelain: bool,
     *_,
     **__,
 ):
     for string in strings(
-        db=db, runs=runs, args=args, prefix=prefix, path=path, description=description
+        db=db,
+        runs=runs,
+        args=args,
+        prefix=prefix,
+        path=path,
+        description=description,
+        porcelain=porcelain,
     ):
         logger.print(string)
 
@@ -67,9 +79,10 @@ def strings(
     db: DataBase,
     description: Optional[str],
     path: Optional[PurePath],
+    porcelain: bool,
 ):
     entry_dict = defaultdict(list)
-    return_strings = [highlight("To reproduce:")]
+    return_strings = [] if porcelain else [highlight("To reproduce:")]
     for entry in runs:
         entry_dict[entry.commit].append(entry)
     for commit, entries in entry_dict.items():
