@@ -1,3 +1,3 @@
 - more advanced tab-completion
-- make reproduce consider current .runsrc
 - ignore nan values in correlate
+- fix the bug when quotes are used in .runsrc
