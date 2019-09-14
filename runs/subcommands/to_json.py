@@ -22,6 +22,12 @@ def add_subparser(subparsers):
         "of args in given patterns.",
     )
     parser.add_argument(
+        "--prefix",
+        type=str,
+        help="String to prepend to all main subcommands, for example, sourcing a "
+        "virtualenv",
+    )
+    parser.add_argument(
         "--exclude", nargs="*", default=set(), help="Keys of args to exclude."
     )
     add_query_args(parser, with_sort=False)
