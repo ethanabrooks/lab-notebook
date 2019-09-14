@@ -27,6 +27,12 @@ def add_subparser(subparsers):
         "args and this value. The keyword <path> will be replaced "
         "by the path of the run.",
     )
+    parser.add_argument(
+        "--prefix",
+        type=str,
+        help="String to prepend to all main subcommands, for example, sourcing a "
+        "virtualenv",
+    )
     return parser
 
 
