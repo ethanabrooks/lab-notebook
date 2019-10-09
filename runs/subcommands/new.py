@@ -101,8 +101,6 @@ def cli(
         if description is None:
             if descriptions:
                 description = descriptions[0]
-            else:
-                description = "commit-message"
 
         new(
             command=Command(prefix, command, *args, path=path),
@@ -115,8 +113,6 @@ def cli(
 def new(command, description, path, transaction):
     bash = transaction.bash
     if description is None:
-        description = ""
-    if description == "commit-message":
         description = bash.cmd("git log -1 --pretty=%B".split())
     if path in transaction.db:
         transaction.remove(path)
