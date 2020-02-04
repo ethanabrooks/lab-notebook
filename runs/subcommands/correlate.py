@@ -70,7 +70,7 @@ def correlations(
             return math.nan
 
     def get_value(path: PurePath) -> Optional[float]:
-        path = Path(str(value_path).replace("<path>", str(path)))
+        path = Path(str(value_path).replace("<path>", str(path)).replace("\\", ""))
         try:
             with path.open() as f:
                 return float(f.read())
